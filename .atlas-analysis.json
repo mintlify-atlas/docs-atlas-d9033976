@@ -1,0 +1,229 @@
+{
+  "projectType": "framework",
+  "projectName": "FLTK",
+  "projectDescription": "Cross-platform C++ GUI toolkit for building native desktop applications with modern widgets and minimal dependencies",
+  "theme": "aspen",
+  "primaryColor": "#0066CC",
+  "lightColor": "#3399FF",
+  "darkColor": "#004080",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart",
+              "hello-world"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/widgets",
+              "concepts/windows",
+              "concepts/events",
+              "concepts/drawing",
+              "concepts/layout",
+              "concepts/callbacks"
+            ]
+          },
+          {
+            "group": "Widgets",
+            "pages": [
+              "widgets/overview",
+              "widgets/basic",
+              "widgets/buttons",
+              "widgets/input",
+              "widgets/menus",
+              "widgets/browsers",
+              "widgets/text",
+              "widgets/valuators",
+              "widgets/containers"
+            ]
+          },
+          {
+            "group": "Layout Management",
+            "pages": [
+              "layout/overview",
+              "layout/group",
+              "layout/flex",
+              "layout/grid",
+              "layout/pack",
+              "layout/scroll",
+              "layout/tabs"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "advanced/opengl",
+              "advanced/cairo",
+              "advanced/images",
+              "advanced/drawing",
+              "advanced/fonts",
+              "advanced/colors",
+              "advanced/clipboard"
+            ]
+          },
+          {
+            "group": "FLUID Designer",
+            "pages": [
+              "fluid/overview",
+              "fluid/getting-started",
+              "fluid/interface",
+              "fluid/file-format"
+            ]
+          },
+          {
+            "group": "Platform Guides",
+            "pages": [
+              "platforms/linux",
+              "platforms/windows",
+              "platforms/macos",
+              "platforms/wayland"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Classes",
+            "pages": [
+              "api/fl",
+              "api/fl-widget",
+              "api/fl-window",
+              "api/fl-group",
+              "api/enumerations"
+            ]
+          },
+          {
+            "group": "Basic Widgets",
+            "pages": [
+              "api/fl-box",
+              "api/fl-button",
+              "api/fl-input",
+              "api/fl-output",
+              "api/fl-choice",
+              "api/fl-slider",
+              "api/fl-progress"
+            ]
+          },
+          {
+            "group": "Menu Widgets",
+            "pages": [
+              "api/fl-menu-item",
+              "api/fl-menu-bar",
+              "api/fl-menu-button",
+              "api/fl-choice-menu"
+            ]
+          },
+          {
+            "group": "Container Widgets",
+            "pages": [
+              "api/fl-flex",
+              "api/fl-grid",
+              "api/fl-pack",
+              "api/fl-scroll",
+              "api/fl-tabs",
+              "api/fl-tile"
+            ]
+          },
+          {
+            "group": "Complex Widgets",
+            "pages": [
+              "api/fl-browser",
+              "api/fl-table",
+              "api/fl-tree",
+              "api/fl-text-editor",
+              "api/fl-terminal"
+            ]
+          },
+          {
+            "group": "Drawing & Graphics",
+            "pages": [
+              "api/fl-image",
+              "api/fl-rgb-image",
+              "api/fl-pixmap",
+              "api/drawing-functions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Basic Examples",
+            "pages": [
+              "examples/hello-world",
+              "examples/buttons",
+              "examples/inputs",
+              "examples/callbacks"
+            ]
+          },
+          {
+            "group": "Layout Examples",
+            "pages": [
+              "examples/flex-layout",
+              "examples/grid-layout",
+              "examples/responsive-design"
+            ]
+          },
+          {
+            "group": "Advanced Examples",
+            "pages": [
+              "examples/opengl-demo",
+              "examples/custom-widgets",
+              "examples/multithreading"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Cross-platform GUI development (Linux, Windows, macOS)",
+    "155+ built-in widget classes",
+    "Fast and lightweight with minimal dependencies",
+    "OpenGL and Cairo graphics support",
+    "FLUID visual interface designer",
+    "Native look and feel on all platforms",
+    "Flexible layout managers (Flex, Grid, Pack)",
+    "Comprehensive event handling system",
+    "Built-in image support (PNG, JPEG, BMP, GIF, SVG)",
+    "X11 and Wayland support on Linux"
+  ],
+  "publicApiSurface": [
+    "Fl - Main application class",
+    "Fl_Widget - Base widget class",
+    "Fl_Window - Window container",
+    "Fl_Group - Widget container",
+    "Fl_Box - Display box for text/images",
+    "Fl_Button - Push button widget",
+    "Fl_Input - Text input widget",
+    "Fl_Menu_Bar - Menu bar widget",
+    "Fl_Browser - List browser widget",
+    "Fl_Table - Table widget",
+    "Fl_Tree - Tree widget",
+    "Fl_Text_Editor - Text editor widget",
+    "Fl_Terminal - Terminal emulator widget",
+    "Fl_Flex - Flexible box layout",
+    "Fl_Grid - Grid layout manager",
+    "Fl_Pack - Automatic packing layout",
+    "Fl_Scroll - Scrollable container",
+    "Fl_Tabs - Tabbed container",
+    "Fl_Gl_Window - OpenGL window",
+    "Fl_Cairo_Window - Cairo graphics window",
+    "fl_draw() - Drawing functions",
+    "fl_color() - Color management",
+    "fl_font() - Font management",
+    "Fl::run() - Main event loop",
+    "Fl::add_timeout() - Timer management"
+  ]
+}
