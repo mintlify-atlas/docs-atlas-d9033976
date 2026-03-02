@@ -1,0 +1,705 @@
+---
+title: Drawing Functions
+description: Low-level drawing API for graphics, shapes, text, and images in FLTK
+---
+
+## Overview
+
+FLTK provides a comprehensive set of portable drawing functions for creating graphics, rendering text, drawing shapes, and manipulating images. These functions work across all supported platforms (Windows, macOS, Linux/X11).
+
+**Header:** `<FL/fl_draw.H>`
+
+## Color Functions
+
+<ParamField path="fl_color" type="void fl_color(Fl_Color c)">
+  Sets the color for all subsequent drawing operations.
+  
+  <ParamField path="c" type="Fl_Color">
+    Color index from the FLTK color map
+  </ParamField>
+  
+  For color-mapped displays, a color cell is allocated from fl_colormap the first time a color is used.
+</ParamField>
+
+```cpp
+void fl_color(Fl_Color c);
+void fl_color(int c);  // For backward compatibility
+```
+
+<ParamField path="fl_color" type="void fl_color(uchar r, uchar g, uchar b)">
+  Sets the color using RGB components.
+  
+  <ParamField path="r" type="uchar">
+    Red component (0-255)
+  </ParamField>
+  
+  <ParamField path="g" type="uchar">
+    Green component (0-255)
+  </ParamField>
+  
+  <ParamField path="b" type="uchar">
+    Blue component (0-255)
+  </ParamField>
+  
+  The closest possible match to the RGB color is used on color-mapped displays.
+</ParamField>
+
+```cpp
+void fl_color(uchar r, uchar g, uchar b);
+```
+
+<ParamField path="fl_color" type="Fl_Color fl_color()">
+  Returns the last fl_color() that was set. Can be used for state save/restore.
+</ParamField>
+
+## Line Style
+
+<ParamField path="fl_line_style" type="void fl_line_style(int style, int width = 0, char* dashes = 0)">
+  Sets how to draw lines (the "pen").
+  
+  <ParamField path="style" type="int">
+    Bitmask of line style, cap style, and join style:
+    - `FL_SOLID` - Solid line (0)
+    - `FL_DASH` - Dashed line (1)
+    - `FL_DOT` - Dotted line (2)
+    - `FL_DASHDOT` - Dash-dot pattern (3)
+    - `FL_DASHDOTDOT` - Dash-dot-dot pattern (4)
+    - `FL_CAP_FLAT` - Flat end caps (0x100)
+    - `FL_CAP_ROUND` - Round end caps (0x200)
+    - `FL_CAP_SQUARE` - Square end caps (0x300)
+    - `FL_JOIN_MITER` - Miter join (0x1000)
+    - `FL_JOIN_ROUND` - Round join (0x2000)
+    - `FL_JOIN_BEVEL` - Bevel join (0x3000)
+    - `FL_UNIFORM_WIDTH` - Uniform width in scaled contexts (0x10000)
+  </ParamField>
+  
+  <ParamField path="width" type="int" default="0">
+    Line thickness in pixels (0 = system default)
+  </ParamField>
+  
+  <ParamField path="dashes" type="char*" default="0">
+    Array of dash lengths in pixels, terminated with 0
+  </ParamField>
+  
+  <Warning>Reset line style to default with `fl_line_style(0)` when done, or box/frame drawing will fail.</Warning>
+  <Warning>On Windows, set line style AFTER setting color, or style settings will be lost.</Warning>
+</ParamField>
+
+<ParamField path="fl_antialias" type="void fl_antialias(int state)">
+  Turns antialiased line drawing ON or OFF (Windows only).
+</ParamField>
+
+<ParamField path="fl_antialias" type="int fl_antialias()">
+  Returns whether line drawings are currently antialiased.
+</ParamField>
+
+## Rectangle Functions
+
+<ParamField path="fl_rect" type="void fl_rect(int x, int y, int w, int h)">
+  Draws a border inside the given bounding box.
+  
+  <ParamField path="x" type="int">
+    X coordinate of upper-left corner
+  </ParamField>
+  
+  <ParamField path="y" type="int">
+    Y coordinate of upper-left corner
+  </ParamField>
+  
+  <ParamField path="w" type="int">
+    Width of rectangle
+  </ParamField>
+  
+  <ParamField path="h" type="int">
+    Height of rectangle
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_rectf" type="void fl_rectf(int x, int y, int w, int h)">
+  Fills a rectangle with the current color.
+</ParamField>
+
+<ParamField path="fl_rectf" type="void fl_rectf(int x, int y, int w, int h, Fl_Color c)">
+  Fills a rectangle with the specified color.
+  
+  <Warning>Changes current color to c.</Warning>
+</ParamField>
+
+<ParamField path="fl_rectf" type="void fl_rectf(int x, int y, int w, int h, uchar r, uchar g, uchar b)">
+  Fills a rectangle with an exact RGB color using dithering if needed.
+</ParamField>
+
+<ParamField path="fl_rounded_rect" type="void fl_rounded_rect(int x, int y, int w, int h, int r)">
+  Draws a rounded rectangle border.
+  
+  <ParamField path="r" type="int">
+    Corner radius (optimized for values 5-15)
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_rounded_rectf" type="void fl_rounded_rectf(int x, int y, int w, int h, int r)">
+  Fills a rounded rectangle.
+</ParamField>
+
+<ParamField path="fl_focus_rect" type="void fl_focus_rect(int x, int y, int w, int h)">
+  Draws a dotted rectangle to indicate keyboard focus.
+</ParamField>
+
+## Line Functions
+
+<ParamField path="fl_point" type="void fl_point(int x, int y)">
+  Draws a single pixel at the given coordinates.
+</ParamField>
+
+<ParamField path="fl_line" type="void fl_line(int x, int y, int x1, int y1)">
+  Draws a line from (x,y) to (x1,y1).
+</ParamField>
+
+<ParamField path="fl_line" type="void fl_line(int x, int y, int x1, int y1, int x2, int y2)">
+  Draws two connected line segments.
+</ParamField>
+
+<ParamField path="fl_xyline" type="void fl_xyline(int x, int y, int x1)">
+  Draws a horizontal line from (x,y) to (x1,y).
+</ParamField>
+
+<ParamField path="fl_xyline" type="void fl_xyline(int x, int y, int x1, int y2)">
+  Draws horizontal then vertical line segments.
+</ParamField>
+
+<ParamField path="fl_xyline" type="void fl_xyline(int x, int y, int x1, int y2, int x3)">
+  Draws horizontal, vertical, horizontal line segments.
+</ParamField>
+
+<ParamField path="fl_yxline" type="void fl_yxline(int x, int y, int y1)">
+  Draws a vertical line from (x,y) to (x,y1).
+</ParamField>
+
+<ParamField path="fl_yxline" type="void fl_yxline(int x, int y, int y1, int x2)">
+  Draws vertical then horizontal line segments.
+</ParamField>
+
+<ParamField path="fl_yxline" type="void fl_yxline(int x, int y, int y1, int x2, int y3)">
+  Draws vertical, horizontal, vertical line segments.
+</ParamField>
+
+## Polygon Functions
+
+<ParamField path="fl_loop" type="void fl_loop(int x, int y, int x1, int y1, int x2, int y2)">
+  Outlines a 3-sided polygon with lines.
+</ParamField>
+
+<ParamField path="fl_loop" type="void fl_loop(int x, int y, int x1, int y1, int x2, int y2, int x3, int y3)">
+  Outlines a 4-sided polygon with lines.
+</ParamField>
+
+<ParamField path="fl_polygon" type="void fl_polygon(int x, int y, int x1, int y1, int x2, int y2)">
+  Fills a 3-sided polygon.
+</ParamField>
+
+<ParamField path="fl_polygon" type="void fl_polygon(int x, int y, int x1, int y1, int x2, int y2, int x3, int y3)">
+  Fills a 4-sided polygon (must be convex).
+</ParamField>
+
+## Circle and Arc Functions
+
+<ParamField path="fl_arc" type="void fl_arc(int x, int y, int w, int h, double a1, double a2)">
+  Draws an ellipse arc using integer coordinates.
+  
+  <ParamField path="x" type="int">
+    X coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="y" type="int">
+    Y coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="w" type="int">
+    Width of bounding box
+  </ParamField>
+  
+  <ParamField path="h" type="int">
+    Height of bounding box
+  </ParamField>
+  
+  <ParamField path="a1" type="double">
+    Start angle in degrees (counter-clockwise from 3 o'clock)
+  </ParamField>
+  
+  <ParamField path="a2" type="double">
+    End angle in degrees (must be >= a1)
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_pie" type="void fl_pie(int x, int y, int w, int h, double a1, double a2)">
+  Draws a filled pie slice.
+</ParamField>
+
+<ParamField path="fl_arc" type="void fl_arc(double x, double y, double r, double start, double end)">
+  Adds arc points to current path (use with fl_begin_line, fl_begin_polygon, etc.).
+  
+  <ParamField path="x" type="double">
+    Center X coordinate
+  </ParamField>
+  
+  <ParamField path="y" type="double">
+    Center Y coordinate
+  </ParamField>
+  
+  <ParamField path="r" type="double">
+    Radius
+  </ParamField>
+  
+  <ParamField path="start" type="double">
+    Start angle in degrees
+  </ParamField>
+  
+  <ParamField path="end" type="double">
+    End angle in degrees
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_circle" type="void fl_circle(double x, double y, double r)">
+  Adds a circle to the current path. Use with fl_begin_loop() or fl_begin_polygon().
+</ParamField>
+
+## Complex Path Drawing
+
+<ParamField path="fl_begin_points" type="void fl_begin_points()">
+  Starts drawing a list of points. Add points with fl_vertex(), end with fl_end_points().
+</ParamField>
+
+<ParamField path="fl_begin_line" type="void fl_begin_line()">
+  Starts drawing a list of lines.
+</ParamField>
+
+<ParamField path="fl_begin_loop" type="void fl_begin_loop()">
+  Starts drawing a closed sequence of lines.
+</ParamField>
+
+<ParamField path="fl_begin_polygon" type="void fl_begin_polygon()">
+  Starts drawing a convex filled polygon.
+</ParamField>
+
+<ParamField path="fl_begin_complex_polygon" type="void fl_begin_complex_polygon()">
+  Starts drawing a complex filled polygon (can be concave or have holes).
+</ParamField>
+
+<ParamField path="fl_vertex" type="void fl_vertex(double x, double y)">
+  Adds a single vertex to the current path.
+</ParamField>
+
+<ParamField path="fl_curve" type="void fl_curve(double X0, double Y0, double X1, double Y1, double X2, double Y2, double X3, double Y3)">
+  Adds Bézier curve points to the path.
+  
+  <ParamField path="X0, Y0" type="double">
+    Curve start point
+  </ParamField>
+  
+  <ParamField path="X1, Y1" type="double">
+    First control point
+  </ParamField>
+  
+  <ParamField path="X2, Y2" type="double">
+    Second control point
+  </ParamField>
+  
+  <ParamField path="X3, Y3" type="double">
+    Curve end point
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_gap" type="void fl_gap()">
+  Separates loops in complex polygons.
+</ParamField>
+
+<ParamField path="fl_end_points" type="void fl_end_points()">
+  Ends and draws the point list.
+</ParamField>
+
+<ParamField path="fl_end_line" type="void fl_end_line()">
+  Ends and draws the line list.
+</ParamField>
+
+<ParamField path="fl_end_loop" type="void fl_end_loop()">
+  Ends and draws the closed line sequence.
+</ParamField>
+
+<ParamField path="fl_end_polygon" type="void fl_end_polygon()">
+  Ends and draws the filled polygon.
+</ParamField>
+
+<ParamField path="fl_end_complex_polygon" type="void fl_end_complex_polygon()">
+  Ends and draws the complex polygon.
+</ParamField>
+
+## Transformation Functions
+
+<ParamField path="fl_push_matrix" type="void fl_push_matrix()">
+  Saves the current transformation matrix on the stack (max depth: 32).
+</ParamField>
+
+<ParamField path="fl_pop_matrix" type="void fl_pop_matrix()">
+  Restores the transformation matrix from the stack.
+</ParamField>
+
+<ParamField path="fl_scale" type="void fl_scale(double x, double y)">
+  Concatenates scaling transformation.
+</ParamField>
+
+<ParamField path="fl_scale" type="void fl_scale(double x)">
+  Concatenates uniform scaling transformation.
+</ParamField>
+
+<ParamField path="fl_translate" type="void fl_translate(double x, double y)">
+  Concatenates translation transformation.
+</ParamField>
+
+<ParamField path="fl_rotate" type="void fl_rotate(double d)">
+  Concatenates rotation transformation (counter-clockwise in degrees).
+</ParamField>
+
+<ParamField path="fl_load_identity" type="void fl_load_identity()">
+  Sets the transformation matrix to identity.
+</ParamField>
+
+<ParamField path="fl_mult_matrix" type="void fl_mult_matrix(double a, double b, double c, double d, double x, double y)">
+  Concatenates another transformation: X' = aX + cY + x, Y' = bX + dY + y
+</ParamField>
+
+## Clipping Functions
+
+<ParamField path="fl_push_clip" type="void fl_push_clip(int x, int y, int w, int h)">
+  Intersects the current clip region with a rectangle and pushes it onto the stack.
+</ParamField>
+
+<ParamField path="fl_push_no_clip" type="void fl_push_no_clip()">
+  Pushes an empty clip region (nothing will be clipped).
+</ParamField>
+
+<ParamField path="fl_pop_clip" type="void fl_pop_clip()">
+  Restores the previous clip region. Must be called once for every fl_push_clip().
+</ParamField>
+
+<ParamField path="fl_not_clipped" type="int fl_not_clipped(int x, int y, int w, int h)">
+  Returns non-zero if any of the rectangle intersects the current clip region.
+</ParamField>
+
+<ParamField path="fl_clip_box" type="int fl_clip_box(int x, int y, int w, int h, int& X, int& Y, int& W, int& H)">
+  Intersects a rectangle with the current clip region and returns the bounding box.
+  
+  Returns non-zero if the resulting rectangle differs from the original.
+</ParamField>
+
+## Font Functions
+
+<ParamField path="fl_font" type="void fl_font(Fl_Font face, Fl_Fontsize fsize)">
+  Sets the current font for subsequent text drawing.
+  
+  <ParamField path="face" type="Fl_Font">
+    Font face (FL_HELVETICA, FL_COURIER, FL_TIMES, etc.)
+  </ParamField>
+  
+  <ParamField path="fsize" type="Fl_Fontsize">
+    Font size in pixels
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_font" type="Fl_Font fl_font()">
+  Returns the current font face.
+</ParamField>
+
+<ParamField path="fl_size" type="Fl_Fontsize fl_size()">
+  Returns the current font size.
+</ParamField>
+
+<ParamField path="fl_height" type="int fl_height()">
+  Returns the recommended line spacing for the current font.
+</ParamField>
+
+<ParamField path="fl_descent" type="int fl_descent()">
+  Returns the distance above the bottom of fl_height() to draw text for vertical centering.
+</ParamField>
+
+<ParamField path="fl_width" type="double fl_width(const char* txt)">
+  Returns the typographical width of a null-terminated string.
+</ParamField>
+
+<ParamField path="fl_width" type="double fl_width(const char* txt, int n)">
+  Returns the width of n bytes of UTF-8 text.
+</ParamField>
+
+<ParamField path="fl_width" type="double fl_width(unsigned int c)">
+  Returns the width of a single Unicode character.
+</ParamField>
+
+<ParamField path="fl_text_extents" type="void fl_text_extents(const char* t, int& dx, int& dy, int& w, int& h)">
+  Determines the minimum pixel dimensions and offset of a string.
+  
+  <ParamField path="t" type="const char*">
+    Text to measure
+  </ParamField>
+  
+  <ParamField path="dx, dy" type="int&">
+    Output: offset from draw position to first colored pixel
+  </ParamField>
+  
+  <ParamField path="w, h" type="int&">
+    Output: width and height of bounding box
+  </ParamField>
+</ParamField>
+
+## Text Drawing Functions
+
+<ParamField path="fl_draw" type="void fl_draw(const char* str, int x, int y)">
+  Draws a null-terminated UTF-8 string at the given position. Text is aligned to the left and to the baseline.
+  
+  <ParamField path="str" type="const char*">
+    UTF-8 string to draw
+  </ParamField>
+  
+  <ParamField path="x" type="int">
+    X coordinate
+  </ParamField>
+  
+  <ParamField path="y" type="int">
+    Y coordinate (baseline)
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_draw" type="void fl_draw(int angle, const char* str, int x, int y)">
+  Draws text rotated counter-clockwise by angle degrees.
+  
+  <ParamField path="angle" type="int">
+    Rotation angle in degrees
+  </ParamField>
+  
+  <Warning>Rotated text requires Xft on X11 systems.</Warning>
+</ParamField>
+
+<ParamField path="fl_draw" type="void fl_draw(const char* str, int n, int x, int y)">
+  Draws n bytes of UTF-8 text.
+</ParamField>
+
+<ParamField path="fl_rtl_draw" type="void fl_rtl_draw(const char* str, int n, int x, int y)">
+  Draws text right-to-left.
+</ParamField>
+
+<ParamField path="fl_draw" type="void fl_draw(const char* str, int x, int y, int w, int h, Fl_Align align, Fl_Image* img = 0, int draw_symbols = 1, int spacing = 0)">
+  Draws formatted and aligned text inside a bounding box.
+  
+  <ParamField path="str" type="const char*">
+    UTF-8 string (can contain \n, \t, and @symbols)
+  </ParamField>
+  
+  <ParamField path="x, y, w, h" type="int">
+    Bounding box
+  </ParamField>
+  
+  <ParamField path="align" type="Fl_Align">
+    Alignment flags (FL_ALIGN_LEFT, FL_ALIGN_CENTER, FL_ALIGN_RIGHT, etc.)
+  </ParamField>
+  
+  <ParamField path="img" type="Fl_Image*" default="0">
+    Optional image to draw with text
+  </ParamField>
+  
+  <ParamField path="draw_symbols" type="int" default="1">
+    Whether to interpret @symbols
+  </ParamField>
+  
+  <ParamField path="spacing" type="int" default="0">
+    Spacing between text and image
+  </ParamField>
+</ParamField>
+
+## Image Drawing Functions
+
+<ParamField path="fl_draw_image" type="void fl_draw_image(const uchar* buf, int X, int Y, int W, int H, int D = 3, int L = 0)">
+  Draws an 8-bit per color RGB or grayscale image.
+  
+  <ParamField path="buf" type="const uchar*">
+    Pointer to image data (R,G,B order)
+  </ParamField>
+  
+  <ParamField path="X, Y" type="int">
+    Position of top-left corner
+  </ParamField>
+  
+  <ParamField path="W, H" type="int">
+    Image dimensions
+  </ParamField>
+  
+  <ParamField path="D" type="int" default="3">
+    Delta between pixels (1=grayscale, 3=RGB, 4=RGBA)
+  </ParamField>
+  
+  <ParamField path="L" type="int" default="0">
+    Line data size (0 = W*D)
+  </ParamField>
+</ParamField>
+
+<ParamField path="fl_draw_image_mono" type="void fl_draw_image_mono(const uchar* buf, int X, int Y, int W, int H, int D = 1, int L = 0)">
+  Draws a grayscale (1 channel) image.
+</ParamField>
+
+<ParamField path="fl_read_image" type="uchar* fl_read_image(uchar* p, int X, int Y, int W, int H, int alpha = 0)">
+  Reads a rectangular area of pixels from the screen.
+</ParamField>
+
+## Pixmap Functions
+
+<ParamField path="fl_draw_pixmap" type="int fl_draw_pixmap(const char* const* cdata, int x, int y, Fl_Color bg = FL_GRAY)">
+  Draws XPM image data at the given position.
+  
+  <ParamField path="cdata" type="const char* const*">
+    Pointer to XPM data
+  </ParamField>
+  
+  <ParamField path="x, y" type="int">
+    Position of top-left corner
+  </ParamField>
+  
+  <ParamField path="bg" type="Fl_Color" default="FL_GRAY">
+    Background color
+  </ParamField>
+  
+  Returns 0 if there was an error decoding XPM data.
+</ParamField>
+
+<ParamField path="fl_measure_pixmap" type="int fl_measure_pixmap(const char* const* cdata, int& w, int& h)">
+  Measures the dimensions of XPM data.
+</ParamField>
+
+## Offscreen Rendering
+
+<ParamField path="fl_create_offscreen" type="Fl_Offscreen fl_create_offscreen(int w, int h)">
+  Creates an offscreen buffer.
+</ParamField>
+
+<ParamField path="fl_begin_offscreen" type="void fl_begin_offscreen(Fl_Offscreen b)">
+  Begins drawing to an offscreen buffer.
+</ParamField>
+
+<ParamField path="fl_end_offscreen" type="void fl_end_offscreen()">
+  Ends offscreen drawing and restores normal drawing.
+</ParamField>
+
+<ParamField path="fl_delete_offscreen" type="void fl_delete_offscreen(Fl_Offscreen bitmap)">
+  Deletes an offscreen buffer.
+</ParamField>
+
+<ParamField path="fl_copy_offscreen" type="void fl_copy_offscreen(int x, int y, int w, int h, Fl_Offscreen pixmap, int srcx, int srcy)">
+  Copies a rectangular area from an offscreen buffer to the current drawing destination.
+</ParamField>
+
+## Example Usage
+
+### Drawing Basic Shapes
+
+```cpp
+void MyWidget::draw() {
+    // Set color and draw filled rectangle
+    fl_color(FL_RED);
+    fl_rectf(10, 10, 100, 50);
+    
+    // Draw rectangle outline
+    fl_color(FL_BLACK);
+    fl_rect(10, 10, 100, 50);
+    
+    // Draw circle
+    fl_color(FL_BLUE);
+    fl_begin_polygon();
+    fl_circle(150, 35, 25);
+    fl_end_polygon();
+    
+    // Draw arc
+    fl_color(FL_GREEN);
+    fl_arc(200, 10, 50, 50, 0, 270);
+}
+```
+
+### Drawing with Line Styles
+
+```cpp
+// Dashed line
+fl_color(FL_BLACK);
+fl_line_style(FL_DASH, 2);
+fl_line(10, 10, 200, 10);
+
+// Custom dash pattern
+char dashes[] = {10, 5, 2, 5, 0}; // 10 on, 5 off, 2 on, 5 off
+fl_line_style(FL_DASH, 1, dashes);
+fl_line(10, 20, 200, 20);
+
+// Reset to solid
+fl_line_style(0);
+```
+
+### Drawing Text
+
+```cpp
+// Simple text
+fl_font(FL_HELVETICA, 14);
+fl_color(FL_BLACK);
+fl_draw("Hello, FLTK!", 10, 30);
+
+// Rotated text
+fl_draw(90, "Vertical Text", 50, 100);
+
+// Formatted text in box
+fl_draw("Centered\nMulti-line\nText",
+        10, 50, 200, 100,
+        FL_ALIGN_CENTER);
+```
+
+### Complex Polygon
+
+```cpp
+// Draw a star
+fl_color(FL_YELLOW);
+fl_begin_polygon();
+for (int i = 0; i < 10; i++) {
+    double angle = i * 36 * M_PI / 180;
+    double r = (i % 2 == 0) ? 50 : 20;
+    fl_vertex(100 + r * cos(angle),
+              100 + r * sin(angle));
+}
+fl_end_polygon();
+```
+
+### Using Transformations
+
+```cpp
+fl_push_matrix();
+fl_translate(100, 100);
+fl_rotate(45);
+fl_scale(2.0);
+
+fl_color(FL_RED);
+fl_rectf(-25, -25, 50, 50);
+
+fl_pop_matrix();
+```
+
+### Drawing Raw Image Data
+
+```cpp
+// Create RGB image data
+uchar* img = new uchar[100 * 100 * 3];
+for (int i = 0; i < 100 * 100 * 3; i += 3) {
+    img[i]   = 255;  // R
+    img[i+1] = 0;    // G
+    img[i+2] = 0;    // B
+}
+
+// Draw it
+fl_draw_image(img, 10, 10, 100, 100, 3);
+delete[] img;
+```
+
+## See Also
+
+- [Fl_Image](/api/fl-image) - Image class hierarchy
+- [Fl_RGB_Image](/api/fl-rgb-image) - RGB images
+- [Fl_Pixmap](/api/fl-pixmap) - XPM pixmaps

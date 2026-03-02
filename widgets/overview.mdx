@@ -1,0 +1,145 @@
+---
+title: Widget Catalog
+description: Complete reference of FLTK GUI widgets and controls
+---
+
+FLTK provides a comprehensive set of widgets for building graphical user interfaces. All widgets inherit from the base `Fl_Widget` class and are defined in the `FL/` header directory.
+
+## Widget Categories
+
+<CardGroup cols={2}>
+  <Card title="Basic Widgets" icon="cube" href="/widgets/basic">
+    Simple display widgets like Fl_Box for labels and frames
+  </Card>
+  
+  <Card title="Buttons" icon="square-check" href="/widgets/buttons">
+    Push buttons, toggle buttons, checkboxes, and radio buttons
+  </Card>
+  
+  <Card title="Text Input" icon="keyboard" href="/widgets/input">
+    Single and multi-line text input widgets with validation
+  </Card>
+  
+  <Card title="Menus" icon="bars" href="/widgets/menus">
+    Menu bars, popup menus, and choice widgets
+  </Card>
+  
+  <Card title="Browsers" icon="list" href="/widgets/browsers">
+    List browsers, file browsers, and selection widgets
+  </Card>
+  
+  <Card title="Text Display" icon="file-lines" href="/widgets/text">
+    Multi-line text display and editor widgets
+  </Card>
+  
+  <Card title="Valuators" icon="sliders" href="/widgets/valuators">
+    Sliders, dials, counters for numeric input
+  </Card>
+  
+  <Card title="Containers" icon="window" href="/widgets/containers">
+    Groups, windows, and scrolling containers
+  </Card>
+</CardGroup>
+
+## Common Widget Properties
+
+All FLTK widgets share these fundamental properties:
+
+### Position and Size
+- **x(), y()** - Widget position relative to parent
+- **w(), h()** - Widget width and height
+- **resize(x, y, w, h)** - Change position and size
+
+### Appearance
+- **label()** - Text label displayed on/near widget
+- **box()** - Box type (border/background style)
+- **color()** - Background color
+- **labelcolor()** - Text color
+- **labelfont(), labelsize()** - Font properties
+
+### Behavior
+- **callback()** - Function called when widget activates
+- **when()** - Conditions that trigger callback
+- **activate(), deactivate()** - Enable/disable widget
+- **show(), hide()** - Control visibility
+
+### Interaction
+- **handle(event)** - Process mouse/keyboard events
+- **take_focus()** - Accept keyboard focus
+- **tooltip()** - Hover text
+
+## Widget Hierarchy
+
+```
+Fl_Widget (base class)
+├── Fl_Box (basic display)
+├── Fl_Button
+│   ├── Fl_Check_Button
+│   ├── Fl_Radio_Button
+│   └── Fl_Return_Button
+├── Fl_Input
+│   ├── Fl_Float_Input
+│   ├── Fl_Int_Input
+│   └── Fl_Secret_Input
+├── Fl_Valuator
+│   ├── Fl_Slider
+│   ├── Fl_Dial
+│   └── Fl_Counter
+├── Fl_Menu_
+│   ├── Fl_Menu_Bar
+│   ├── Fl_Menu_Button
+│   └── Fl_Choice
+├── Fl_Browser
+│   ├── Fl_File_Browser
+│   └── Fl_Check_Browser
+├── Fl_Group (container)
+│   ├── Fl_Window
+│   ├── Fl_Scroll
+│   └── Fl_Pack
+└── Fl_Text_Display
+    └── Fl_Text_Editor
+```
+
+## Usage Pattern
+
+Most FLTK widgets follow this creation pattern:
+
+```cpp
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+
+int main() {
+  Fl_Window *window = new Fl_Window(300, 200, "My Window");
+  
+  // Create widget: position (x, y), size (w, h), label
+  Fl_Button *btn = new Fl_Button(100, 80, 100, 30, "Click Me");
+  btn->callback([](Fl_Widget *w, void *) {
+    printf("Button clicked!\n");
+  });
+  
+  window->end();
+  window->show();
+  return Fl::run();
+}
+```
+
+## Coordinate System
+
+FLTK uses a screen coordinate system where:
+- **(0, 0)** is the top-left corner
+- **X increases** to the right
+- **Y increases** downward
+- All measurements are in **pixels**
+- Widget positions are **relative to their parent**
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Start with Buttons" icon="hand-pointer" href="/widgets/buttons">
+    Learn about the most common interactive widgets
+  </Card>
+  
+  <Card title="Container Widgets" icon="layer-group" href="/widgets/containers">
+    Understand how to organize widgets in groups and windows
+  </Card>
+</CardGroup>

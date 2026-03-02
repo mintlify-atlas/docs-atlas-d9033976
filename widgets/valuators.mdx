@@ -1,0 +1,516 @@
+---
+title: Valuator Widgets
+description: Sliders, dials, counters, and other widgets for numeric input
+---
+
+Valuator widgets allow users to select numeric values through graphical controls. All valuators inherit from the `Fl_Valuator` base class.
+
+## Fl_Slider
+
+**Header:** `FL/Fl_Slider.H`
+
+A slider widget with a sliding knob inside a box. Can be horizontal or vertical.
+
+### Constructor
+
+```cpp
+Fl_Slider(int x, int y, int w, int h, const char *label = 0);
+Fl_Slider(uchar type, int x, int y, int w, int h, const char *label);
+```
+
+### Slider Types
+
+Set with `type()` method:
+
+```cpp
+FL_VERT_SLIDER       // Vertical slider (default)
+FL_HOR_SLIDER        // Horizontal slider  
+FL_VERT_FILL_SLIDER  // Vertical filled slider (progress bar style)
+FL_HOR_FILL_SLIDER   // Horizontal filled slider
+FL_VERT_NICE_SLIDER  // Vertical with nice knob
+FL_HOR_NICE_SLIDER   // Horizontal with nice knob
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="value() - Get/Set Value">
+    Get or set the current slider value.
+    
+    ```cpp
+    double value() const;
+    int value(double v);
+    
+    Fl_Slider *slider = new Fl_Slider(50, 50, 200, 30);
+    slider->bounds(0.0, 100.0);  // Set range
+    slider->value(50.0);         // Set to middle
+    
+    double val = slider->value();
+    printf("Value: %.2f\n", val);
+    ```
+  </Accordion>
+
+  <Accordion title="bounds() - Set Range">
+    Set minimum and maximum values.
+    
+    ```cpp
+    void bounds(double min, double max);
+    double minimum() const;
+    double maximum() const;
+    
+    slider->bounds(0.0, 100.0);    // 0 to 100
+    slider->bounds(-50.0, 50.0);   // -50 to +50
+    ```
+  </Accordion>
+
+  <Accordion title="step() - Increment Size">
+    Set the step size for arrow key adjustments.
+    
+    ```cpp
+    void step(double s);
+    double step() const;
+    
+    slider->step(1.0);   // Increment by 1
+    slider->step(0.1);   // Fine increments
+    ```
+  </Accordion>
+
+  <Accordion title="slider_size() - Knob Size">
+    Set size of the moving slider knob.
+    
+    ```cpp
+    void slider_size(double s);  // Fraction of total (0.0 - 1.0)
+    float slider_size() const;
+    
+    slider->slider_size(0.1);  // 10% of track length
+    ```
+  </Accordion>
+
+  <Accordion title="slider() - Knob Box Type">
+    Set the appearance of the slider knob.
+    
+    ```cpp
+    void slider(Fl_Boxtype box);
+    Fl_Boxtype slider() const;
+    
+    slider->slider(FL_UP_BOX);
+    slider->slider(FL_ROUND_UP_BOX);
+    ```
+  </Accordion>
+
+  <Accordion title="scale() - Linear or Logarithmic">
+    Set the scale type for the slider.
+    
+    ```cpp
+    void scale(Scale_Type s);
+    Scale_Type scale() const;
+    
+    // Scale types
+    LINEAR_SCALE  // Linear scale (default)
+    LOG_SCALE     // Logarithmic scale
+    
+    slider->scale(LOG_SCALE);  // Good for volume, frequency
+    ```
+  </Accordion>
+
+  <Accordion title="ticks() - Show Tick Marks">
+    Add tick marks to nice sliders.
+    
+    ```cpp
+    void ticks(uchar position, uchar num_ticks = 11);
+    
+    // Tick positions (can combine with |)
+    TICKS_NONE   // No ticks
+    TICKS_ABOVE  // Above horizontal slider
+    TICKS_BELOW  // Below horizontal slider
+    TICKS_LEFT   // Left of vertical slider
+    TICKS_RIGHT  // Right of vertical slider
+    
+    slider->type(FL_HOR_NICE_SLIDER);
+    slider->ticks(Fl_Slider::TICKS_BELOW, 11);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Slider.H>
+#include <FL/Fl_Value_Output.H>
+
+Fl_Value_Output *output;
+
+void slider_cb(Fl_Widget *w, void *) {
+  Fl_Slider *slider = (Fl_Slider*)w;
+  output->value(slider->value());
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(320, 200, "Slider Example");
+  
+  // Horizontal slider
+  Fl_Slider *h_slider = new Fl_Slider(60, 50, 200, 25, "Volume:");
+  h_slider->type(FL_HOR_NICE_SLIDER);
+  h_slider->bounds(0, 100);
+  h_slider->value(50);
+  h_slider->callback(slider_cb);
+  
+  // Value display
+  output = new Fl_Value_Output(60, 90, 100, 25, "Value:");
+  output->value(50);
+  
+  // Vertical slider
+  Fl_Slider *v_slider = new Fl_Slider(280, 30, 25, 150);
+  v_slider->type(FL_VERT_FILL_SLIDER);
+  v_slider->bounds(0, 100);
+  v_slider->value(75);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Visual Description
+
+Sliders appear as a track with a movable knob. Vertical sliders have the knob moving up/down, horizontal left/right. Fill sliders show a colored bar from minimum to current value. Nice sliders have a rounded, raised knob.
+
+## Fl_Value_Slider
+
+**Header:** `FL/Fl_Value_Slider.H`
+
+Combines a slider with a text display of the current value.
+
+```cpp
+Fl_Value_Slider *vslider = new Fl_Value_Slider(50, 50, 300, 25, "Brightness:");
+vslider->type(FL_HOR_NICE_SLIDER);
+vslider->bounds(0, 255);
+vslider->step(1);
+vslider->textsize(14);
+```
+
+## Fl_Dial
+
+**Header:** `FL/Fl_Dial.H`
+
+A circular dial control, like a volume knob.
+
+### Constructor
+
+```cpp
+Fl_Dial(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Dial Types
+
+```cpp
+FL_NORMAL_DIAL  // Dial with dot indicator
+FL_LINE_DIAL    // Dial with line indicator
+FL_FILL_DIAL    // Dial with filled arc
+```
+
+### Key Methods
+
+```cpp
+// Set angle range (default: 45 to 315 degrees)
+void angles(short angle1, short angle2);
+short angle1() const;
+short angle2() const;
+
+// 0 degrees is straight down, angles go clockwise
+dial->angles(0, 360);    // Full circle
+dial->angles(225, 315);  // Bottom-left quadrant
+```
+
+### Example
+
+```cpp
+Fl_Dial *dial = new Fl_Dial(100, 100, 100, 100, "Volume");
+dial->type(FL_FILL_DIAL);
+dial->bounds(0, 10);
+dial->angles(225, 315);  // 90 degree range
+dial->value(5);
+
+dial->callback([](Fl_Widget *w, void *) {
+  Fl_Dial *d = (Fl_Dial*)w;
+  printf("Dial: %.1f\n", d->value());
+});
+```
+
+### Visual Description
+
+Circular widget with indicator showing current value. Normal dial shows a dot on the perimeter, line dial shows a line from center, fill dial shows a colored arc.
+
+## Fl_Counter
+
+**Header:** `FL/Fl_Counter.H`
+
+Numeric value with increment/decrement arrow buttons.
+
+### Constructor
+
+```cpp
+Fl_Counter(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Counter Types
+
+```cpp
+FL_NORMAL_COUNTER  // Four arrow buttons (fast + slow)
+FL_SIMPLE_COUNTER  // Two arrow buttons (up/down only)
+```
+
+### Key Methods
+
+```cpp
+void step(double s);         // Set single step size
+void step(double s, double l); // Set single and fast step
+void lstep(double l);        // Set large (fast) step
+
+counter->step(1.0, 10.0);    // +/-1 and +/-10 buttons
+```
+
+### Example
+
+```cpp
+Fl_Counter *counter = new Fl_Counter(100, 50, 200, 30, "Count:");
+counter->type(FL_NORMAL_COUNTER);
+counter->bounds(0, 100);
+counter->step(1, 5);  // Small step = 1, large step = 5
+counter->value(10);
+
+counter->callback([](Fl_Widget *w, void *) {
+  Fl_Counter *c = (Fl_Counter*)w;
+  printf("Count: %.0f\n", c->value());
+});
+```
+
+### Visual Description
+
+Shows numeric value in center with arrow buttons on either side. Normal counter has four buttons: double-left, left, right, double-right for slow and fast adjustment.
+
+## Fl_Roller
+
+**Header:** `FL/Fl_Roller.H`
+
+Looks like a rolling cylinder that you drag to change value.
+
+```cpp
+Fl_Roller *roller = new Fl_Roller(100, 50, 200, 25);
+roller->bounds(0, 360);
+roller->step(1);
+```
+
+## Fl_Scrollbar
+
+**Header:** `FL/Fl_Scrollbar.H`
+
+Scrollbar widget (typically used automatically by Fl_Scroll).
+
+```cpp
+Fl_Scrollbar *scroll = new Fl_Scrollbar(300, 50, 20, 200);
+scroll->bounds(0, 1000);
+scroll->slider_size(0.1);  // Visible portion
+scroll->linesize(10);      // Scroll increment
+```
+
+## Valuator Gallery
+
+<CardGroup cols={2}>
+  <Card title="Slider" icon="sliders">
+    **Fl_Slider** - Linear control
+    
+    Horizontal or vertical slider with draggable knob.
+    
+    **Use for:** Volume, brightness, position, percentage
+  </Card>
+
+  <Card title="Dial" icon="circle-dot">
+    **Fl_Dial** - Rotary control
+    
+    Circular dial rotated with mouse drag.
+    
+    **Use for:** Volume knobs, angle selection, levels
+  </Card>
+
+  <Card title="Counter" icon="arrow-up-1-9">
+    **Fl_Counter** - Stepped numeric
+    
+    Number with increment/decrement buttons.
+    
+    **Use for:** Quantity, count, discrete values
+  </Card>
+
+  <Card title="Value Slider" icon="text-slash">
+    **Fl_Value_Slider** - Slider with display
+    
+    Slider combined with numeric readout.
+    
+    **Use for:** When exact value visibility is important
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### RGB Color Picker
+
+```cpp
+Fl_Slider *r_slider = new Fl_Slider(100, 50, 200, 25, "Red:");
+Fl_Slider *g_slider = new Fl_Slider(100, 90, 200, 25, "Green:");
+Fl_Slider *b_slider = new Fl_Slider(100, 130, 200, 25, "Blue:");
+
+for (auto *slider : {r_slider, g_slider, b_slider}) {
+  slider->type(FL_HOR_NICE_SLIDER);
+  slider->bounds(0, 255);
+  slider->step(1);
+  slider->callback([](Fl_Widget *, void *v) {
+    auto *box = (Fl_Box*)v;
+    int r = r_slider->value();
+    int g = g_slider->value();
+    int b = b_slider->value();
+    box->color(fl_rgb_color(r, g, b));
+    box->redraw();
+  }, preview_box);
+}
+```
+
+### Audio Mixer
+
+```cpp
+class MixerChannel {
+public:
+  Fl_Value_Slider *volume;
+  Fl_Slider *pan;
+  
+  MixerChannel(int x, int y, const char *name) {
+    // Volume slider (vertical)
+    volume = new Fl_Value_Slider(x, y, 40, 200, name);
+    volume->type(FL_VERT_NICE_SLIDER);
+    volume->bounds(0, 100);
+    volume->value(80);
+    volume->step(1);
+    
+    // Pan control (horizontal)
+    pan = new Fl_Slider(x - 10, y + 210, 60, 20);
+    pan->type(FL_HOR_SLIDER);
+    pan->bounds(-50, 50);
+    pan->value(0);
+  }
+};
+```
+
+### Progress Bar (Read-Only Slider)
+
+```cpp
+Fl_Slider *progress = new Fl_Slider(50, 50, 400, 25);
+progress->type(FL_HOR_FILL_SLIDER);
+progress->bounds(0, 100);
+progress->value(0);
+progress->color(FL_BACKGROUND_COLOR);
+progress->selection_color(FL_BLUE);
+progress->deactivate();  // Read-only
+
+// Update progress
+void set_progress(double percent) {
+  progress->value(percent);
+  progress->redraw();
+}
+```
+
+### Logarithmic Volume Control
+
+```cpp
+Fl_Slider *volume = new Fl_Slider(50, 50, 300, 25, "Volume (dB):");
+volume->type(FL_HOR_NICE_SLIDER);
+volume->bounds(-60, 0);  // -60dB to 0dB
+volume->value(-12);
+volume->scale(Fl_Slider::LOG_SCALE);
+volume->step(0.1);
+
+volume->callback([](Fl_Widget *w, void *) {
+  Fl_Slider *s = (Fl_Slider*)w;
+  double db = s->value();
+  double linear = pow(10.0, db / 20.0);
+  set_audio_volume(linear);
+});
+```
+
+### Linked Sliders
+
+```cpp
+Fl_Slider *slider1 = new Fl_Slider(50, 50, 200, 25, "Master:");
+Fl_Slider *slider2 = new Fl_Slider(50, 90, 200, 25, "Slave:");
+
+slider1->callback([](Fl_Widget *w, void *v) {
+  Fl_Slider *master = (Fl_Slider*)w;
+  Fl_Slider *slave = (Fl_Slider*)v;
+  slave->value(master->value() * 0.8);  // Slave at 80%
+  slave->redraw();
+}, slider2);
+```
+
+## Valuator Base Class
+
+All valuators inherit these common methods from `Fl_Valuator`:
+
+```cpp
+// Value
+double value() const;
+int value(double v);
+
+// Range
+void minimum(double min);
+void maximum(double max);
+void bounds(double min, double max);
+void range(double min, double max);
+
+double minimum() const;
+double maximum() const;
+
+// Step
+void step(double s);
+double step() const;
+
+// Precision (for display)
+void precision(int digits);
+
+// Formatting
+int format(char *buffer);
+```
+
+## Important Notes
+
+<Warning>
+  Slider values are **floating-point** (double). Use `step(1.0)` and cast to int if you need integer values.
+</Warning>
+
+<Info>
+  The `bounds()` method sets both minimum and maximum in one call. To reverse a slider (max at top/left), swap the values: `bounds(100, 0)`.
+</Info>
+
+<Tip>
+  For **volume controls**, use logarithmic scale with `scale(LOG_SCALE)` to match human hearing perception.
+</Tip>
+
+## Callback Timing
+
+```cpp
+// Callback on every change (while dragging)
+slider->when(FL_WHEN_CHANGED);
+
+// Callback only when released (default)
+slider->when(FL_WHEN_RELEASE);
+
+// Callback on both
+slider->when(FL_WHEN_CHANGED | FL_WHEN_RELEASE);
+```
+
+## Reference
+
+- Source: `FL/Fl_Slider.H` (lines 36-168)
+- Source: `FL/Fl_Dial.H` (lines 32-83)
+- Source: `FL/Fl_Counter.H` (lines 33-110)
+- Source: `FL/Fl_Valuator.H`
+- Example: `test/adjuster.cxx`

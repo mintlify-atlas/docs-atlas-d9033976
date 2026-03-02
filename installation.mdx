@@ -1,0 +1,477 @@
+---
+title: Installation
+description: Build and install FLTK on Linux, Windows, and macOS using CMake
+---
+
+# Installation
+
+FLTK 1.5 uses CMake exclusively as its build system. CMake generates platform-specific build files (Makefiles, Visual Studio projects, Xcode projects) from a single configuration.
+
+## Prerequisites
+
+Before building FLTK, ensure you have:
+
+<Steps>
+  <Step title="CMake 3.15 or later">
+    Download from [cmake.org](https://cmake.org/download/) or install via your package manager.
+    
+    Verify installation:
+    ```bash
+    cmake --version
+    ```
+  </Step>
+
+  <Step title="C++11 capable compiler">
+    FLTK 1.5 requires C++11 support:
+    
+    - **Linux**: GCC 4.8+, Clang 3.3+
+    - **Windows**: Visual Studio 2015+, MinGW-w64
+    - **macOS**: Xcode 7.0+ (Apple Clang)
+  </Step>
+
+  <Step title="Platform-specific dependencies">
+    Install development libraries for your platform (see tabs below).
+  </Step>
+</Steps>
+
+## Platform dependencies
+
+<Tabs>
+  <Tab title="Linux">
+    Install development packages for X11, OpenGL, and optional libraries:
+
+    **Ubuntu/Debian:**
+    ```bash
+    sudo apt update
+    sudo apt install cmake g++ make
+    sudo apt install libx11-dev libxext-dev libxft-dev libxinerama-dev \
+                     libxcursor-dev libxrender-dev libxfixes-dev \
+                     libgl1-mesa-dev libglu1-mesa-dev
+    ```
+
+    **Fedora/RHEL:**
+    ```bash
+    sudo dnf install cmake gcc-c++ make
+    sudo dnf install libX11-devel libXext-devel libXft-devel libXinerama-devel \
+                     libXcursor-devel libXrender-devel libXfixes-devel \
+                     mesa-libGL-devel mesa-libGLU-devel
+    ```
+
+    **For Wayland support (optional):**
+    ```bash
+    # Ubuntu/Debian
+    sudo apt install libwayland-dev libdbus-1-dev libxkbcommon-dev \
+                     wayland-protocols libpango1.0-dev libcairo2-dev
+
+    # Fedora/RHEL  
+    sudo dnf install wayland-devel dbus-devel libxkbcommon-devel \
+                     wayland-protocols-devel pango-devel cairo-devel
+    ```
+  </Tab>
+
+  <Tab title="Windows">
+    **Visual Studio:**
+    
+    Install Visual Studio 2015 or later with C++ development tools:
+    - Visual Studio Community (free): [visualstudio.microsoft.com](https://visualstudio.microsoft.com/)
+    - Select "Desktop development with C++" workload
+    - CMake is included with Visual Studio 2017+
+
+    **MinGW:**
+    
+    For MinGW with MSYS2:
+    ```bash
+    # Install MSYS2 from https://www.msys2.org/
+    # Then in MSYS2 terminal:
+    pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make
+    ```
+
+    <Note>
+    FLTK builds without external dependencies on Windows - the Win32 API and GDI+ are included with Windows.
+    </Note>
+  </Tab>
+
+  <Tab title="macOS">
+    Install Xcode command line tools:
+
+    ```bash
+    xcode-select --install
+    ```
+
+    Install CMake via Homebrew (recommended):
+    ```bash
+    # Install Homebrew if needed
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Install CMake
+    brew install cmake
+    ```
+
+    Alternatively, download CMake from [cmake.org](https://cmake.org/download/).
+
+    <Note>
+    Xcode includes all necessary frameworks (Cocoa, OpenGL). No additional dependencies required.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Building FLTK
+
+FLTK supports out-of-tree builds. The source directory remains clean, and you can maintain multiple build configurations.
+
+### Quick build (all platforms)
+
+<Steps>
+  <Step title="Download FLTK source">
+    ```bash
+    # Download latest release
+    git clone https://github.com/fltk/fltk.git
+    cd fltk
+    
+    # Or download and extract from https://www.fltk.org/software.php
+    ```
+  </Step>
+
+  <Step title="Configure with CMake">
+    ```bash
+    cmake -B build -G "Unix Makefiles"
+    ```
+
+    This creates a `build` directory with generated Makefiles.
+
+    <Tip>
+    Use `cmake --help` to see available generators for your platform.
+    </Tip>
+  </Step>
+
+  <Step title="Build the library">
+    ```bash
+    cmake --build build
+    ```
+
+    This works with any generator. For faster builds with Make:
+    ```bash
+    cmake --build build -- -j$(nproc)  # Linux/macOS
+    cmake --build build -- -j%NUMBER_OF_PROCESSORS%  # Windows
+    ```
+  </Step>
+
+  <Step title="Test the build (optional)">
+    Run the demo program:
+    ```bash
+    ./build/bin/test/demo
+    ```
+  </Step>
+
+  <Step title="Install (optional)">
+    ```bash
+    sudo cmake --install build
+    ```
+
+    Default installation paths:
+    - **Linux/macOS**: `/usr/local`
+    - **Windows**: `C:\Program Files\FLTK`
+
+    <Warning>
+    Installation is optional. You can build applications directly from the build tree without installing system-wide.
+    </Warning>
+  </Step>
+</Steps>
+
+## Build options
+
+Customize your FLTK build with CMake options:
+
+### Common options
+
+```bash
+cmake -B build \
+  -D CMAKE_BUILD_TYPE=Release \
+  -D CMAKE_INSTALL_PREFIX=/custom/path \
+  -D FLTK_BUILD_EXAMPLES=ON \
+  -D FLTK_BUILD_TEST=ON
+```
+
+<AccordionGroup>
+  <Accordion title="Build type options">
+    **CMAKE_BUILD_TYPE**: Controls optimization and debug symbols
+    
+    - `Release`: Optimized, no debug info (default for single-config generators)
+    - `Debug`: No optimization, full debug symbols
+    - `RelWithDebInfo`: Optimized with debug symbols
+    - `MinSizeRel`: Optimize for size
+
+    ```bash
+    cmake -B build -D CMAKE_BUILD_TYPE=Debug
+    ```
+  </Accordion>
+
+  <Accordion title="Library options">
+    **FLTK_BUILD_SHARED_LIBS**: Build shared libraries in addition to static (default: OFF)
+    
+    ```bash
+    cmake -B build -D FLTK_BUILD_SHARED_LIBS=ON
+    ```
+
+    **FLTK_BUILD_GL**: Build OpenGL support library (default: ON)
+    
+    **FLTK_BUILD_FORMS**: Build (X)Forms compatibility library (default: OFF)
+    
+    **FLTK_BUILD_EXAMPLES**: Build example programs (default: OFF)
+    
+    **FLTK_BUILD_TEST**: Build test and demo programs (default: ON)
+  </Accordion>
+
+  <Accordion title="Platform-specific options">
+    **Linux/Unix:**
+    
+    - `FLTK_BACKEND_WAYLAND`: Enable Wayland backend (default: ON)
+    - `FLTK_BACKEND_X11`: Enable X11 backend (default: ON)
+    - `FLTK_GRAPHICS_CAIRO`: Use Cairo for graphics (default: ON with Wayland)
+    - `FLTK_USE_PANGO`: Use Pango for text rendering (default: ON with Cairo)
+
+    **Windows:**
+    
+    - `FLTK_GRAPHICS_GDIPLUS`: Use GDI+ for antialiasing (default: ON)
+    - `FLTK_MSVC_RUNTIME_DLL`: Use DLL runtime with MSVC (default: ON)
+
+    **macOS:**
+    
+    - `CMAKE_OSX_ARCHITECTURES`: "arm64", "x86_64", or "arm64;x86_64" for universal
+    - `CMAKE_OSX_DEPLOYMENT_TARGET`: Minimum macOS version (e.g., "11.0")
+
+    ```bash
+    # Build universal binary on macOS
+    cmake -B build -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+    ```
+  </Accordion>
+
+  <Accordion title="Advanced options">
+    **FLTK_OPTION_SVG**: SVG support (default: ON)
+    
+    **FLTK_OPTION_LARGE_FILE**: Large file support >2GB (default: ON)
+    
+    **FLTK_USE_SYSTEM_LIBJPEG**: Use system libjpeg instead of bundled (default: ON on Linux, OFF on Windows/macOS)
+    
+    **FLTK_USE_SYSTEM_LIBPNG**: Use system libpng instead of bundled (default: same as libjpeg)
+    
+    **FLTK_USE_SYSTEM_ZLIB**: Use system zlib instead of bundled (default: same as libjpeg)
+  </Accordion>
+</AccordionGroup>
+
+## Platform-specific builds
+
+<Tabs>
+  <Tab title="Linux Makefiles">
+    Standard build with Unix Makefiles:
+
+    ```bash
+    cd fltk
+    cmake -B build -G "Unix Makefiles" \
+      -D CMAKE_BUILD_TYPE=Release \
+      -D FLTK_BUILD_EXAMPLES=ON
+    
+    cd build
+    make -j$(nproc)
+    sudo make install
+    ```
+
+    For a Debug build in a separate directory:
+    ```bash
+    cmake -B build/debug -G "Unix Makefiles" \
+      -D CMAKE_BUILD_TYPE=Debug
+    cmake --build build/debug -- -j$(nproc)
+    ```
+  </Tab>
+
+  <Tab title="Windows Visual Studio">
+    Using Visual Studio 2022:
+
+    ```powershell
+    # From Developer Command Prompt for VS 2022
+    cd fltk
+    cmake -B build -G "Visual Studio 17 2022" -A x64
+    
+    # Build from command line
+    cmake --build build --config Release
+    
+    # Or open in Visual Studio
+    start build\FLTK.sln
+    ```
+
+    In Visual Studio:
+    1. Select "Release" or "Debug" in Configuration Manager
+    2. Right-click "Solution 'FLTK'" → "Build Solution"
+    3. Test programs: `build\bin\test\Release\demo.exe`
+
+    <Tip>
+    For static runtime (/MT instead of /MD):
+    ```powershell
+    cmake -B build -G "Visual Studio 17 2022" -D FLTK_MSVC_RUNTIME_DLL=OFF
+    ```
+    </Tip>
+  </Tab>
+
+  <Tab title="Windows MinGW">
+    Using MinGW with MSYS2:
+
+    ```bash
+    # In MSYS2 MinGW64 terminal
+    cd fltk
+    cmake -B build -G "Unix Makefiles" \
+      -D CMAKE_BUILD_TYPE=Release
+    
+    cmake --build build -- -j$(nproc)
+    ```
+
+    Using MinGW Makefiles on Windows:
+    ```cmd
+    cmake -B build -G "MinGW Makefiles"
+    cmake --build build
+    ```
+  </Tab>
+
+  <Tab title="macOS Xcode">
+    Generate Xcode project:
+
+    ```bash
+    cd fltk
+    cmake -B build -G Xcode \
+      -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+    
+    # Open in Xcode
+    open build/FLTK.xcodeproj
+    
+    # Or build from terminal
+    cmake --build build --config Release
+    ```
+
+    In Xcode:
+    1. Select "ALL_BUILD" scheme
+    2. Product → Build (⌘B)
+    3. Select "demo" scheme
+    4. Product → Run (⌘R)
+
+    Using Make (faster for development):
+    ```bash
+    cmake -B build -G "Unix Makefiles" -D CMAKE_BUILD_TYPE=Release
+    cmake --build build -- -j$(sysctl -n hw.ncpu)
+    ```
+  </Tab>
+</Tabs>
+
+## Verify installation
+
+After building, verify FLTK is working:
+
+<Steps>
+  <Step title="Run test programs">
+    ```bash
+    # Demo application
+    ./build/bin/test/demo
+    
+    # Hello World
+    ./build/bin/test/hello
+    
+    # Various test programs
+    ./build/bin/test/buttons
+    ./build/bin/test/editor
+    ```
+  </Step>
+
+  <Step title="Check FLUID designer">
+    ```bash
+    ./build/bin/fluid
+    ```
+    
+    FLUID is the visual interface designer for FLTK.
+  </Step>
+
+  <Step title="Test fltk-config (after install)">
+    ```bash
+    fltk-config --version
+    fltk-config --cxxflags
+    fltk-config --ldflags
+    ```
+    
+    `fltk-config` helps compile FLTK applications.
+  </Step>
+</Steps>
+
+## Building without installation
+
+You can develop FLTK applications without system-wide installation:
+
+```bash
+# Build FLTK
+cmake -B /path/to/fltk/build -S /path/to/fltk
+cmake --build /path/to/fltk/build
+
+# In your CMakeLists.txt:
+set(FLTK_DIR "/path/to/fltk/build" CACHE FILEPATH "FLTK build directory")
+find_package(FLTK 1.5 CONFIG REQUIRED)
+```
+
+This approach is useful for:
+- Testing different FLTK versions
+- Development without sudo privileges  
+- Keeping multiple FLTK configurations
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="CMake can't find compiler">
+    Ensure your compiler is in PATH:
+    
+    ```bash
+    # Linux/macOS
+    which g++
+    which clang++
+    
+    # Windows
+    where cl.exe
+    ```
+    
+    For Visual Studio, use "Developer Command Prompt for VS".
+  </Accordion>
+
+  <Accordion title="Missing X11 headers on Linux">
+    ```bash
+    # Error: X11/Xlib.h not found
+    sudo apt install libx11-dev  # Ubuntu/Debian
+    sudo dnf install libX11-devel  # Fedora/RHEL
+    ```
+  </Accordion>
+
+  <Accordion title="OpenGL not found">
+    ```bash
+    # Linux
+    sudo apt install libgl1-mesa-dev libglu1-mesa-dev
+    
+    # Or disable OpenGL support
+    cmake -B build -D FLTK_BUILD_GL=OFF
+    ```
+  </Accordion>
+
+  <Accordion title="Build fails on Windows with MinGW">
+    Use MSYS2 environment, not standalone MinGW:
+    
+    ```bash
+    # Install MSYS2 from https://www.msys2.org/
+    # Use "MSYS2 MinGW 64-bit" terminal
+    pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Build your first FLTK application
+  </Card>
+  <Card title="Hello world tutorial" icon="window" href="/hello-world">
+    Detailed walkthrough of a simple program
+  </Card>
+</CardGroup>

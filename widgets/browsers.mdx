@@ -1,0 +1,409 @@
+---
+title: Browser Widgets
+description: List browsers, file browsers, and selection widgets for displaying scrollable lists
+---
+
+Browser widgets display scrolling lists of text items. FLTK provides several browser variants for different selection behaviors.
+
+## Fl_Browser
+
+**Header:** `FL/Fl_Browser.H`
+
+The base browser class displays a scrolling list of text lines with full control over formatting, icons, and styling.
+
+### Constructor
+
+```cpp
+Fl_Browser(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="add() - Add Items">
+    Add text lines to the browser.
+    
+    ```cpp
+    void add(const char *text, void *data = 0);
+    void insert(int line, const char *text, void *data = 0);
+    
+    Fl_Browser *browser = new Fl_Browser(50, 50, 300, 200);
+    browser->add("First item");
+    browser->add("Second item");
+    browser->add("Third item");
+    
+    // With associated data
+    browser->add("File.txt", (void*)file_ptr);
+    ```
+    
+    **Note:** Line numbers start at **1**, not 0.
+  </Accordion>
+
+  <Accordion title="remove() / clear() - Delete Items">
+    Remove items from the browser.
+    
+    ```cpp
+    void remove(int line);  // Remove specific line
+    void clear();           // Remove all items
+    
+    browser->remove(3);     // Remove third item
+    browser->clear();       // Empty the browser
+    ```
+  </Accordion>
+
+  <Accordion title="text() - Get Item Text">
+    Retrieve the text of a specific line.
+    
+    ```cpp
+    const char* text(int line) const;
+    void text(int line, const char *newtext);
+    
+    printf("Line 1: %s\n", browser->text(1));
+    browser->text(2, "Updated text");
+    ```
+  </Accordion>
+
+  <Accordion title="value() - Current Selection">
+    Get or set the selected line.
+    
+    ```cpp
+    int value() const;       // Returns selected line number (0 = none)
+    void value(int line);    // Select specific line
+    
+    int sel = browser->value();
+    if (sel > 0) {
+      printf("Selected: %s\n", browser->text(sel));
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="size() - Number of Items">
+    Get the total number of items.
+    
+    ```cpp
+    int size() const;
+    
+    for (int i = 1; i <= browser->size(); i++) {
+      printf("%d: %s\n", i, browser->text(i));
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="load() - Load from File">
+    Load browser contents from a text file.
+    
+    ```cpp
+    int load(const char *filename);
+    
+    if (browser->load("items.txt")) {
+      printf("Loaded %d lines\n", browser->size());
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Format Codes">
+    Use special format codes to style individual lines.
+    
+    Format codes start with `@` character:
+    
+    - `@b` - **Bold** text
+    - `@i` - *Italic* text  
+    - `@f` or `@t` - Fixed-width font
+    - `@l` - Large (24pt) font
+    - `@m` - Medium (18pt) font
+    - `@s` - Small (11pt) font
+    - `@c` - Center aligned
+    - `@r` - Right aligned
+    - `@u` or `@_` - Underlined
+    - `@C###` - Text color (0-255)
+    - `@B###` - Background color (0-255)
+    - `@.` - Stop format parsing
+    
+    ```cpp
+    browser->add("@bBold text");
+    browser->add("@iItalic text");
+    browser->add("@b@iNORMAL@b@i");
+    browser->add("@C1RED TEXT");  // Red text
+    browser->add("@c@bCentered Bold");
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Browser Types
+
+Set the browser type to control selection behavior:
+
+```cpp
+FL_NORMAL_BROWSER    // No selection
+FL_SELECT_BROWSER    // Single selection
+FL_HOLD_BROWSER      // Selection persists
+FL_MULTI_BROWSER     // Multiple selection
+```
+
+### Example from Source
+
+<CodeGroup>
+```cpp examples/browser-simple.cxx
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Multi_Browser.H>
+
+void HoldBrowserCallback(Fl_Widget *w, void *) {
+  Fl_Hold_Browser *brow = (Fl_Hold_Browser*)w;
+  int line = brow->value();
+  printf("Selected: %s\n", brow->text(line));
+}
+
+void MultiBrowserCallback(Fl_Widget *w, void *) {
+  Fl_Multi_Browser *brow = (Fl_Multi_Browser*)w;
+  for (int t = 1; t <= brow->size(); t++) {
+    if (brow->selected(t)) {
+      printf("Item %d selected: %s\n", t, brow->text(t));
+    }
+  }
+}
+
+int main(int argc, char *argv[]) {
+  Fl_Window *win = new Fl_Window(250, 220);
+  
+  // Hold browser - single selection
+  Fl_Hold_Browser *hold = new Fl_Hold_Browser(10, 10, 230, 80, "Hold");
+  hold->callback(HoldBrowserCallback);
+  hold->add("One");
+  hold->add("Two");
+  hold->add("Three");
+  hold->select(1);
+  
+  // Multi browser - multiple selection
+  Fl_Multi_Browser *multi = new Fl_Multi_Browser(10, 120, 230, 80, "Multi");
+  multi->callback(MultiBrowserCallback);
+  multi->add("Aaa");
+  multi->add("Bbb");
+  multi->add("Ccc");
+  multi->select(1);
+  multi->select(2);
+  
+  win->end();
+  win->show(argc, argv);
+  return Fl::run();
+}
+```
+
+```cpp Loading File Contents
+Fl_Browser *browser = new Fl_Browser(10, 10, 380, 280);
+
+if (!browser->load("browser.cxx")) {
+  // Fallback if file not found
+  browser->add("Line 1");
+  browser->add("Line 2");
+  browser->add("@bBold line");
+  browser->add("@iItalic line");
+}
+```
+</CodeGroup>
+
+### Visual Description
+
+A browser appears as a scrollable rectangular area with a thin border. Text items are listed vertically. Selected items are highlighted with a blue background. Vertical scrollbar appears when content exceeds height.
+
+## Fl_Select_Browser
+
+**Header:** `FL/Fl_Select_Browser.H`
+
+Default browser type with single selection. Clicking an item selects it and deselects others.
+
+```cpp
+Fl_Select_Browser *sel = new Fl_Select_Browser(50, 50, 200, 150);
+sel->add("Option A");
+sel->add("Option B");
+sel->add("Option C");
+sel->value(1);  // Select first item
+```
+
+## Fl_Hold_Browser
+
+**Header:** `FL/Fl_Hold_Browser.H`
+
+Selection persists until another item is clicked. Good for lists where user might click elsewhere then return.
+
+```cpp
+Fl_Hold_Browser *hold = new Fl_Hold_Browser(50, 50, 200, 150);
+hold->add("Item 1");
+hold->add("Item 2");
+```
+
+## Fl_Multi_Browser
+
+**Header:** `FL/Fl_Multi_Browser.H`
+
+Allows selecting multiple items using Ctrl+click (add to selection) or Shift+click (range selection).
+
+```cpp
+Fl_Multi_Browser *multi = new Fl_Multi_Browser(50, 50, 200, 150);
+multi->add("File 1");
+multi->add("File 2");
+multi->add("File 3");
+
+// Check which items are selected
+for (int i = 1; i <= multi->size(); i++) {
+  if (multi->selected(i)) {
+    printf("Selected: %s\n", multi->text(i));
+  }
+}
+```
+
+## Fl_File_Browser
+
+**Header:** `FL/Fl_File_Browser.H`
+
+Specialized browser for displaying file system contents with icons and sorting.
+
+```cpp
+Fl_File_Browser *files = new Fl_File_Browser(50, 50, 300, 200);
+files->load("/home/user/documents");
+files->filter("*.txt");  // Show only .txt files
+```
+
+## Fl_Check_Browser
+
+**Header:** `FL/Fl_Check_Browser.H`
+
+Browser where each item has a checkbox. User can check/uncheck items independently.
+
+```cpp
+Fl_Check_Browser *checks = new Fl_Check_Browser(50, 50, 200, 150);
+checks->add("Option 1");
+checks->add("Option 2");
+checks->add("Option 3");
+
+checks->check_all();      // Check all items
+checks->check_none();     // Uncheck all items
+checks->checked(1, 1);    // Check first item
+
+if (checks->checked(1)) {
+  printf("Item 1 is checked\n");
+}
+```
+
+## Browser Gallery
+
+<CardGroup cols={2}>
+  <Card title="Select Browser" icon="hand-pointer">
+    **Fl_Select_Browser** - Single selection
+    
+    Standard list with single-select behavior.
+    
+    **Use for:** Choosing one option from a list
+  </Card>
+
+  <Card title="Multi Browser" icon="list-check">
+    **Fl_Multi_Browser** - Multiple selection
+    
+    Allows Ctrl+click and Shift+click for multi-select.
+    
+    **Use for:** Selecting multiple files, items, or options
+  </Card>
+
+  <Card title="File Browser" icon="folder-open">
+    **Fl_File_Browser** - File system
+    
+    Shows files and directories with icons and type filtering.
+    
+    **Use for:** File selection dialogs, directory browsing
+  </Card>
+
+  <Card title="Check Browser" icon="square-check">
+    **Fl_Check_Browser** - Checkbox list
+    
+    Each item has independent checkbox.
+    
+    **Use for:** Feature toggles, option lists, permissions
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Dynamic Item List
+
+```cpp
+Fl_Browser *browser = new Fl_Browser(10, 10, 300, 200);
+
+void add_item(const char *text) {
+  browser->add(text);
+  browser->bottomline(browser->size());  // Scroll to bottom
+}
+
+void remove_selected() {
+  int sel = browser->value();
+  if (sel > 0) {
+    browser->remove(sel);
+  }
+}
+```
+
+### Column-based Display
+
+```cpp
+Fl_Browser *browser = new Fl_Browser(10, 10, 400, 250);
+
+// Set column widths
+static int widths[] = {100, 100, 80, 120, 0};
+browser->column_widths(widths);
+browser->column_char('\t');
+
+// Add tabulated data
+browser->add("Name\tSize\tType\tModified");
+browser->add("file.txt\t1.2KB\tText\t2024-01-15");
+browser->add("image.png\t45KB\tImage\t2024-01-14");
+```
+
+### Searchable List
+
+```cpp
+void search_browser(Fl_Browser *br, const char *term) {
+  for (int i = 1; i <= br->size(); i++) {
+    if (strstr(br->text(i), term)) {
+      br->topline(i);
+      br->value(i);
+      return;
+    }
+  }
+  fl_alert("Not found: %s", term);
+}
+```
+
+### Custom Icon Display
+
+```cpp
+Fl_PNG_Image *icon1 = new Fl_PNG_Image("icon1.png");
+Fl_PNG_Image *icon2 = new Fl_PNG_Image("icon2.png");
+
+browser->add("Item with icon");
+browser->icon(1, icon1);
+
+browser->add("Another item");
+browser->icon(2, icon2);
+```
+
+## Important Notes
+
+<Warning>
+  Browser line numbers start at **1**, not 0. A value of 0 means no selection.
+</Warning>
+
+<Info>
+  The **format_char()** can be changed from '@' to another character if you need to display '@' symbols in your text.
+</Info>
+
+<Tip>
+  Use `make_visible(line)` to scroll the browser so a specific line is visible without changing the selection.
+</Tip>
+
+## Reference
+
+- Source: `FL/Fl_Browser.H` (lines 32-331)
+- Source: `FL/Fl_File_Browser.H`
+- Source: `FL/Fl_Check_Browser.H`
+- Example: `test/browser.cxx`
+- Example: `examples/browser-simple.cxx`

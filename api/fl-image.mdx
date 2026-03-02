@@ -1,0 +1,268 @@
+---
+title: Fl_Image
+description: Base class for image caching, scaling and drawing in FLTK
+---
+
+## Overview
+
+Fl_Image is the base class used for caching, scaling and drawing all kinds of images in FLTK. This class keeps track of common image data such as pixels, colormap, width, height, and depth. Virtual methods provide type-specific image handling.
+
+## Class Hierarchy
+
+```
+Fl_Image (base class)
+├── Fl_RGB_Image - RGB color images with 1-4 channels
+│   ├── Fl_SVG_Image - Scalable Vector Graphics
+│   ├── Fl_PNG_Image - PNG format images
+│   └── Fl_JPEG_Image - JPEG format images
+├── Fl_Pixmap - XPM colormap images
+└── Fl_Shared_Image - Shared/cached images
+```
+
+## Image Dimensions
+
+Each image possesses two (width, height) pairs:
+
+1. **Data dimensions** - The width and height of the raw image data returned by `data_w()` and `data_h()`. These values are set when the image is created and remain unchanged.
+
+2. **Display dimensions** - The width and height of the area filled by the image when drawn, returned by `w()` and `h()`. These values equal `data_w()` and `data_h()` when created, and can be changed by the `scale()` member function.
+
+## Constructor
+
+<ParamField path="Fl_Image" type="constructor">
+  Creates a new image object.
+  
+  <ParamField path="W" type="int">
+    Image width in pixels
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Image height in pixels
+  </ParamField>
+  
+  <ParamField path="D" type="int">
+    Image depth (0 for bitmaps, 1 for pixmaps, 1-4 for color images)
+  </ParamField>
+</ParamField>
+
+## Dimension Methods
+
+<ParamField path="w" type="int w() const">
+  Returns the current image drawing width in FLTK units. Values may differ from `data_w()` if `scale()` has been called.
+</ParamField>
+
+<ParamField path="h" type="int h() const">
+  Returns the current image drawing height in FLTK units. Values may differ from `data_h()` if `scale()` has been called.
+</ParamField>
+
+<ParamField path="data_w" type="int data_w() const">
+  Returns the width of the image data in pixels.
+</ParamField>
+
+<ParamField path="data_h" type="int data_h() const">
+  Returns the height of the image data in pixels.
+</ParamField>
+
+<ParamField path="d" type="int d() const">
+  Returns the image depth. The return value will be 0 for bitmaps, 1 for pixmaps, and 1-4 for color images.
+</ParamField>
+
+## Data Access Methods
+
+<ParamField path="data" type="const char* const* data() const">
+  Returns a pointer to the current image data array. Use `count()` to find the size of the data array. May return NULL.
+  
+  <Tip>For Fl_RGB_Image, this returns exactly one pointer to the R, G, B [, A] data array. The total size depends on `data_w() * data_h() * d()`.</Tip>
+</ParamField>
+
+<ParamField path="count" type="int count() const">
+  Returns the number of data values associated with the image. The value will be 0 for images with no data, 1 for bitmap and color images, and greater than 2 for pixmap images.
+</ParamField>
+
+<ParamField path="ld" type="int ld() const">
+  Returns the current line data size in bytes. If 0, line data size is assumed to be `data_w() * d()` bytes. If non-zero, it accounts for extra padding data per line.
+</ParamField>
+
+## Scaling and Transformation
+
+<ParamField path="scale" type="void scale(int width, int height, int proportional = 1, int can_expand = 0)">
+  Sets the image drawing size.
+  
+  <ParamField path="width" type="int">
+    Target width for drawing
+  </ParamField>
+  
+  <ParamField path="height" type="int">
+    Target height for drawing
+  </ParamField>
+  
+  <ParamField path="proportional" type="int" default="1">
+    If non-zero, maintains aspect ratio
+  </ParamField>
+  
+  <ParamField path="can_expand" type="int" default="0">
+    If non-zero, allows expansion beyond original size
+  </ParamField>
+</ParamField>
+
+<ParamField path="RGB_scaling" type="static void RGB_scaling(Fl_RGB_Scaling)">
+  Sets the RGB image scaling method.
+  
+  Available scaling algorithms:
+  - `FL_RGB_SCALING_NEAREST` - Default, faster RGB image scaling
+  - `FL_RGB_SCALING_BILINEAR` - More accurate but slower scaling
+</ParamField>
+
+<ParamField path="scaling_algorithm" type="static void scaling_algorithm(Fl_RGB_Scaling algorithm)">
+  Sets what algorithm is used when resizing a source image before drawing. Default is `FL_RGB_SCALING_BILINEAR`.
+</ParamField>
+
+## Drawing Methods
+
+<ParamField path="draw" type="void draw(int X, int Y, int W, int H, int cx = 0, int cy = 0)">
+  Draws the image to the current drawing surface with a bounding box.
+  
+  <ParamField path="X" type="int">
+    X coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="Y" type="int">
+    Y coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="W" type="int">
+    Width of bounding box
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Height of bounding box
+  </ParamField>
+  
+  <ParamField path="cx" type="int" default="0">
+    X offset of image origin within bounding box
+  </ParamField>
+  
+  <ParamField path="cy" type="int" default="0">
+    Y offset of image origin within bounding box
+  </ParamField>
+</ParamField>
+
+<ParamField path="draw" type="void draw(int X, int Y)">
+  Draws the image at the specified position with its current width and height.
+  
+  <ParamField path="X" type="int">
+    X coordinate for upper-left corner
+  </ParamField>
+  
+  <ParamField path="Y" type="int">
+    Y coordinate for upper-left corner
+  </ParamField>
+</ParamField>
+
+## Image Manipulation
+
+<ParamField path="copy" type="Fl_Image* copy(int W, int H) const">
+  Creates a copy of the image with the specified dimensions.
+  
+  <ParamField path="W" type="int">
+    Width of the copy
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Height of the copy
+  </ParamField>
+  
+  Returns a new image that should be released when done.
+</ParamField>
+
+<ParamField path="copy" type="Fl_Image* copy() const">
+  Creates a copy of the image in the same size. Equivalent to `copy(w(), h())`.
+</ParamField>
+
+<ParamField path="color_average" type="void color_average(Fl_Color c, float i)">
+  Averages the image with the specified color.
+  
+  <ParamField path="c" type="Fl_Color">
+    Color to average with
+  </ParamField>
+  
+  <ParamField path="i" type="float">
+    Intensity/blend factor (0.0 to 1.0)
+  </ParamField>
+</ParamField>
+
+<ParamField path="inactive" type="void inactive()">
+  Creates an inactive (grayed out) version of the image. Calls `color_average(FL_GRAY, 0.33f)` internally.
+</ParamField>
+
+<ParamField path="desaturate" type="void desaturate()">
+  Converts the image to grayscale.
+</ParamField>
+
+## Memory Management
+
+<ParamField path="release" type="void release()">
+  Releases the image - equivalent to `delete this` for most image classes. For Fl_Shared_Image and subclasses, this maintains shared image references.
+</ParamField>
+
+<ParamField path="uncache" type="void uncache()">
+  Releases cached image data, freeing memory while keeping the image object.
+</ParamField>
+
+## Widget Integration
+
+<ParamField path="label" type="void label(Fl_Widget* w)">
+  Sets this image as the label for a widget.
+  
+  <ParamField path="w" type="Fl_Widget*">
+    Pointer to the widget
+  </ParamField>
+</ParamField>
+
+<ParamField path="label" type="void label(Fl_Menu_Item* m)">
+  Sets this image as the label for a menu item.
+  
+  <ParamField path="m" type="Fl_Menu_Item*">
+    Pointer to the menu item
+  </ParamField>
+</ParamField>
+
+## Error Codes
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `ERR_NO_IMAGE` | -1 | No image data |
+| `ERR_FILE_ACCESS` | -2 | File access error |
+| `ERR_FORMAT` | -3 | Invalid image format |
+| `ERR_MEMORY_ACCESS` | -4 | Memory access error |
+
+<ParamField path="fail" type="int fail() const">
+  Returns error code if image failed to load, or 0 if successful.
+</ParamField>
+
+## Example Usage
+
+```cpp
+// Load and display an image
+Fl_PNG_Image *img = new Fl_PNG_Image("photo.png");
+if (img->fail()) {
+    fprintf(stderr, "Failed to load image\n");
+    delete img;
+} else {
+    // Scale to 200x150, maintaining aspect ratio
+    img->scale(200, 150, 1, 0);
+    
+    // Use as widget label
+    Fl_Box *box = new Fl_Box(10, 10, 200, 150);
+    img->label(box);
+    
+    // Or draw directly
+    img->draw(10, 10);
+}
+```
+
+## See Also
+
+- [Fl_RGB_Image](/api/fl-rgb-image) - RGB color images
+- [Fl_Pixmap](/api/fl-pixmap) - XPM pixmap images
+- [Drawing Functions](/api/drawing-functions) - Low-level drawing API

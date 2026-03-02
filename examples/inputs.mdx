@@ -1,0 +1,343 @@
+---
+title: Input Field Examples
+description: Text input widgets and validation in FLTK
+---
+
+## What This Example Demonstrates
+
+This comprehensive example shows:
+- Different types of input fields (text, numeric, password, multiline)
+- Input validation (float, integer)
+- Callback timing options (when callbacks fire)
+- Color customization
+- Keyboard navigation options
+- Getting and setting input values
+
+Source file: `test/input.cxx` (simplified for clarity)
+
+## Complete Source Code
+
+```cpp
+#include <stdio.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Float_Input.H>
+#include <FL/Fl_Int_Input.H>
+#include <FL/Fl_Secret_Input.H>
+#include <FL/Fl_Multiline_Input.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Toggle_Button.H>
+
+void cb(Fl_Widget *ob) {
+  printf("Callback for %s '%s'\n", ob->label(), ((Fl_Input*)ob)->value());
+}
+
+int when = 0;
+Fl_Input *input[5];
+
+void toggle_cb(Fl_Widget *o, long v) {
+  if (((Fl_Toggle_Button*)o)->value()) 
+    when |= v; 
+  else 
+    when &= ~v;
+  for (int i=0; i<5; i++) 
+    input[i]->when(when);
+}
+
+int main(int argc, char **argv) {
+  Fl::args(argc, argv);
+  Fl::get_system_colors();
+  
+  Fl_Window *window = new Fl_Window(400, 350);
+
+  int y = 10;
+  input[0] = new Fl_Input(70, y, 300, 30, "Normal:"); y += 35;
+  input[0]->tooltip("Normal input field");
+  
+  input[1] = new Fl_Float_Input(70, y, 300, 30, "Float:"); y += 35;
+  input[1]->tooltip("Input field for floating-point number (F1)");
+  input[1]->shortcut(FL_F+1);
+  
+  input[2] = new Fl_Int_Input(70, y, 300, 30, "Int:"); y += 35;
+  input[2]->tooltip("Input field for integer number (F2)");
+  input[2]->shortcut(FL_F+2);
+  
+  input[3] = new Fl_Secret_Input(70, y, 300, 30, "&Secret:"); y += 35;
+  input[3]->tooltip("Input field for password (Alt-S)");
+  
+  input[4] = new Fl_Multiline_Input(70, y, 300, 100, "&Multiline:"); y += 105;
+  input[4]->tooltip("Input field for short text with newlines (Alt-M)");
+  input[4]->wrap(1);
+
+  for (int i = 0; i < 5; i++) {
+    input[i]->when(0); 
+    input[i]->callback(cb);
+  }
+
+  Fl_Button *b;
+  b = new Fl_Toggle_Button(10, y, 200, 25, "FL_WHEN_CHANGED");
+  b->callback(toggle_cb, FL_WHEN_CHANGED); y += 25;
+  b->tooltip("Do callback each time the text changes");
+  
+  b = new Fl_Toggle_Button(10, y, 200, 25, "FL_WHEN_RELEASE");
+  b->callback(toggle_cb, FL_WHEN_RELEASE); y += 25;
+  b->tooltip("Do callback when widget loses focus");
+  
+  b = new Fl_Toggle_Button(10, y, 200, 25, "FL_WHEN_ENTER_KEY");
+  b->callback(toggle_cb, FL_WHEN_ENTER_KEY); y += 25;
+  b->tooltip("Do callback when user hits Enter key");
+
+  window->end();
+  window->resizable(window);
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+fltk-config --compile input.cxx
+```
+
+## Expected Behavior
+
+The program displays:
+1. **Normal** - Accepts any text
+2. **Float** - Only accepts floating-point numbers (e.g., 3.14, -2.5)
+3. **Int** - Only accepts integers (e.g., 42, -17)
+4. **Secret** - Password field (shows dots instead of characters)
+5. **Multiline** - Multi-line text input with word wrapping
+6. Toggle buttons to control when callbacks fire
+
+## Key Concepts
+
+### Input Field Types
+
+| Class | Purpose | Example |
+|-------|---------|----------|
+| `Fl_Input` | General text | "Hello World" |
+| `Fl_Float_Input` | Floating-point | 3.14159 |
+| `Fl_Int_Input` | Integers only | 42 |
+| `Fl_Secret_Input` | Password | ••••••••• |
+| `Fl_Multiline_Input` | Multiple lines | Text with\nnewlines |
+
+### Getting and Setting Values
+
+```cpp
+// Set value
+input->value("Initial text");
+
+// Get value
+const char *text = input->value();
+printf("Current value: %s\n", text);
+
+// Check if value changed
+if (input->changed()) {
+  printf("Value was modified\n");
+  input->clear_changed();  // Reset flag
+}
+```
+
+### Callback Timing (when)
+
+Control when callbacks are triggered:
+
+```cpp
+// Callback on every keystroke
+input->when(FL_WHEN_CHANGED);
+
+// Callback when Enter is pressed
+input->when(FL_WHEN_ENTER_KEY);
+
+// Callback when widget loses focus
+input->when(FL_WHEN_RELEASE);
+
+// Callback even if not changed
+input->when(FL_WHEN_NOT_CHANGED);
+
+// Combine multiple conditions
+input->when(FL_WHEN_CHANGED | FL_WHEN_ENTER_KEY);
+```
+
+### Keyboard Shortcuts
+
+```cpp
+input->shortcut(FL_F+1);        // F1 key
+input->shortcut(FL_CTRL+'s');   // Ctrl+S
+input->shortcut(FL_ALT+'a');    // Alt+A
+```
+
+Or use `&` in the label:
+```cpp
+new Fl_Input(10, 10, 100, 30, "&Name:");  // Alt+N focuses this field
+```
+
+## Variations and Extensions
+
+### Input Validation
+
+```cpp
+// Limit input length
+input->maximum_size(20);
+
+// Custom validation in callback
+void validate_email(Fl_Widget *w, void*) {
+  Fl_Input *inp = (Fl_Input*)w;
+  const char *text = inp->value();
+  if (strchr(text, '@') == NULL) {
+    inp->color(FL_RED);  // Invalid: no @ symbol
+  } else {
+    inp->color(FL_WHITE);  // Valid
+  }
+  inp->redraw();
+}
+```
+
+### Read-Only Input
+
+```cpp
+Fl_Input *readonly = new Fl_Input(10, 10, 200, 30);
+readonly->value("Cannot edit this");
+readonly->readonly(1);  // Make read-only
+```
+
+### Output Widget (Non-Editable Display)
+
+```cpp
+#include <FL/Fl_Output.H>
+
+Fl_Output *output = new Fl_Output(10, 10, 200, 30, "Result:");
+output->value("This is read-only output");
+// User cannot edit, but can select and copy text
+```
+
+### Multiline Features
+
+```cpp
+Fl_Multiline_Input *multi = new Fl_Multiline_Input(10, 10, 300, 200);
+
+// Enable word wrapping
+multi->wrap(1);
+
+// Allow Tab key to insert tabs instead of navigating
+multi->tab_nav(0);
+
+// Get cursor position
+int pos = multi->position();
+int line = multi->count_lines(0, pos, 1);
+printf("Cursor at line %d\n", line);
+
+// Insert text at cursor
+multi->insert("inserted text");
+```
+
+### Text Selection
+
+```cpp
+// Select all text
+input->position(input->size());  // End
+input->mark(0);                  // Start of selection
+
+// Get selected text
+const char *selected = input->selection_text();
+
+// Clear selection
+input->position(input->position());
+```
+
+### Colors and Styling
+
+```cpp
+input->textcolor(FL_BLACK);           // Text color
+input->color(FL_WHITE);               // Background
+input->selection_color(FL_BLUE);      // Selection highlight
+input->textfont(FL_COURIER);          // Use monospace font
+input->textsize(14);                  // Font size
+input->cursor_color(FL_RED);          // Cursor color
+```
+
+### Input Masks and Filters
+
+For phone numbers, dates, etc., create a custom input class:
+
+```cpp
+class PhoneInput : public Fl_Input {
+public:
+  PhoneInput(int x, int y, int w, int h, const char *l=0) 
+    : Fl_Input(x,y,w,h,l) {}
+  
+  int handle(int e) {
+    if (e == FL_KEYBOARD) {
+      char c = Fl::event_text()[0];
+      // Only allow digits and dashes
+      if (!isdigit(c) && c != '-' && c != '(' && c != ')' && c != ' ') {
+        return 1;  // Consume event, don't insert
+      }
+    }
+    return Fl_Input::handle(e);
+  }
+};
+```
+
+## Complete Example: Form Validation
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Int_Input.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+#include <string.h>
+
+Fl_Input *name_input;
+Fl_Input *email_input;
+Fl_Int_Input *age_input;
+
+void submit_cb(Fl_Widget*, void*) {
+  const char *name = name_input->value();
+  const char *email = email_input->value();
+  const char *age = age_input->value();
+  
+  if (strlen(name) == 0) {
+    fl_alert("Please enter your name");
+    return;
+  }
+  
+  if (!strchr(email, '@')) {
+    fl_alert("Please enter a valid email");
+    return;
+  }
+  
+  if (strlen(age) == 0 || atoi(age) < 1) {
+    fl_alert("Please enter a valid age");
+    return;
+  }
+  
+  fl_message("Form submitted!\nName: %s\nEmail: %s\nAge: %s", 
+             name, email, age);
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 200, "Form Example");
+  
+  name_input = new Fl_Input(100, 20, 280, 30, "Name:");
+  email_input = new Fl_Input(100, 60, 280, 30, "Email:");
+  age_input = new Fl_Int_Input(100, 100, 280, 30, "Age:");
+  
+  Fl_Button *submit = new Fl_Button(150, 150, 100, 30, "Submit");
+  submit->callback(submit_cb);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Next Steps
+
+- Learn about [callbacks](/examples/callbacks)
+- Explore [flex layouts](/examples/flex-layout)
+- See [custom widgets](/examples/custom-widgets)

@@ -1,0 +1,567 @@
+---
+title: Container Widgets
+description: Groups, windows, and scrolling containers for organizing widget layouts
+---
+
+Container widgets hold and organize other widgets. They manage layout, resizing, and interaction between child widgets.
+
+## Fl_Group
+
+**Header:** `FL/Fl_Group.H`
+
+The base container class. Groups maintain an ordered list of child widgets and control their layout and event handling.
+
+### Constructor
+
+```cpp
+Fl_Group(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="begin() / end() - Add Children">
+    Control which group receives newly created widgets.
+    
+    ```cpp
+    void begin();  // New widgets go into this group
+    void end();    // Stop adding to this group
+    
+    Fl_Group *group = new Fl_Group(10, 10, 200, 100);
+    group->begin();
+      Fl_Button *btn1 = new Fl_Button(20, 20, 80, 30, "Button 1");
+      Fl_Button *btn2 = new Fl_Button(20, 60, 80, 30, "Button 2");
+    group->end();
+    
+    // Widgets created after end() go to parent
+    ```
+    
+    **Important:** Always call `end()` after adding children!
+  </Accordion>
+
+  <Accordion title="add() / remove() - Manage Children">
+    Explicitly add or remove widgets from group.
+    
+    ```cpp
+    void add(Fl_Widget &widget);
+    void add(Fl_Widget *widget);
+    void remove(Fl_Widget &widget);
+    void remove(int index);
+    void clear();  // Remove all children
+    
+    Fl_Button *btn = new Fl_Button(20, 20, 80, 30, "Button");
+    group->add(btn);
+    
+    // Later...
+    group->remove(btn);
+    ```
+  </Accordion>
+
+  <Accordion title="children() / child() - Access Children">
+    Get information about child widgets.
+    
+    ```cpp
+    int children() const;              // Number of children
+    Fl_Widget* child(int n) const;     // Get nth child (0-based)
+    int find(const Fl_Widget *) const; // Get index of child
+    
+    for (int i = 0; i < group->children(); i++) {
+      Fl_Widget *w = group->child(i);
+      printf("Child %d: %s\n", i, w->label());
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="resizable() - Resize Behavior">
+    Control how the group and its children resize.
+    
+    ```cpp
+    void resizable(Fl_Widget *widget);
+    Fl_Widget* resizable() const;
+    
+    // NULL = fixed size, children don't move
+    group->resizable(NULL);
+    
+    // Group itself = children resize proportionally
+    group->resizable(group);
+    
+    // Specific widget = defines resize box
+    Fl_Box *spacer = new Fl_Box(50, 50, 100, 100);
+    group->resizable(spacer);
+    ```
+    
+    The resizable widget defines a "resize box". Widgets inside this box scale with the group, widgets outside it stay at fixed distance from edges.
+  </Accordion>
+
+  <Accordion title="clip_children() - Clip Drawing">
+    Prevent children from drawing outside group bounds.
+    
+    ```cpp
+    void clip_children(int c);  // 1 = clip, 0 = no clip
+    unsigned int clip_children() const;
+    
+    group->clip_children(1);  // Enable clipping
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300, "Group Example");
+  
+  // Create a group with frame
+  Fl_Group *group = new Fl_Group(20, 20, 360, 120);
+  group->box(FL_ENGRAVED_BOX);
+  group->begin();
+    Fl_Box *title = new Fl_Box(30, 30, 340, 30, "Button Group");
+    title->labelfont(FL_HELVETICA_BOLD);
+    
+    Fl_Button *b1 = new Fl_Button(40, 70, 100, 30, "Button 1");
+    Fl_Button *b2 = new Fl_Button(150, 70, 100, 30, "Button 2");
+    Fl_Button *b3 = new Fl_Button(260, 70, 100, 30, "Button 3");
+  group->end();
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Visual Description
+
+An Fl_Group is typically invisible (FL_NO_BOX) but can have any box type. It defines a rectangular region containing child widgets. The group handles events and passes them to appropriate children.
+
+## Fl_Window
+
+**Header:** `FL/Fl_Window.H`
+
+Creates an actual window with title bar and window manager controls. Inherits from Fl_Group.
+
+### Constructor
+
+```cpp
+// Window positioned by window manager
+Fl_Window(int w, int h, const char *title = 0);
+
+// Window at specific position  
+Fl_Window(int x, int y, int w, int h, const char *title = 0);
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="show() / hide() - Display Window">
+    Show or hide the window.
+    
+    ```cpp
+    void show();
+    void show(int argc, char **argv);  // For main window
+    void hide();
+    
+    int shown() const;  // Returns 1 if shown
+    
+    win->show(argc, argv);  // Main window
+    dialog->show();         // Other windows
+    ```
+  </Accordion>
+
+  <Accordion title="label() - Window Title">
+    Set the window title bar text.
+    
+    ```cpp
+    void label(const char *title);
+    const char* label() const;
+    
+    win->label("My Application");
+    win->label("Document.txt - Editor");
+    ```
+  </Accordion>
+
+  <Accordion title="size_range() - Set Size Constraints">
+    Limit how the window can be resized.
+    
+    ```cpp
+    void size_range(int minw, int minh, 
+                   int maxw=0, int maxh=0,
+                   int dw=0, int dh=0, 
+                   int aspect=0);
+    
+    // Minimum 400x300, maximum 1920x1080
+    win->size_range(400, 300, 1920, 1080);
+    
+    // Fixed size (not resizable)
+    win->size_range(400, 300, 400, 300);
+    
+    // Minimum only
+    win->size_range(400, 300);
+    ```
+  </Accordion>
+
+  <Accordion title="position() - Set Window Position">
+    Set window position on screen.
+    
+    ```cpp
+    void position(int x, int y);
+    void hotspot(int x, int y);  // Position relative to mouse
+    
+    win->position(100, 100);  // Top-left at (100, 100)
+    ```
+  </Accordion>
+
+  <Accordion title="Modal Windows">
+    Create modal dialogs that block other windows.
+    
+    ```cpp
+    void set_modal();       // Modal to all windows
+    void set_non_modal();   // On top, but doesn't block
+    void clear_modal_states();  // Back to normal
+    
+    Fl_Window *dialog = new Fl_Window(300, 150, "Confirm");
+    dialog->set_modal();
+    dialog->show();
+    ```
+  </Accordion>
+
+  <Accordion title="fullscreen() - Full Screen Mode">
+    Make window fill entire screen.
+    
+    ```cpp
+    void fullscreen();
+    void fullscreen_off();
+    void fullscreen_off(int x, int y, int w, int h);
+    
+    unsigned int fullscreen_active() const;
+    
+    win->fullscreen();      // Go fullscreen
+    win->fullscreen_off();  // Restore
+    ```
+  </Accordion>
+
+  <Accordion title="border() - Window Decorations">
+    Control window manager border.
+    
+    ```cpp
+    void border(int b);  // 1 = with border, 0 = borderless
+    unsigned int border() const;
+    
+    win->border(0);  // Borderless window
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Example from Source
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+
+void close_cb(Fl_Widget *w, void *) {
+  ((Fl_Window*)w->parent())->hide();
+}
+
+int main(int argc, char **argv) {
+  // Main window
+  Fl_Window *window = new Fl_Window(320, 240, "My Application");
+  window->begin();
+    Fl_Button *btn = new Fl_Button(110, 100, 100, 30, "Close");
+    btn->callback(close_cb);
+  window->end();
+  
+  window->show(argc, argv);  // Parse command line args
+  return Fl::run();
+}
+```
+
+### Visual Description
+
+Fl_Window appears as a system window with title bar, close/minimize/maximize buttons (platform-dependent), and optional border. Background is typically gray (FL_BACKGROUND_COLOR).
+
+## Fl_Scroll
+
+**Header:** `FL/Fl_Scroll.H`
+
+A container that adds scrollbars when children exceed available space.
+
+### Constructor
+
+```cpp
+Fl_Scroll(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Scroll Types
+
+```cpp
+enum {
+  HORIZONTAL = 1,          // Only horizontal scrollbar
+  VERTICAL = 2,            // Only vertical scrollbar  
+  BOTH = 3,                // Both scrollbars (default)
+  HORIZONTAL_ALWAYS = 5,   // Horizontal always visible
+  VERTICAL_ALWAYS = 6,     // Vertical always visible
+  BOTH_ALWAYS = 7          // Both always visible
+};
+
+scroll->type(Fl_Scroll::VERTICAL);
+```
+
+### Key Methods
+
+```cpp
+void scroll_to(int x, int y);  // Scroll to position
+int xposition() const;          // Current X scroll
+int yposition() const;          // Current Y scroll
+
+scroll->scroll_to(0, 100);  // Scroll down 100 pixels
+```
+
+### Example
+
+```cpp
+Fl_Scroll *scroll = new Fl_Scroll(10, 10, 380, 280);
+scroll->type(Fl_Scroll::BOTH);
+scroll->begin();
+  // Add many widgets that exceed scroll area
+  for (int i = 0; i < 20; i++) {
+    new Fl_Button(20, 20 + i*40, 300, 30, 
+                 ("Button " + std::to_string(i+1)).c_str());
+  }
+scroll->end();
+```
+
+### Visual Description
+
+Appears as a rectangular region with scrollbars on the right and/or bottom when content is larger than the visible area. Content can be scrolled by dragging scrollbars or mouse wheel.
+
+## Fl_Pack
+
+**Header:** `FL/Fl_Pack.H`
+
+Automatically arranges children in a row or column.
+
+```cpp
+Fl_Pack *pack = new Fl_Pack(10, 10, 200, 300);
+pack->type(Fl_Pack::VERTICAL);  // Stack vertically
+pack->spacing(5);               // 5 pixel gap between children
+
+pack->begin();
+  new Fl_Button(0, 0, 0, 30, "Button 1");  // Width auto-fills
+  new Fl_Button(0, 0, 0, 30, "Button 2");
+  new Fl_Button(0, 0, 0, 30, "Button 3");
+pack->end();
+```
+
+## Fl_Tabs
+
+**Header:** `FL/Fl_Tabs.H`
+
+Tabbed interface where only one child group is visible at a time.
+
+```cpp
+Fl_Tabs *tabs = new Fl_Tabs(10, 10, 380, 280);
+
+// Tab 1
+Fl_Group *tab1 = new Fl_Group(10, 35, 380, 255, "General");
+tab1->begin();
+  // Add widgets for tab 1
+tab1->end();
+
+// Tab 2  
+Fl_Group *tab2 = new Fl_Group(10, 35, 380, 255, "Advanced");
+tab2->begin();
+  // Add widgets for tab 2
+tab2->end();
+
+tabs->end();
+```
+
+## Container Gallery
+
+<CardGroup cols={2}>
+  <Card title="Group" icon="layer-group">
+    **Fl_Group** - Basic container
+    
+    Holds widgets, manages events and layout.
+    
+    **Use for:** Organizing related widgets, grouping radio buttons
+  </Card>
+
+  <Card title="Window" icon="window-maximize">
+    **Fl_Window** - Top-level window
+    
+    System window with title bar and decorations.
+    
+    **Use for:** Application windows, dialogs
+  </Card>
+
+  <Card title="Scroll" icon="scroll">
+    **Fl_Scroll** - Scrolling container
+    
+    Adds scrollbars when content exceeds bounds.
+    
+    **Use for:** Long forms, large content areas
+  </Card>
+
+  <Card title="Pack" icon="bars-staggered">
+    **Fl_Pack** - Auto-layout container
+    
+    Automatically arranges children in rows/columns.
+    
+    **Use for:** Toolbars, button groups, vertical lists
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Dialog with OK/Cancel
+
+```cpp
+Fl_Window* create_dialog(const char *title) {
+  Fl_Window *dlg = new Fl_Window(400, 200, title);
+  dlg->set_modal();
+  dlg->begin();
+    // Content area
+    Fl_Box *msg = new Fl_Box(20, 20, 360, 120, "Message here");
+    msg->box(FL_FLAT_BOX);
+    msg->align(FL_ALIGN_WRAP);
+    
+    // Button group at bottom
+    Fl_Return_Button *ok = new Fl_Return_Button(190, 150, 90, 30, "OK");
+    ok->callback([](Fl_Widget *, void *v) {
+      ((Fl_Window*)v)->hide();
+    }, dlg);
+    
+    Fl_Button *cancel = new Fl_Button(290, 150, 90, 30, "Cancel");
+    cancel->callback([](Fl_Widget *, void *v) {
+      ((Fl_Window*)v)->hide();
+    }, dlg);
+  dlg->end();
+  return dlg;
+}
+```
+
+### Scrollable Content Panel
+
+```cpp
+Fl_Scroll *scroll = new Fl_Scroll(10, 10, 580, 480);
+scroll->box(FL_DOWN_BOX);
+scroll->type(Fl_Scroll::VERTICAL);
+
+scroll->begin();
+  // Create invisible box to define scroll area
+  Fl_Box *bounds = new Fl_Box(10, 10, 560, 2000);
+  
+  // Add many widgets
+  for (int i = 0; i < 50; i++) {
+    Fl_Button *btn = new Fl_Button(20, 20 + i*45, 540, 35);
+    btn->label(("Item " + std::to_string(i+1)).c_str());
+  }
+scroll->end();
+```
+
+### Resizable Window Layout
+
+```cpp
+Fl_Window *win = new Fl_Window(600, 400, "Resizable Layout");
+
+// Toolbar (fixed height)
+Fl_Group *toolbar = new Fl_Group(0, 0, 600, 40);
+toolbar->box(FL_FLAT_BOX);
+toolbar->color(FL_BACKGROUND2_COLOR);
+toolbar->begin();
+  new Fl_Button(10, 5, 80, 30, "New");
+  new Fl_Button(100, 5, 80, 30, "Open");
+toolbar->end();
+
+// Content area (resizable)
+Fl_Box *content = new Fl_Box(0, 40, 600, 330);
+content->box(FL_DOWN_BOX);
+
+// Status bar (fixed height)  
+Fl_Box *status = new Fl_Box(0, 370, 600, 30);
+status->box(FL_FLAT_BOX);
+status->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+status->label(" Ready");
+
+win->end();
+win->resizable(content);  // Only content area resizes
+win->size_range(400, 300);  // Minimum size
+```
+
+### Tabbed Settings Panel
+
+```cpp
+Fl_Window *win = new Fl_Window(500, 400, "Settings");
+
+Fl_Tabs *tabs = new Fl_Tabs(10, 10, 480, 340);
+
+// General tab
+Fl_Group *general = new Fl_Group(10, 35, 480, 315, "General");
+general->begin();
+  new Fl_Check_Button(30, 60, 200, 25, "Auto-save");
+  new Fl_Check_Button(30, 90, 200, 25, "Show tooltips");
+general->end();
+
+// Appearance tab
+Fl_Group *appearance = new Fl_Group(10, 35, 480, 315, "Appearance");
+appearance->begin();
+  Fl_Choice *theme = new Fl_Choice(150, 60, 150, 25, "Theme:");
+  theme->add("Default|Dark|Light");
+appearance->end();
+
+tabs->end();
+
+Fl_Return_Button *ok = new Fl_Return_Button(300, 360, 80, 30, "OK");
+Fl_Button *cancel = new Fl_Button(390, 360, 80, 30, "Cancel");
+
+win->end();
+```
+
+## Important Notes
+
+<Warning>
+  Always call `end()` after adding children to a group or window. Forgetting this causes subsequent widgets to be added as children, breaking your layout.
+</Warning>
+
+<Info>
+  The **resizable()** widget must be a direct child of the group. Setting a grandchild or unrelated widget as resizable causes undefined behavior.
+</Info>
+
+<Tip>
+  Use `current(0)` after `show()` to prevent accidentally adding widgets to a window: `win->show(); Fl_Group::current(0);`
+</Tip>
+
+## Window Types
+
+### Fl_Double_Window
+
+Reduces flicker with double-buffering:
+
+```cpp
+Fl_Double_Window *win = new Fl_Double_Window(400, 300);
+// Use for windows with complex graphics or animations
+```
+
+### Fl_Overlay_Window  
+
+Supports overlay planes for temporary graphics:
+
+```cpp
+Fl_Overlay_Window *win = new Fl_Overlay_Window(400, 300);
+// Override draw_overlay() for rubber-band selection, etc.
+```
+
+## Reference
+
+- Source: `FL/Fl_Group.H` (lines 33-283)
+- Source: `FL/Fl_Window.H` (lines 35-649)
+- Source: `FL/Fl_Scroll.H` (lines 26-224)
+- Source: `FL/Fl_Pack.H`
+- Source: `FL/Fl_Tabs.H`

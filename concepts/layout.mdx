@@ -1,0 +1,531 @@
+---
+title: Layout
+description: Widget positioning, sizing, and layout management in FLTK
+---
+
+FLTK provides flexible layout options through manual positioning, resize callbacks, and layout manager groups. Understanding these systems is essential for creating responsive user interfaces.
+
+## Coordinate System
+
+FLTK uses absolute positioning relative to the parent widget. All coordinates are in pixels.
+
+```cpp
+// Widget position is relative to parent
+Fl_Widget *widget = new Fl_Widget(
+  10,   // x - distance from left edge of parent
+  20,   // y - distance from top edge of parent  
+  100,  // width in pixels
+  30    // height in pixels
+);
+
+// Access position and size (from FL/Fl_Widget.H:360-378)
+int x = widget->x();  // X position
+int y = widget->y();  // Y position
+int w = widget->w();  // Width
+int h = widget->h();  // Height
+```
+
+## Manual Layout
+
+The simplest approach is to position widgets explicitly:
+
+```cpp
+Fl_Window *win = new Fl_Window(400, 300, "Manual Layout");
+win->begin();
+
+Fl_Button *btn1 = new Fl_Button(10, 10, 100, 30, "Button 1");
+Fl_Button *btn2 = new Fl_Button(120, 10, 100, 30, "Button 2");
+Fl_Button *btn3 = new Fl_Button(10, 50, 210, 30, "Button 3");
+
+win->end();
+win->show();
+```
+
+### Modifying Position and Size
+
+From `FL/Fl_Widget.H:380-420`:
+
+<Tabs>
+  <Tab title="Position">
+    ```cpp
+    // Move widget
+    widget->position(50, 100);
+    
+    // Same as:
+    widget->resize(50, 100, widget->w(), widget->h());
+    ```
+  </Tab>
+  
+  <Tab title="Size">
+    ```cpp
+    // Resize widget
+    widget->size(200, 150);
+    
+    // Same as:
+    widget->resize(widget->x(), widget->y(), 200, 150);
+    ```
+  </Tab>
+  
+  <Tab title="Both">
+    ```cpp
+    // Move and resize together
+    widget->resize(50, 100, 200, 150);
+    ```
+  </Tab>
+</Tabs>
+
+## Responsive Layout
+
+Handle window resizing by overriding the `resize()` method:
+
+```cpp
+class My_Window : public Fl_Window {
+  Fl_Button *ok_btn;
+  Fl_Button *cancel_btn;
+  
+public:
+  My_Window(int W, int H, const char *L = 0)
+    : Fl_Window(W, H, L) {
+    begin();
+    ok_btn = new Fl_Button(0, 0, 80, 30, "OK");
+    cancel_btn = new Fl_Button(0, 0, 80, 30, "Cancel");
+    end();
+  }
+  
+  void resize(int X, int Y, int W, int H) override {
+    Fl_Window::resize(X, Y, W, H);
+    
+    // Position buttons at bottom-right
+    int btn_y = H - 40;
+    cancel_btn->resize(W - 90, btn_y, 80, 30);
+    ok_btn->resize(W - 180, btn_y, 80, 30);
+  }
+};
+```
+
+## Layout Groups
+
+FLTK includes layout manager widgets that automatically position children:
+
+### Fl_Pack
+
+Stacks widgets horizontally or vertically:
+
+```cpp
+#include <FL/Fl_Pack.H>
+
+Fl_Window *win = new Fl_Window(300, 200);
+win->begin();
+
+// Vertical pack
+Fl_Pack *vpack = new Fl_Pack(10, 10, 280, 180);
+vpack->type(Fl_Pack::VERTICAL);
+vpack->spacing(5);  // Spacing between widgets
+vpack->begin();
+
+new Fl_Button(0, 0, 100, 30, "Button 1");  // x,y ignored
+new Fl_Button(0, 0, 100, 30, "Button 2");
+new Fl_Button(0, 0, 100, 30, "Button 3");
+
+vpack->end();
+win->end();
+win->show();
+```
+
+<CodeGroup>
+```cpp Vertical Pack
+Fl_Pack *pack = new Fl_Pack(x, y, w, h);
+pack->type(Fl_Pack::VERTICAL);
+pack->spacing(5);
+pack->begin();
+// Add widgets - they stack top to bottom
+new Fl_Widget(0, 0, w, h1);
+new Fl_Widget(0, 0, w, h2);
+pack->end();
+```
+
+```cpp Horizontal Pack
+Fl_Pack *pack = new Fl_Pack(x, y, w, h);
+pack->type(Fl_Pack::HORIZONTAL);
+pack->spacing(10);
+pack->begin();
+// Add widgets - they stack left to right
+new Fl_Widget(0, 0, w1, h);
+new Fl_Widget(0, 0, w2, h);
+pack->end();
+```
+</CodeGroup>
+
+### Fl_Flex
+
+Flexible box layout (added in FLTK 1.4):
+
+```cpp
+#include <FL/Fl_Flex.H>
+
+Fl_Window *win = new Fl_Window(400, 300);
+win->begin();
+
+// Create flex container
+Fl_Flex *flex = new Fl_Flex(10, 10, 380, 280);
+flex->begin();
+
+// Add widgets with size ratios
+Fl_Box *left = new Fl_Box(0, 0, 0, 0, "Left");
+Fl_Box *center = new Fl_Box(0, 0, 0, 0, "Center");
+Fl_Box *right = new Fl_Box(0, 0, 0, 0, "Right");
+
+flex->end();
+
+// Set flex ratios (default is 0 = fixed size)
+flex->fixed(left, 100);    // Fixed 100 pixels
+flex->set_size(center, 0); // Flexible (fills remaining)
+flex->fixed(right, 100);   // Fixed 100 pixels
+
+win->end();
+win->resizable(flex);  // Make flex resize with window
+win->show();
+```
+
+<Steps>
+  <Step title="Create Flex Container">
+    ```cpp
+    Fl_Flex *flex = new Fl_Flex(x, y, w, h);
+    flex->type(Fl_Flex::ROW);     // Horizontal (default)
+    // or
+    flex->type(Fl_Flex::COLUMN);  // Vertical
+    ```
+  </Step>
+  
+  <Step title="Add Children">
+    ```cpp
+    flex->begin();
+    Fl_Widget *w1 = new Fl_Widget(...);
+    Fl_Widget *w2 = new Fl_Widget(...);
+    Fl_Widget *w3 = new Fl_Widget(...);
+    flex->end();
+    ```
+  </Step>
+  
+  <Step title="Set Sizing">
+    ```cpp
+    // Fixed size widgets
+    flex->fixed(w1, 100);  // 100 pixels
+    
+    // Flexible widgets (proportional)
+    flex->set_size(w2, 2);  // 2 parts
+    flex->set_size(w3, 1);  // 1 part
+    // w2 gets 2/3 of remaining space, w3 gets 1/3
+    ```
+  </Step>
+</Steps>
+
+### Fl_Grid
+
+Grid layout manager:
+
+```cpp
+#include <FL/Fl_Grid.H>
+
+Fl_Window *win = new Fl_Window(400, 300);
+win->begin();
+
+Fl_Grid *grid = new Fl_Grid(10, 10, 380, 280);
+grid->layout(3, 3, 5, 5);  // 3 rows, 3 cols, 5px margin, 5px gap
+grid->begin();
+
+// Add widgets to grid cells
+Fl_Box *b1 = new Fl_Box(0, 0, 0, 0, "1,1");
+Fl_Box *b2 = new Fl_Box(0, 0, 0, 0, "1,2");
+Fl_Box *b3 = new Fl_Box(0, 0, 0, 0, "2,1");
+
+grid->end();
+
+// Position widgets in grid
+grid->widget(b1, 0, 0);        // row 0, col 0
+grid->widget(b2, 0, 1);        // row 0, col 1  
+grid->widget(b3, 1, 0, 2, 1);  // row 1, col 0, span 2 rows, 1 col
+
+win->end();
+win->resizable(grid);
+win->show();
+```
+
+### Fl_Tile
+
+Resizable tile layout with draggable dividers:
+
+```cpp
+#include <FL/Fl_Tile.H>
+
+Fl_Window *win = new Fl_Window(400, 300);
+win->begin();
+
+Fl_Tile *tile = new Fl_Tile(0, 0, 400, 300);
+tile->begin();
+
+// Create quadrants
+Fl_Box *tl = new Fl_Box(0, 0, 200, 150, "Top Left");
+tl->box(FL_DOWN_BOX);
+
+Fl_Box *tr = new Fl_Box(200, 0, 200, 150, "Top Right");
+tr->box(FL_DOWN_BOX);
+
+Fl_Box *bl = new Fl_Box(0, 150, 200, 150, "Bottom Left");
+bl->box(FL_DOWN_BOX);
+
+Fl_Box *br = new Fl_Box(200, 150, 200, 150, "Bottom Right");
+br->box(FL_DOWN_BOX);
+
+tile->end();
+win->end();
+win->resizable(tile);
+win->show();
+// User can drag dividers between quadrants
+```
+
+## Resizable Widgets
+
+Control which widget grows when the parent resizes:
+
+```cpp
+Fl_Window *win = new Fl_Window(400, 300);
+win->begin();
+
+// Toolbar - fixed height
+Fl_Group *toolbar = new Fl_Group(0, 0, 400, 40);
+// ... add toolbar buttons ...
+toolbar->end();
+
+// Content area - should grow
+Fl_Box *content = new Fl_Box(0, 40, 400, 220);
+content->box(FL_DOWN_BOX);
+
+// Status bar - fixed height
+Fl_Box *status = new Fl_Box(0, 260, 400, 40);
+status->box(FL_UP_BOX);
+
+win->end();
+
+// Make content area resizable
+win->resizable(content);
+// Toolbar and status bar stay fixed size
+
+win->show();
+```
+
+<Note>
+  Only one widget can be the resizable widget. It receives all extra space when the parent grows.
+</Note>
+
+## Common Layout Patterns
+
+<AccordionGroup>
+  <Accordion title="Toolbar + Content + Status">
+    ```cpp
+    class MainWindow : public Fl_Window {
+      Fl_Group *toolbar;
+      Fl_Scroll *content;
+      Fl_Box *status;
+      
+    public:
+      MainWindow(int W, int H, const char *L = 0)
+        : Fl_Window(W, H, L) {
+        begin();
+        
+        // Fixed toolbar at top
+        toolbar = new Fl_Group(0, 0, W, 40);
+        toolbar->box(FL_UP_BOX);
+        // ... add toolbar items ...
+        toolbar->end();
+        
+        // Scrollable content area
+        content = new Fl_Scroll(0, 40, W, H - 80);
+        content->box(FL_DOWN_BOX);
+        content->end();
+        
+        // Fixed status bar at bottom
+        status = new Fl_Box(0, H - 40, W, 40);
+        status->box(FL_UP_BOX);
+        status->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+        
+        end();
+        resizable(content);
+      }
+      
+      void resize(int X, int Y, int W, int H) override {
+        Fl_Window::resize(X, Y, W, H);
+        toolbar->resize(0, 0, W, 40);
+        content->resize(0, 40, W, H - 80);
+        status->resize(0, H - 40, W, 40);
+      }
+    };
+    ```
+  </Accordion>
+  
+  <Accordion title="Button Row">
+    ```cpp
+    void create_button_row(Fl_Group *parent, int y) {
+      Fl_Pack *pack = new Fl_Pack(
+        10, y, 
+        parent->w() - 20, 30
+      );
+      pack->type(Fl_Pack::HORIZONTAL);
+      pack->spacing(5);
+      pack->begin();
+      
+      new Fl_Button(0, 0, 80, 30, "OK");
+      new Fl_Button(0, 0, 80, 30, "Cancel");
+      new Fl_Button(0, 0, 80, 30, "Apply");
+      
+      pack->end();
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Form Layout">
+    ```cpp
+    void create_form(Fl_Group *parent) {
+      int y = 10;
+      int label_w = 100;
+      int field_w = 200;
+      int h = 30;
+      int spacing = 10;
+      
+      // Name field
+      new Fl_Box(10, y, label_w, h, "Name:");
+      new Fl_Input(10 + label_w, y, field_w, h);
+      y += h + spacing;
+      
+      // Email field
+      new Fl_Box(10, y, label_w, h, "Email:");
+      new Fl_Input(10 + label_w, y, field_w, h);
+      y += h + spacing;
+      
+      // Phone field
+      new Fl_Box(10, y, label_w, h, "Phone:");
+      new Fl_Input(10 + label_w, y, field_w, h);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Sidebar Layout">
+    ```cpp
+    class SidebarWindow : public Fl_Window {
+      Fl_Group *sidebar;
+      Fl_Group *main_area;
+      
+    public:
+      SidebarWindow(int W, int H)
+        : Fl_Window(W, H, "Sidebar") {
+        begin();
+        
+        // Fixed-width sidebar
+        sidebar = new Fl_Group(0, 0, 200, H);
+        sidebar->box(FL_FLAT_BOX);
+        sidebar->color(FL_DARK1);
+        sidebar->end();
+        
+        // Main area grows
+        main_area = new Fl_Group(200, 0, W - 200, H);
+        main_area->box(FL_DOWN_BOX);
+        main_area->end();
+        
+        end();
+        resizable(main_area);
+      }
+      
+      void resize(int X, int Y, int W, int H) override {
+        Fl_Window::resize(X, Y, W, H);
+        sidebar->resize(0, 0, 200, H);
+        main_area->resize(200, 0, W - 200, H);
+      }
+    };
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Margins and Padding
+
+FLTK doesn't have built-in margins, but you can simulate them:
+
+```cpp
+// Add margins to a group
+class PaddedGroup : public Fl_Group {
+  int padding;
+  
+public:
+  PaddedGroup(int X, int Y, int W, int H, int P = 10)
+    : Fl_Group(X, Y, W, H), padding(P) {}
+  
+  void resize(int X, int Y, int W, int H) override {
+    Fl_Group::resize(X, Y, W, H);
+    
+    // Resize children with padding
+    for (int i = 0; i < children(); i++) {
+      Fl_Widget *w = child(i);
+      w->resize(
+        X + padding,
+        Y + padding,
+        W - 2 * padding,
+        H - 2 * padding
+      );
+    }
+  }
+};
+```
+
+## Size Constraints
+
+Limit window resizing (from `FL/Fl_Window.H:362`):
+
+```cpp
+// Set minimum and maximum size
+win->size_range(
+  400, 300,    // minimum width, height
+  1920, 1080,  // maximum width, height (0 = unlimited)
+  0, 0,        // width/height increment (for grid snapping)
+  1            // keep aspect ratio (1 = yes)
+);
+
+// Get current constraints
+int minw, minh, maxw, maxh;
+win->get_size_range(&minw, &minh, &maxw, &maxh);
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Layout Groups" icon="table-cells">
+    Prefer Fl_Pack, Fl_Flex, or Fl_Grid over manual positioning for maintainable layouts.
+  </Card>
+  
+  <Card title="Override resize()" icon="arrows-maximize">
+    Implement resize() for custom responsive behavior when manual layout is needed.
+  </Card>
+  
+  <Card title="Set Resizable" icon="expand">
+    Always set a resizable widget to control growth behavior.
+  </Card>
+  
+  <Card title="Test Different Sizes" icon="window-restore">
+    Test your layout at various window sizes to ensure it works correctly.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Widgets" icon="cube" href="/concepts/widgets">
+    Learn about widget properties and methods
+  </Card>
+  <Card title="Windows" icon="window" href="/concepts/windows">
+    Window creation and management
+  </Card>
+  <Card title="Events" icon="bolt" href="/concepts/events">
+    Handle resize and other events
+  </Card>
+  <Card title="Groups" icon="layer-group" href="/api-reference/groups">
+    Container widgets reference
+  </Card>
+</CardGroup>

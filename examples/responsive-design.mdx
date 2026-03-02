@@ -1,0 +1,410 @@
+---
+title: Responsive Design
+description: Creating resizable and adaptive FLTK interfaces
+---
+
+## What This Example Demonstrates
+
+This example shows how to create responsive FLTK applications that adapt to window resizing:
+- Understanding the resizable widget concept
+- How FLTK distributes extra space
+- Setting minimum window sizes
+- Creating proportional resize behavior
+- Combining fixed and flexible widgets
+
+FLTK's resize system is based on mathematical rules that determine how widgets grow and shrink.
+
+## How FLTK Resizing Works
+
+Source file: `test/resize-example1.cxx` (simplified)
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Box.H>
+
+int main(int argc, char **argv) {
+  Fl_Double_Window *window = new Fl_Double_Window(200, 200, "Resize Example");
+  
+  // Create widgets
+  Fl_Box *fixed1 = new Fl_Box(10, 10, 80, 80, "Fixed");
+  fixed1->box(FL_UP_BOX);
+  fixed1->color(FL_RED);
+  
+  Fl_Box *flexible = new Fl_Box(100, 10, 90, 180, "Flexible");
+  flexible->box(FL_DOWN_BOX);
+  flexible->color(FL_GREEN);
+  
+  Fl_Box *fixed2 = new Fl_Box(10, 100, 80, 90, "Fixed");
+  fixed2->box(FL_UP_BOX);
+  fixed2->color(FL_BLUE);
+  
+  window->end();
+  
+  // The "resizable" widget receives extra space
+  window->resizable(flexible);
+  
+  // Set minimum window size
+  window->size_range(200, 200);
+  
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+fltk-config --compile resize-example.cxx
+```
+
+## Expected Behavior
+
+- Red and blue boxes stay fixed size
+- Green box expands/contracts when window is resized
+- Window cannot be smaller than 200x200
+- All extra space goes to the green (resizable) box
+
+## Key Concepts
+
+### The Resizable Widget
+
+Each Fl_Group (and Fl_Window) can have one resizable child:
+
+```cpp
+window->resizable(widget);
+```
+
+**Rules:**
+1. Only the resizable widget changes size when the window is resized
+2. Non-resizable widgets maintain their size
+3. If resizable is NULL, all widgets scale proportionally
+4. If resizable is the group itself, all children scale
+
+### Window Size Constraints
+
+```cpp
+// Set minimum size
+window->size_range(min_w, min_h);
+
+// Set minimum and maximum size
+window->size_range(min_w, min_h, max_w, max_h);
+
+// Set minimum with aspect ratio constraints
+window->size_range(min_w, min_h, max_w, max_h, 
+                   aspect_w, aspect_h,  // aspect ratio
+                   fixed_aspect);       // 1=fixed, 0=variable
+```
+
+### Resizable Patterns
+
+**Pattern 1: One widget grows**
+```cpp
+Fl_Window win(300, 200);
+Fl_Box *fixed = new Fl_Box(10, 10, 100, 180);
+Fl_Box *grows = new Fl_Box(120, 10, 170, 180);
+win.resizable(grows);  // Only 'grows' changes size
+win.end();
+```
+
+**Pattern 2: All widgets scale proportionally**
+```cpp
+Fl_Window win(300, 200);
+Fl_Box *box1 = new Fl_Box(10, 10, 100, 80);
+Fl_Box *box2 = new Fl_Box(120, 10, 170, 80);
+win.resizable(NULL);  // NULL = all scale proportionally
+win.end();
+```
+
+**Pattern 3: Everything scales**
+```cpp
+Fl_Window win(300, 200);
+Fl_Box *box1 = new Fl_Box(10, 10, 100, 80);
+Fl_Box *box2 = new Fl_Box(120, 10, 170, 80);
+win.resizable(win);  // Window is its own resizable
+win.end();
+```
+
+## Practical Examples
+
+### Editor Layout (Fixed Toolbar, Flexible Content)
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Text_Editor.H>
+#include <FL/Fl_Text_Buffer.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(600, 400, "Editor");
+  
+  // Fixed toolbar at top (30 pixels)
+  Fl_Box *toolbar = new Fl_Box(0, 0, 600, 30, "Toolbar");
+  toolbar->box(FL_UP_BOX);
+  toolbar->color(FL_LIGHT2);
+  
+  // Flexible text editor
+  Fl_Text_Buffer *buf = new Fl_Text_Buffer();
+  Fl_Text_Editor *editor = new Fl_Text_Editor(0, 30, 600, 350);
+  editor->buffer(buf);
+  
+  // Fixed status bar at bottom (20 pixels)
+  Fl_Box *status = new Fl_Box(0, 380, 600, 20, "Status Bar");
+  status->box(FL_DOWN_BOX);
+  status->color(FL_LIGHT2);
+  
+  win->end();
+  win->resizable(editor);  // Only editor grows/shrinks
+  win->size_range(400, 200);
+  win->show();
+  return Fl::run();
+}
+```
+
+### Three-Panel Layout
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(800, 600, "Three Panel Layout");
+  
+  // Horizontal group for panels
+  Fl_Group *hgroup = new Fl_Group(0, 0, 800, 600);
+  
+  // Left sidebar (fixed 200px)
+  Fl_Box *left = new Fl_Box(0, 0, 200, 600, "Sidebar");
+  left->box(FL_DOWN_BOX);
+  left->color(FL_LIGHT1);
+  
+  // Center content (flexible)
+  Fl_Box *center = new Fl_Box(200, 0, 400, 600, "Content");
+  center->box(FL_DOWN_BOX);
+  center->color(FL_WHITE);
+  
+  // Right panel (fixed 200px)
+  Fl_Box *right = new Fl_Box(600, 0, 200, 600, "Panel");
+  right->box(FL_DOWN_BOX);
+  right->color(FL_LIGHT1);
+  
+  hgroup->resizable(center);  // Center grows
+  hgroup->end();
+  
+  win->resizable(hgroup);
+  win->size_range(600, 400);
+  win->show();
+  return Fl::run();
+}
+```
+
+### Nested Resizable Groups
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(600, 400);
+  
+  // Vertical group for top/bottom split
+  Fl_Group *vgroup = new Fl_Group(0, 0, 600, 400);
+  
+  // Top area (fixed 100px)
+  Fl_Box *top = new Fl_Box(0, 0, 600, 100, "Header");
+  top->box(FL_UP_BOX);
+  
+  // Middle area (flexible) - contains horizontal split
+  Fl_Group *middle = new Fl_Group(0, 100, 600, 280);
+  
+  Fl_Box *left = new Fl_Box(0, 100, 150, 280, "Left");
+  left->box(FL_DOWN_BOX);
+  
+  Fl_Box *center = new Fl_Box(150, 100, 300, 280, "Center");
+  center->box(FL_DOWN_BOX);
+  
+  Fl_Box *right = new Fl_Box(450, 100, 150, 280, "Right");
+  right->box(FL_DOWN_BOX);
+  
+  middle->resizable(center);  // Center grows horizontally
+  middle->end();
+  
+  // Bottom area (fixed 20px)
+  Fl_Box *bottom = new Fl_Box(0, 380, 600, 20, "Status");
+  bottom->box(FL_UP_BOX);
+  
+  vgroup->resizable(middle);  // Middle grows vertically
+  vgroup->end();
+  
+  win->resizable(vgroup);
+  win->size_range(400, 200);
+  win->show();
+  return Fl::run();
+}
+```
+
+## Advanced Techniques
+
+### Custom Resize Handling
+
+```cpp
+class MyWindow : public Fl_Window {
+public:
+  MyWindow(int w, int h, const char *l=0) : Fl_Window(w, h, l) {}
+  
+  void resize(int X, int Y, int W, int H) {
+    // Custom resize logic
+    
+    // Call parent resize first
+    Fl_Window::resize(X, Y, W, H);
+    
+    // Then adjust children manually if needed
+    // child1->resize(...);
+    // child2->resize(...);
+  }
+};
+```
+
+### Maintaining Aspect Ratio
+
+```cpp
+class AspectBox : public Fl_Box {
+  double aspect_ratio;
+public:
+  AspectBox(int x, int y, int w, int h, const char *l=0) 
+    : Fl_Box(x, y, w, h, l) {
+    aspect_ratio = (double)w / h;
+  }
+  
+  void resize(int X, int Y, int W, int H) {
+    // Maintain aspect ratio
+    int new_h = (int)(W / aspect_ratio);
+    if (new_h > H) {
+      new_h = H;
+      W = (int)(H * aspect_ratio);
+    }
+    Fl_Box::resize(X, Y, W, new_h);
+  }
+};
+```
+
+### Responding to Size Changes
+
+```cpp
+class SizeAwareWidget : public Fl_Box {
+public:
+  SizeAwareWidget(int x, int y, int w, int h, const char *l=0)
+    : Fl_Box(x, y, w, h, l) {}
+  
+  void resize(int X, int Y, int W, int H) {
+    Fl_Box::resize(X, Y, W, H);
+    
+    // React to size change
+    if (W < 200) {
+      labelsize(10);  // Small font for narrow width
+    } else if (W < 400) {
+      labelsize(14);  // Medium font
+    } else {
+      labelsize(18);  // Large font
+    }
+    redraw();
+  }
+};
+```
+
+## Common Patterns
+
+### Toolbar + Content + Statusbar
+
+```cpp
+toolbar->position = fixed top
+content->position = flexible
+statusbar->position = fixed bottom
+
+window->resizable(content)
+```
+
+### Sidebar + Main
+
+```cpp
+sidebar->width = fixed
+main->width = flexible
+
+hgroup->resizable(main)
+window->resizable(hgroup)
+```
+
+### Table-like Layout
+
+```cpp
+// Use Fl_Grid for best results
+grid->col_weight(0, 0);    // Fixed column
+grid->col_weight(1, 100);  // Flexible column
+grid->row_weight(0, 100);  // All rows flexible
+```
+
+## Using Fl_Flex and Fl_Grid for Responsive Design
+
+### Fl_Flex (Recommended for Simple Layouts)
+
+```cpp
+Fl_Flex *flex = new Fl_Flex(0, 0, 800, 600, Fl_Flex::VERTICAL);
+
+Fl_Box *header = new Fl_Box(0, 0, 0, 0, "Header");
+flex->fixed(header, 80);  // Fixed 80px
+
+Fl_Box *content = new Fl_Box(0, 0, 0, 0, "Content");
+// Content is flexible by default
+
+Fl_Box *footer = new Fl_Box(0, 0, 0, 0, "Footer");
+flex->fixed(footer, 30);  // Fixed 30px
+
+flex->end();
+```
+
+### Fl_Grid (Recommended for Forms)
+
+```cpp
+Fl_Grid *grid = new Fl_Grid(0, 0, 400, 300);
+grid->layout(3, 2, 10, 5);
+
+// Control resize behavior
+int col_weights[] = {0, 100};  // First col fixed, second flexible
+grid->col_weight(col_weights, 2);
+
+int row_weights[] = {0, 0, 100};  // First two rows fixed, last flexible
+grid->row_weight(row_weights, 3);
+
+grid->end();
+```
+
+## Best Practices
+
+1. **Always set size_range()** to prevent too-small windows
+2. **Use Fl_Flex/Fl_Grid** instead of manual resizing when possible
+3. **Test with various window sizes** during development
+4. **One resizable per group** - keeps behavior predictable
+5. **Fixed sizes for toolbars/statusbars** - content should be flexible
+6. **Nest groups** for complex multi-directional resize behavior
+7. **Override resize()** only when necessary for custom behavior
+
+## Debugging Resize Issues
+
+```cpp
+// Add to your widget class
+void resize(int X, int Y, int W, int H) {
+  printf("Resizing to: x=%d y=%d w=%d h=%d\n", X, Y, W, H);
+  Fl_Widget::resize(X, Y, W, H);
+}
+```
+
+## Next Steps
+
+- Learn about [Fl_Flex layouts](/examples/flex-layout)
+- Explore [Fl_Grid layouts](/examples/grid-layout)
+- See [custom widgets](/examples/custom-widgets)

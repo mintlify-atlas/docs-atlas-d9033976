@@ -1,0 +1,382 @@
+---
+title: Fl_Flex Layout Examples
+description: Modern flexible box layout for responsive FLTK interfaces
+---
+
+## What This Example Demonstrates
+
+Fl_Flex provides modern, flexible layouts similar to CSS Flexbox:
+- Horizontal and vertical arrangements
+- Automatic widget sizing and spacing
+- Fixed and flexible widget sizes
+- Gap control between widgets
+- Nested layouts for complex UIs
+- Responsive resizing behavior
+
+Fl_Flex was introduced in FLTK 1.4 and simplifies layout management.
+
+## Simple Example
+
+Source file: `examples/howto-flex-simple.cxx`
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Flex.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+
+// the 'Exit' button callback closes the window and terminates the program
+void exit_cb(Fl_Widget *w, void *) {
+  fl_message("The '%s' button closes the window\nand terminates the program.", w->label());
+  w->window()->hide();
+}
+
+// common callback for all other buttons
+void button_cb(Fl_Widget *w, void *) {
+  fl_message("The '%s' button does nothing.", w->label());
+}
+
+int main(int argc, char **argv) {
+  Fl_Double_Window window(410, 40, "Simple Fl_Flex Demo");
+  
+  Fl_Flex flex(5, 5, window.w() - 10, window.h() - 10, Fl_Flex::HORIZONTAL);
+  Fl_Button b1(0, 0, 0, 0, "File");
+  Fl_Button b2(0, 0, 0, 0, "New");
+  Fl_Button b3(0, 0, 0, 0, "Save");
+  Fl_Box    bx(0, 0, 0, 0); // empty space
+  Fl_Button eb(0, 0, 0, 0, "Exit");
+
+  // assign callbacks to buttons
+  b1.callback(button_cb);
+  b2.callback(button_cb);
+  b3.callback(button_cb);
+  eb.callback(exit_cb);
+
+  // set gap between adjacent buttons and extra spacing (invisible box size)
+  flex.gap(10);
+  flex.fixed(bx, 30); // total 50: 2 * gap + 30
+
+  // end() groups
+  flex.end();
+  window.end();
+
+  // set resizable, minimal window size, show() window, and execute event loop
+  window.resizable(flex);
+  window.size_range(300, 30);
+  window.show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+fltk-config --compile flex-simple.cxx
+```
+
+## Expected Behavior
+
+- Horizontal row of buttons with consistent spacing
+- "File", "New", and "Save" buttons have equal size
+- Empty space in the middle (fixed 30 pixels + gaps)
+- "Exit" button on the right
+- All resize proportionally when window is resized
+- Minimum window width enforced (300 pixels)
+
+## Key Concepts
+
+### Creating Fl_Flex
+
+```cpp
+// Horizontal layout (row)
+Fl_Flex flex_row(x, y, w, h, Fl_Flex::HORIZONTAL);
+
+// Vertical layout (column)
+Fl_Flex flex_col(x, y, w, h, Fl_Flex::VERTICAL);
+
+// Default is VERTICAL
+Fl_Flex flex(x, y, w, h);  // vertical
+```
+
+### Fixed vs Flexible Widgets
+
+```cpp
+Fl_Button *btn1 = new Fl_Button(0, 0, 0, 0, "Fixed");
+Fl_Button *btn2 = new Fl_Button(0, 0, 0, 0, "Flexible");
+
+flex.fixed(btn1, 100);  // Always 100 pixels wide/tall
+// btn2 is flexible by default - expands to fill space
+```
+
+### Gap Control
+
+```cpp
+// Set uniform gap between all widgets
+flex.gap(10);  // 10 pixels between each widget
+
+// Set margin around the entire flex container
+flex.margin(5);  // 5 pixels on all sides
+
+// Or set individual margins
+flex.margin(10, 5, 10, 5);  // left, top, right, bottom
+```
+
+## Advanced Login Form Example
+
+Source file: `test/flex_login.cxx` (simplified)
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Flex.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Input.H>
+
+Fl_Button *create_button(const char *caption) {
+  Fl_Button *rtn = new Fl_Button(0, 0, 100, 25, caption);
+  rtn->color(fl_rgb_color(225, 225, 225));
+  return rtn;
+}
+
+void buttons_panel(Fl_Flex *parent) {
+  new Fl_Box(0, 0, 0, 0, "");  // Top spacer
+  
+  Fl_Box *title = new Fl_Box(0, 0, 0, 0, "Welcome to Fl_Flex");
+  title->align(FL_ALIGN_CENTER);
+  title->labelfont(FL_BOLD + FL_ITALIC);
+  title->labelsize(16);
+
+  // Username row
+  Fl_Flex *urow = new Fl_Flex(Fl_Flex::ROW);
+  {
+    Fl_Box *b = new Fl_Box(0, 0, 0, 0, "Username:");
+    b->align(FL_ALIGN_INSIDE | FL_ALIGN_RIGHT);
+    Fl_Input *username = new Fl_Input(0, 0, 0, 0, "");
+    urow->fixed(username, 180);
+    urow->end();
+  }
+
+  // Password row
+  Fl_Flex *prow = new Fl_Flex(Fl_Flex::ROW);
+  {
+    Fl_Box *b = new Fl_Box(0, 0, 0, 0, "Password:");
+    b->align(FL_ALIGN_INSIDE | FL_ALIGN_RIGHT);
+    Fl_Input *password = new Fl_Input(0, 0, 0, 0, "");
+    prow->fixed(password, 180);
+    prow->end();
+  }
+
+  Fl_Box *pad = new Fl_Box(0, 0, 0, 0, "");  // Spacer
+
+  // Button row
+  Fl_Flex *brow = new Fl_Flex(Fl_Flex::ROW);
+  {
+    new Fl_Box(0, 0, 0, 0, "");  // Left spacer
+    Fl_Button *reg = create_button("Register");
+    Fl_Button *login = create_button("Login");
+    brow->fixed(reg, 80);
+    brow->fixed(login, 80);
+    brow->gap(20);
+    brow->end();
+  }
+
+  Fl_Box *b = new Fl_Box(0, 0, 0, 0, "");  // Bottom spacer
+
+  // Set fixed heights for rows
+  parent->fixed(title, 60);
+  parent->fixed(urow, 30);
+  parent->fixed(prow, 30);
+  parent->fixed(pad, 1);
+  parent->fixed(brow, 30);
+  parent->fixed(b, 30);
+}
+
+void middle_panel(Fl_Flex *parent) {
+  new Fl_Box(0, 0, 0, 0, "");  // Left spacer
+
+  Fl_Box *box = new Fl_Box(0, 0, 0, 0, "Image");
+  box->box(FL_BORDER_BOX);
+  box->color(fl_rgb_color(0, 200, 0));
+  
+  Fl_Box *spacer = new Fl_Box(0, 0, 0, 0, "");
+
+  Fl_Flex *bp = new Fl_Flex(Fl_Flex::COLUMN);
+  buttons_panel(bp);
+  bp->end();
+
+  new Fl_Box(0, 0, 0, 0, "");  // Right spacer
+
+  parent->fixed(box, 150);
+  parent->fixed(spacer, 10);
+  parent->fixed(bp, 300);
+}
+
+void mainPanel(Fl_Flex *parent) {
+  new Fl_Box(0, 0, 0, 0, "");  // Top flexible separator
+
+  Fl_Flex *mp = new Fl_Flex(Fl_Flex::ROW);
+  middle_panel(mp);
+  mp->end();
+
+  new Fl_Box(0, 0, 0, 0, "");  // Bottom flexible separator
+
+  parent->fixed(mp, 200);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *win = new Fl_Double_Window(100, 100, "Fl_Flex Login Layout");
+
+  Fl_Flex *col = new Fl_Flex(5, 5, 90, 90, Fl_Flex::COLUMN);
+  mainPanel(col);
+  col->end();
+
+  win->resizable(col);
+  win->color(fl_rgb_color(250, 250, 250));
+  win->end();
+
+  win->resize(0, 0, 600, 300);
+  win->size_range(550, 250);
+  win->show(argc, argv);
+
+  int ret = Fl::run();
+  delete win;
+  return ret;
+}
+```
+
+## Compilation
+
+```bash
+fltk-config --compile flex_login.cxx
+```
+
+## Variations and Extensions
+
+### Toolbar Layout
+
+```cpp
+Fl_Flex *toolbar = new Fl_Flex(0, 0, 800, 30, Fl_Flex::HORIZONTAL);
+toolbar->gap(5);
+
+new Fl_Button(0, 0, 0, 0, "New");
+new Fl_Button(0, 0, 0, 0, "Open");
+new Fl_Button(0, 0, 0, 0, "Save");
+
+// Separator
+Fl_Box *sep = new Fl_Box(0, 0, 0, 0);
+toolbar->fixed(sep, 20);
+
+new Fl_Button(0, 0, 0, 0, "Cut");
+new Fl_Button(0, 0, 0, 0, "Copy");
+new Fl_Button(0, 0, 0, 0, "Paste");
+
+toolbar->end();
+```
+
+### Three-Panel Layout
+
+```cpp
+// Classic three-panel application layout
+Fl_Flex *main_layout = new Fl_Flex(0, 0, 800, 600, Fl_Flex::VERTICAL);
+
+// Top toolbar (fixed height)
+Fl_Flex *toolbar = new Fl_Flex(Fl_Flex::HORIZONTAL);
+// ... add toolbar buttons ...
+toolbar->end();
+main_layout->fixed(toolbar, 30);
+
+// Middle content area (flexible)
+Fl_Flex *content = new Fl_Flex(Fl_Flex::HORIZONTAL);
+{
+  // Left sidebar
+  Fl_Box *sidebar = new Fl_Box(0, 0, 0, 0, "Sidebar");
+  sidebar->box(FL_DOWN_BOX);
+  content->fixed(sidebar, 200);
+  
+  // Main content (flexible)
+  Fl_Box *main = new Fl_Box(0, 0, 0, 0, "Main Content");
+  main->box(FL_DOWN_BOX);
+}
+content->end();
+
+// Bottom status bar (fixed height)
+Fl_Box *status = new Fl_Box(0, 0, 0, 0, "Status Bar");
+status->box(FL_DOWN_BOX);
+main_layout->fixed(status, 20);
+
+main_layout->end();
+```
+
+### Controlling Individual Widget Behavior
+
+```cpp
+// Make a widget invisible and excluded from layout
+widget->hide();
+
+// Make a widget take no space
+flex.fixed(widget, 0);
+
+// Make widget visible again and recalculate layout
+widget->show();
+flex.layout();
+```
+
+### Dynamic Resizing
+
+```cpp
+void toggle_sidebar_cb(Fl_Widget*, void *data) {
+  Fl_Flex *flex = (Fl_Flex*)data;
+  Fl_Widget *sidebar = flex->child(0);
+  
+  if (sidebar->visible()) {
+    sidebar->hide();
+  } else {
+    sidebar->show();
+  }
+  
+  flex->layout();  // Recalculate layout
+  flex->redraw();
+}
+```
+
+## Comparison: Manual vs Fl_Flex Layout
+
+### Manual Positioning (Old Way)
+```cpp
+Fl_Window win(400, 100);
+Fl_Button *b1 = new Fl_Button(10, 35, 80, 30, "Button 1");
+Fl_Button *b2 = new Fl_Button(100, 35, 80, 30, "Button 2");
+Fl_Button *b3 = new Fl_Button(190, 35, 80, 30, "Button 3");
+// Hard to resize, maintain spacing, add/remove buttons
+```
+
+### Fl_Flex (New Way)
+```cpp
+Fl_Window win(400, 100);
+Fl_Flex flex(10, 10, 380, 80, Fl_Flex::HORIZONTAL);
+flex.gap(10);
+new Fl_Button(0, 0, 0, 0, "Button 1");
+new Fl_Button(0, 0, 0, 0, "Button 2");
+new Fl_Button(0, 0, 0, 0, "Button 3");
+flex.end();
+// Automatically maintains spacing, easy to add/remove, responsive
+```
+
+## Best Practices
+
+1. **Use Fl_Flex for toolbars and button rows** - perfect use case
+2. **Nest Fl_Flex containers** for complex layouts
+3. **Use empty Fl_Box** widgets as spacers
+4. **Set fixed sizes** for widgets that shouldn't resize
+5. **Call layout()** after dynamically changing visibility
+6. **Use gap() and margin()** instead of manual spacing
+7. **Make the Fl_Flex resizable** for responsive windows
+
+## Next Steps
+
+- Compare with [Fl_Grid layout](/examples/grid-layout)
+- Learn about [responsive design](/examples/responsive-design)
+- See [custom widgets](/examples/custom-widgets)

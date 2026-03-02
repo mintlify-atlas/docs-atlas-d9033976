@@ -1,0 +1,379 @@
+---
+title: Text Input Widgets
+description: Single-line and multi-line text input widgets with validation
+---
+
+FLTK provides comprehensive text input widgets for capturing user text input, with built-in support for editing, selection, undo/redo, and clipboard operations.
+
+## Fl_Input
+
+**Header:** `FL/Fl_Input.H`
+
+The standard single-line text input widget. Displays and edits a single line of text with full UTF-8 support.
+
+### Constructor
+
+```cpp
+Fl_Input(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="value() - Get/Set Text">
+    Access the text content of the input field.
+    
+    ```cpp
+    const char* value() const;     // Get current text
+    int value(const char *text);   // Set text
+    int value(const char *text, int len);  // Set with length
+    
+    Fl_Input *input = new Fl_Input(50, 50, 200, 30, "Name:");
+    input->value("John Doe");
+    printf("Entered: %s\n", input->value());
+    ```
+  </Accordion>
+
+  <Accordion title="insert() / replace() - Edit Text">
+    Programmatically modify text content.
+    
+    ```cpp
+    input->insert("text");          // Insert at cursor
+    input->replace(0, 5, "new");    // Replace range
+    input->cut();                   // Cut selection
+    input->copy();                  // Copy to clipboard
+    input->paste();                 // Paste from clipboard
+    ```
+  </Accordion>
+
+  <Accordion title="position() - Cursor Position">
+    Get or set the text cursor position.
+    
+    ```cpp
+    int position() const;           // Get cursor position
+    int position(int p);            // Set cursor position
+    int position(int p, int m);     // Set position and mark
+    
+    input->position(0);             // Move to start
+    input->position(input->size()); // Move to end
+    ```
+  </Accordion>
+
+  <Accordion title="size() - Text Length">
+    Get the length of the text.
+    
+    ```cpp
+    int size() const;  // Returns number of bytes (not characters for UTF-8)
+    
+    if (input->size() > 0) {
+      printf("Has text\n");
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="maximum_size() - Limit Input Length">
+    Set maximum number of characters allowed.
+    
+    ```cpp
+    void maximum_size(int m);
+    int maximum_size() const;
+    
+    input->maximum_size(50);  // Limit to 50 characters
+    ```
+  </Accordion>
+
+  <Accordion title="readonly() - Prevent Editing">
+    Make the input field read-only.
+    
+    ```cpp
+    void readonly(int b);
+    int readonly() const;
+    
+    input->readonly(1);  // User cannot edit
+    input->color(FL_BACKGROUND2_COLOR);  // Visual feedback
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Keyboard Bindings
+
+Fl_Input supports standard text editing keys:
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Select All | Ctrl+A | Cmd+A |
+| Copy | Ctrl+C | Cmd+C |
+| Paste | Ctrl+V | Cmd+V |
+| Cut | Ctrl+X | Cmd+X |
+| Undo | Ctrl+Z | Cmd+Z |
+| Move to start | Home | Cmd+Left |
+| Move to end | End | Cmd+Right |
+| Word left | Ctrl+Left | Alt+Left |
+| Word right | Ctrl+Right | Alt+Right |
+
+### Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Button.H>
+#include <stdio.h>
+
+void submit_cb(Fl_Widget *, void *v) {
+  Fl_Input *input = (Fl_Input*)v;
+  printf("Submitted: %s\n", input->value());
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 150);
+  
+  Fl_Input *name = new Fl_Input(100, 30, 250, 30, "Name:");
+  name->value("Enter your name");
+  
+  Fl_Button *btn = new Fl_Button(150, 80, 100, 30, "Submit");
+  btn->callback(submit_cb, name);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Specialized Input Types
+
+FLTK provides specialized input widgets for specific data types:
+
+### Fl_Int_Input
+
+**Header:** `FL/Fl_Int_Input.H`
+
+Accepts only integer input (digits and minus sign).
+
+```cpp
+Fl_Int_Input *qty = new Fl_Int_Input(100, 50, 100, 30, "Quantity:");
+qty->value("42");
+
+int quantity = atoi(qty->value());
+```
+
+### Fl_Float_Input
+
+**Header:** `FL/Fl_Float_Input.H`
+
+Accepts floating-point numbers (digits, decimal point, minus, and 'e' for scientific notation).
+
+```cpp
+Fl_Float_Input *price = new Fl_Float_Input(100, 50, 100, 30, "Price:");
+price->value("19.99");
+
+double amount = atof(price->value());
+```
+
+### Fl_Secret_Input
+
+**Header:** `FL/Fl_Secret_Input.H`
+
+Displays asterisks (****) instead of actual characters. Perfect for password fields.
+
+```cpp
+Fl_Secret_Input *pwd = new Fl_Secret_Input(100, 50, 200, 30, "Password:");
+pwd->maximum_size(32);
+```
+
+### Fl_Multiline_Input
+
+**Header:** `FL/Fl_Multiline_Input.H`
+
+Multi-line text input with scrolling.
+
+```cpp
+Fl_Multiline_Input *notes = new Fl_Multiline_Input(50, 50, 300, 150, "Notes:");
+notes->align(FL_ALIGN_TOP_LEFT);
+```
+
+## Input Widget Gallery
+
+<CardGroup cols={2}>
+  <Card title="Standard Input" icon="keyboard">
+    **Fl_Input** - Single-line text
+    
+    White rectangular field with thin border. Displays text cursor when focused.
+    
+    **Use for:** Names, titles, search boxes, single-line data
+  </Card>
+
+  <Card title="Integer Input" icon="hashtag">
+    **Fl_Int_Input** - Numbers only
+    
+    Identical appearance to Fl_Input but rejects non-digit input.
+    
+    **Use for:** Quantities, ages, counts, IDs
+  </Card>
+
+  <Card title="Float Input" icon="calculator">
+    **Fl_Float_Input** - Decimal numbers
+    
+    Accepts numbers with decimal points and scientific notation.
+    
+    **Use for:** Prices, measurements, percentages
+  </Card>
+
+  <Card title="Secret Input" icon="lock">
+    **Fl_Secret_Input** - Hidden characters
+    
+    Displays asterisks or dots instead of typed characters.
+    
+    **Use for:** Passwords, PINs, sensitive data
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Login Form
+
+```cpp
+Fl_Window *login = new Fl_Window(300, 180, "Login");
+
+Fl_Input *username = new Fl_Input(120, 30, 150, 30, "Username:");
+username->maximum_size(50);
+
+Fl_Secret_Input *password = new Fl_Secret_Input(120, 70, 150, 30, "Password:");
+password->maximum_size(32);
+
+Fl_Return_Button *login_btn = new Fl_Return_Button(100, 120, 100, 30, "Login");
+login_btn->callback([](Fl_Widget *, void *v) {
+  auto *data = (std::pair<Fl_Input*, Fl_Secret_Input*>*)v;
+  printf("Login: %s / %s\n", data->first->value(), data->second->value());
+}, new std::pair(username, password));
+
+login->end();
+```
+
+### Numeric Input with Validation
+
+```cpp
+void validate_number(Fl_Widget *w, void *) {
+  Fl_Input *input = (Fl_Input*)w;
+  const char *text = input->value();
+  
+  // Simple validation
+  for (int i = 0; text[i]; i++) {
+    if (!isdigit(text[i]) && text[i] != '.') {
+      fl_beep();
+      input->value("");  // Clear invalid input
+      return;
+    }
+  }
+}
+
+Fl_Input *amount = new Fl_Input(100, 50, 150, 30, "Amount:");
+amount->when(FL_WHEN_CHANGED);
+amount->callback(validate_number);
+```
+
+### Input with Default Text
+
+```cpp
+Fl_Input *search = new Fl_Input(50, 20, 300, 30);
+search->value("Search...");
+search->color(FL_BACKGROUND2_COLOR);
+
+// Clear default text on first focus
+void focus_cb(Fl_Widget *w, void *) {
+  Fl_Input *inp = (Fl_Input*)w;
+  static bool first = true;
+  if (first && strcmp(inp->value(), "Search...") == 0) {
+    inp->value("");
+    inp->color(FL_WHITE);
+    first = false;
+  }
+}
+
+search->callback(focus_cb);
+search->when(FL_WHEN_CHANGED);
+```
+
+### Multi-line Text Area
+
+```cpp
+Fl_Window *win = new Fl_Window(400, 300);
+
+Fl_Multiline_Input *editor = new Fl_Multiline_Input(10, 40, 380, 200, "Comments:");
+editor->align(FL_ALIGN_TOP_LEFT);
+editor->textfont(FL_COURIER);
+editor->textsize(14);
+editor->wrap(1);  // Word wrap
+
+Fl_Button *save = new Fl_Button(150, 250, 100, 30, "Save");
+save->callback([](Fl_Widget *, void *v) {
+  Fl_Multiline_Input *text = (Fl_Multiline_Input*)v;
+  save_to_file(text->value());
+}, editor);
+
+win->end();
+```
+
+## Input Styling
+
+```cpp
+Fl_Input *input = new Fl_Input(50, 50, 250, 35);
+
+// Colors
+input->color(FL_WHITE);           // Background
+input->textcolor(FL_BLACK);       // Text color
+input->selection_color(FL_BLUE);  // Selection highlight
+input->cursor_color(FL_RED);      // Cursor color
+
+// Typography
+input->textfont(FL_COURIER);
+input->textsize(16);
+
+// Border
+input->box(FL_DOWN_BOX);
+```
+
+## Callbacks and Events
+
+```cpp
+Fl_Input *input = new Fl_Input(50, 50, 200, 30);
+
+// Callback on Enter key
+input->when(FL_WHEN_ENTER_KEY);
+input->callback([](Fl_Widget *w, void *) {
+  Fl_Input *inp = (Fl_Input*)w;
+  printf("Enter pressed: %s\n", inp->value());
+});
+
+// Callback on every change
+input->when(FL_WHEN_CHANGED);
+input->callback([](Fl_Widget *w, void *) {
+  Fl_Input *inp = (Fl_Input*)w;
+  printf("Changed to: %s\n", inp->value());
+});
+
+// Callback when focus is lost
+input->when(FL_WHEN_RELEASE);
+```
+
+## Important Notes
+
+<Warning>
+  The `value()` method returns a pointer to **internal buffer** that may become invalid after widget modification. Copy the string if you need to keep it.
+</Warning>
+
+<Info>
+  Fl_Input fully supports **UTF-8** text encoding. Use `size()` to get byte count, not character count.
+</Info>
+
+<Tip>
+  Use `readonly(1)` instead of `deactivate()` if you want text to be copyable but not editable. Deactivated widgets appear grayed out.
+</Tip>
+
+## Reference
+
+- Source: `FL/Fl_Input.H` (lines 220-271)
+- Source: `FL/Fl_Int_Input.H`
+- Source: `FL/Fl_Float_Input.H`
+- Source: `FL/Fl_Secret_Input.H`
+- Source: `FL/Fl_Multiline_Input.H`

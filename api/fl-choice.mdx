@@ -1,0 +1,308 @@
+---
+title: Fl_Choice
+description: API reference for the Fl_Choice class in FLTK
+---
+
+# Fl_Choice
+
+The `Fl_Choice` widget is a button that pops up a menu when clicked, displaying the currently selected item inside the button. It's commonly called an "OptionButton" in Motif terminology.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Choice.H>
+```
+
+## Class Overview
+
+`Fl_Choice` provides a dropdown menu for selecting one option from a list. Features include:
+
+- Displays the currently selected item inside the button
+- Pops up a menu hierarchy when clicked
+- Supports keyboard shortcuts for menu items
+- Label appears outside the button
+- Designed for controlling a single variable rather than multiple actions
+
+<Note>
+The main difference between `Fl_Choice` and `Fl_Menu_Button` is that `Fl_Choice` displays the selected item's name inside the button, while the widget's label appears outside.
+</Note>
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Menu_
+        └── Fl_Choice
+```
+
+Inherits from: `Fl_Menu_` (which inherits from `Fl_Widget`)
+
+## Constructor
+
+```cpp
+Fl_Choice(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a new choice widget.
+
+<ParamField path="X" type="int">
+  The X coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*" default="nullptr">
+  Label text displayed outside the choice button
+</ParamField>
+
+## Public Methods
+
+### value()
+
+```cpp
+int value() const
+int value(int v)
+int value(const Fl_Menu_Item *v)
+```
+
+Gets or sets the index of the currently selected item.
+
+<ParamField path="v" type="int">
+  Zero-based index of the menu item to select
+</ParamField>
+
+<ParamField path="v" type="const Fl_Menu_Item*">
+  Pointer to the menu item to select
+</ParamField>
+
+**Returns:** 
+- For getter: Index of currently selected item (initially -1 if no selection)
+- For setter: Index value that was set
+
+### handle()
+
+```cpp
+int handle(int event) override
+```
+
+Handles events for the choice widget including mouse clicks and keyboard shortcuts.
+
+<ParamField path="event" type="int">
+  The FLTK event type
+</ParamField>
+
+**Returns:** `int` - 1 if handled, 0 otherwise
+
+## Protected Methods
+
+### draw()
+
+```cpp
+void draw() override
+```
+
+Draws the choice widget with the currently selected item displayed. Called automatically by FLTK.
+
+## Inherited Methods from Fl_Menu_
+
+As a subclass of `Fl_Menu_`, `Fl_Choice` inherits extensive menu management functionality:
+
+### Adding Menu Items
+
+- `add(const char *label)` - Add a menu item
+- `add(const char *label, int shortcut, Fl_Callback *cb, void *data = 0)` - Add item with callback
+- `add(const char *label, const char *shortcut, Fl_Callback *cb, void *data = 0)` - Add with string shortcut
+- `insert(int index, const char *label, ...)` - Insert item at specific position
+
+### Menu Item Access
+
+- `menu()` - Get pointer to menu item array
+- `menu(const Fl_Menu_Item *)` - Set the menu item array
+- `size()` - Get number of menu items
+- `mvalue()` - Get pointer to currently selected menu item
+- `text()` / `text(int)` - Get label of selected or specified item
+
+### Finding Items
+
+- `find_item(const char *name)` - Find item by pathname
+- `find_index(const char *name)` - Find index by pathname
+- `find_index(const Fl_Menu_Item *)` - Find index of menu item pointer
+
+### Menu Appearance
+
+- `down_box()` / `down_box(Fl_Boxtype)` - Box type when menu is popped up (default: `FL_DOWN_BOX`)
+- `textfont()` / `textfont(Fl_Font)` - Font for menu items
+- `textsize()` / `textsize(Fl_Fontsize)` - Size for menu text
+- `textcolor()` / `textcolor(Fl_Color)` - Color for menu text
+
+### State Management
+
+- `changed()` - Returns true when user picks a different value
+- `set_changed()` - Set the changed flag
+- `clear_changed()` - Clear the changed flag
+
+## Callback Behavior
+
+When a user selects a menu item:
+
+1. `value()` is set to that item
+2. If the item has a callback, that callback is invoked (the `Fl_Choice` is passed as the `Fl_Widget*` argument)
+3. If the item does not have a callback, the `Fl_Choice` widget's callback is invoked instead
+4. The callback can determine which item was picked using `value()`, `mvalue()`, or `text()`
+
+## Usage Example
+
+From the header file documentation:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Choice.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(300, 200);
+  
+  Fl_Choice *choice = new Fl_Choice(100, 10, 100, 25, "Choice:");
+  choice->add("Zero");
+  choice->add("One");
+  choice->add("Two");
+  choice->add("Three");
+  choice->value(2);  // Make "Two" selected by default (zero-based!)
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Advanced Example with Callback
+
+From `test/input_choice.cxx`:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Choice.H>
+#include <stdio.h>
+
+void choice_cb(Fl_Widget *, void *data) {
+  Fl_Choice *choice = (Fl_Choice *)data;
+  printf("Fl_Choice value='%d' (%s)\n", 
+         choice->value(), 
+         choice->text());
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *win = new Fl_Window(300, 200);
+  
+  Fl_Choice *choice = new Fl_Choice(180, 70, 100, 25, "Fl_Choice:");
+  choice->callback(choice_cb, (void *)choice);
+  choice->add("Apple");
+  choice->add("Banana");
+  choice->add("Cherry");
+  choice->value(1);  // Select "Banana"
+  
+  win->end();
+  win->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Menu Hierarchies Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Choice.H>
+
+void choice_cb(Fl_Widget *w, void *) {
+  Fl_Choice *choice = (Fl_Choice*)w;
+  printf("Selected: %s\n", choice->text());
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 150);
+  
+  Fl_Choice *menu = new Fl_Choice(150, 50, 200, 30, "Select Color:");
+  menu->callback(choice_cb);
+  
+  // Add items with hierarchical paths using '/'
+  menu->add("Primary/Red");
+  menu->add("Primary/Green");
+  menu->add("Primary/Blue");
+  menu->add("Secondary/Cyan");
+  menu->add("Secondary/Magenta");
+  menu->add("Secondary/Yellow");
+  
+  menu->value(0);  // Select first item
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Dynamic Menu Updates
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Button.H>
+
+Fl_Choice *choice;
+int item_count = 3;
+
+void add_item_cb(Fl_Widget *, void *) {
+  char label[32];
+  sprintf(label, "Item %d", ++item_count);
+  choice->add(label);
+  choice->value(choice->size() - 2);  // Select the new item
+  choice->redraw();
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(300, 150);
+  
+  choice = new Fl_Choice(100, 30, 150, 25, "Options:");
+  choice->add("Item 1");
+  choice->add("Item 2");
+  choice->add("Item 3");
+  choice->value(0);
+  
+  Fl_Button *btn = new Fl_Button(100, 80, 150, 25, "Add Item");
+  btn->callback(add_item_cb);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Keyboard Shortcuts
+
+- All three mouse buttons pop up the menu
+- The widget label can contain '&' to create a keyboard shortcut
+- Individual menu items can have their own `shortcut()` values
+- Typing an item's shortcut does the same as clicking it
+
+## Events
+
+FLTK triggers an `FL_BEFORE_MENU` event right before displaying the menu, allowing you to update menu item states dynamically.
+
+## See Also
+
+- [Fl_Menu_](/api/fl-menu-underscore) - Base class for menu widgets
+- [Fl_Menu_Button](/api/fl-menu-button) - Similar but doesn't show selected item
+- [Fl_Menu_Bar](/api/fl-menu-bar) - Horizontal menu bar
+- [Fl_Input_Choice](/api/fl-input-choice) - Combination of input field and choice menu

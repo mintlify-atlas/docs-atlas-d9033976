@@ -1,0 +1,609 @@
+---
+title: Fl_Choice
+description: Dropdown choice widget for selecting a single option from a menu
+---
+
+# Fl_Choice
+
+The `Fl_Choice` widget is a button that pops up a menu when clicked, displaying the currently selected value inside the button. It's commonly used for dropdown selection widgets.
+
+## Header
+
+```cpp
+#include <FL/Fl_Choice.H>
+```
+
+## Inheritance
+
+```
+Fl_Widget → Fl_Menu_ → Fl_Choice
+```
+
+## Constructor
+
+### Fl_Choice()
+
+Creates a new choice widget.
+
+```cpp
+Fl_Choice(int X, int Y, int W, int H, const char *label = 0);
+```
+
+<ParamField path="X" type="int">
+  X coordinate of the widget
+</ParamField>
+
+<ParamField path="Y" type="int">
+  Y coordinate of the widget
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget
+</ParamField>
+
+<ParamField path="label" type="const char*">
+  Optional label displayed to the left of the widget
+</ParamField>
+
+**Example:**
+```cpp
+Fl_Choice *choice = new Fl_Choice(100, 50, 150, 25, "Select:");
+```
+
+## Overview
+
+The `Fl_Choice` widget is similar to `Fl_Menu_Button`, but with a key difference: the label of the most recently chosen menu item is displayed inside the box, while the widget's label is displayed outside the box.
+
+This makes it ideal for controlling a single variable where you want the user to see the current selection at all glance.
+
+<Note>
+  In Motif, this widget is called an OptionButton.
+</Note>
+
+## Adding Choices
+
+### Using add()
+
+Dynamically add choices:
+
+```cpp
+Fl_Choice *choice = new Fl_Choice(100, 50, 150, 25, "Font:");
+choice->add("Helvetica");
+choice->add("Times");
+choice->add("Courier");
+choice->add("Symbol");
+choice->value(0);  // Select first item
+```
+
+### Simple Example
+
+From the FLTK documentation:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Choice.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(300, 200);
+  Fl_Choice *choice = new Fl_Choice(100, 10, 100, 25, "Choice:");
+  choice->add("Zero");
+  choice->add("One");
+  choice->add("Two");
+  choice->add("Three");
+  choice->value(2);  // Select "Two" by default (zero-based index)
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Using Static Array
+
+```cpp
+static Fl_Menu_Item items[] = {
+  {"Small"},
+  {"Medium"},
+  {"Large"},
+  {"Extra Large"},
+  {0}
+};
+
+Fl_Choice *choice = new Fl_Choice(100, 50, 150, 25, "Size:");
+choice->copy(items);
+choice->value(1);  // Select "Medium"
+```
+
+### With User Data
+
+From `examples/chart-simple.cxx`:
+
+```cpp
+void chart_type_cb(Fl_Widget *w, void*) {
+  const Fl_Menu_Item *item = G_choice->mvalue();
+  G_chart->type((uchar)item->argument());
+  G_chart->redraw();
+}
+
+Fl_Choice *choice = new Fl_Choice(140, 470, 200, 25, "Chart Type: ");
+choice->add("FL_BAR_CHART",        0, chart_type_cb, (void*)FL_BAR_CHART);
+choice->add("FL_HORBAR_CHART",     0, chart_type_cb, (void*)FL_HORBAR_CHART);
+choice->add("FL_LINE_CHART",       0, chart_type_cb, (void*)FL_LINE_CHART);
+choice->add("FL_FILL_CHART",       0, chart_type_cb, (void*)FL_FILL_CHART);
+choice->add("FL_SPIKE_CHART",      0, chart_type_cb, (void*)FL_SPIKE_CHART);
+choice->add("FL_PIE_CHART",        0, chart_type_cb, (void*)FL_PIE_CHART);
+choice->add("FL_SPECIALPIE_CHART", 0, chart_type_cb, (void*)FL_SPECIALPIE_CHART);
+choice->value(0);
+```
+
+## Value Methods
+
+### value()
+
+Gets or sets the selected item by index.
+
+```cpp
+int value() const;
+int value(int index);
+int value(const Fl_Menu_Item *item);
+```
+
+<ParamField path="index" type="int">
+  Zero-based index of the item to select. Returns -1 initially if no item selected.
+</ParamField>
+
+<ParamField path="item" type="const Fl_Menu_Item*">
+  Pointer to the menu item to select
+</ParamField>
+
+**Returns (setter):** Non-zero if the value changed, 0 otherwise.
+
+**Example:**
+```cpp
+Fl_Choice *choice = new Fl_Choice(100, 50, 150, 25);
+choice->add("Red");
+choice->add("Green");
+choice->add("Blue");
+
+choice->value(1);              // Select "Green"
+int selected = choice->value(); // Returns 1
+```
+
+### text()
+
+Returns the label of the currently selected item.
+
+```cpp
+const char* text() const;
+```
+
+**Returns:** Label of the selected item, or NULL if none selected.
+
+**Example:**
+```cpp
+const char *selected = choice->text();
+if (selected) {
+  printf("Selected: %s\n", selected);
+}
+```
+
+### mvalue()
+
+Returns a pointer to the currently selected menu item.
+
+```cpp
+const Fl_Menu_Item* mvalue() const;
+```
+
+**Returns:** Pointer to the selected `Fl_Menu_Item`, or NULL.
+
+**Example:**
+```cpp
+const Fl_Menu_Item *item = choice->mvalue();
+if (item) {
+  printf("Selected: %s\n", item->label());
+  long data = item->argument();
+}
+```
+
+### prev_mvalue()
+
+Returns the previously selected menu item.
+
+```cpp
+const Fl_Menu_Item* prev_mvalue() const;
+```
+
+**Returns:** Pointer to the previously selected item.
+
+<Note>
+  This method is particularly useful for detecting changes in `Fl_Choice` selections.
+</Note>
+
+**Example:**
+```cpp
+void choice_cb(Fl_Widget *w, void*) {
+  Fl_Choice *choice = (Fl_Choice*)w;
+  const Fl_Menu_Item *current = choice->mvalue();
+  const Fl_Menu_Item *previous = choice->prev_mvalue();
+  
+  if (previous) {
+    printf("Changed from '%s' to '%s'\n", 
+           previous->label(), current->label());
+  }
+}
+```
+
+## Callbacks
+
+When a user selects a menu item:
+
+1. `value()` is set to that item
+2. If the item has a callback, it's invoked with:
+   - The `Fl_Choice` as the first argument
+   - The item's `user_data()` as the second argument
+3. If the item doesn't have a callback, the `Fl_Choice`'s callback is invoked instead
+
+### Widget Callback
+
+```cpp
+void choice_cb(Fl_Widget *w, void*) {
+  Fl_Choice *choice = (Fl_Choice*)w;
+  printf("Selected: %s (index %d)\n", choice->text(), choice->value());
+}
+
+Fl_Choice *choice = new Fl_Choice(100, 50, 150, 25, "Color:");
+choice->callback(choice_cb);
+choice->add("Red");
+choice->add("Green");
+choice->add("Blue");
+```
+
+### Item Callbacks
+
+```cpp
+void red_cb(Fl_Widget*, void*)   { printf("Red selected\n"); }
+void green_cb(Fl_Widget*, void*) { printf("Green selected\n"); }
+void blue_cb(Fl_Widget*, void*)  { printf("Blue selected\n"); }
+
+choice->add("Red",   0, red_cb);
+choice->add("Green", 0, green_cb);
+choice->add("Blue",  0, blue_cb);
+```
+
+## Change Detection
+
+### changed()
+
+The inherited `changed()` flag indicates when the user picks a different value:
+
+```cpp
+int changed() const;        // True when user picks different value
+void set_changed();         // Set the changed flag
+void clear_changed();       // Clear the changed flag
+```
+
+<Note>
+  The `changed()` flag is automatically cleared just before a callback is invoked and when `value()` is called.
+</Note>
+
+**Example:**
+```cpp
+void choice_cb(Fl_Widget *w, void*) {
+  Fl_Choice *choice = (Fl_Choice*)w;
+  // changed() is automatically true when callback is called
+  printf("Selection changed to: %s\n", choice->text());
+}
+```
+
+## Mouse Button Behavior
+
+All three mouse buttons pop up the menu. Unlike some toolkits (Forms), the first two buttons do NOT increment/decrement the choice automatically.
+
+<Note>
+  If you need increment/decrement behavior, you can implement it in a subclass.
+</Note>
+
+## Events
+
+### FL_BEFORE_MENU Event
+
+FLTK triggers an `FL_BEFORE_MENU` event right before displaying the menu. This provides an opportunity to update menu item states.
+
+From `test/menubar.cxx`:
+
+```cpp
+class Dynamic_Choice : public Fl_Choice {
+public:
+  Dynamic_Choice(int X, int Y, int W, int H, const char *L = 0)
+    : Fl_Choice(X, Y, W, H, L) {}
+  
+  int handle(int event) override {
+    if (event == FL_BEFORE_MENU) {
+      // Update menu items before showing
+      Fl_Menu_Item *flip = (Fl_Menu_Item*)find_item("Flip");
+      Fl_Menu_Item *flop = (Fl_Menu_Item*)find_item("Flop");
+      
+      if (some_condition()) {
+        flip->activate();
+        flop->deactivate();
+      } else {
+        flip->deactivate();
+        flop->activate();
+      }
+    }
+    return Fl_Choice::handle(event);
+  }
+};
+```
+
+## Appearance
+
+### down_box()
+
+Controls the box type used when the menu is popped up.
+
+```cpp
+Fl_Boxtype down_box() const;
+void down_box(Fl_Boxtype boxtype);
+```
+
+**Default:** `FL_DOWN_BOX`
+
+**Example:**
+```cpp
+choice->down_box(FL_BORDER_BOX);
+```
+
+### Text Appearance
+
+```cpp
+// Menu text appearance
+choice->textfont(FL_HELVETICA);
+choice->textsize(12);
+choice->textcolor(FL_BLACK);
+
+// Widget label appearance
+choice->labelfont(FL_HELVETICA_BOLD);
+choice->labelsize(14);
+choice->labelcolor(FL_BLACK);
+```
+
+### Box and Color
+
+```cpp
+choice->box(FL_THIN_DOWN_BOX);
+choice->color(FL_WHITE);
+choice->selection_color(FL_BLUE);
+```
+
+## Managing Items
+
+### Finding Items
+
+```cpp
+// By label
+const Fl_Menu_Item *item = choice->find_item("Medium");
+
+// By index
+int index = choice->find_index("Medium");
+
+// By callback
+const Fl_Menu_Item *item = choice->find_item(medium_cb);
+```
+
+### Modifying Items
+
+```cpp
+// Get item by index
+Fl_Menu_Item *item = (Fl_Menu_Item*)&choice->menu()[2];
+
+// Modify item
+item->label("Extra Large");
+item->activate();
+item->deactivate();
+
+// Replace label by index
+int index = choice->find_index("Medium");
+choice->replace(index, "Medium (Default)");
+```
+
+### Removing Items
+
+```cpp
+// Remove by index
+int index = choice->find_index("Large");
+if (index >= 0) {
+  choice->remove(index);
+}
+
+// Clear all items
+choice->clear();
+```
+
+### Item Count
+
+```cpp
+int count = choice->size();
+printf("Choice has %d items\n", count);
+```
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Box.H>
+#include <stdio.h>
+
+Fl_Box *output;
+
+void choice_cb(Fl_Widget *w, void*) {
+  Fl_Choice *choice = (Fl_Choice*)w;
+  const Fl_Menu_Item *item = choice->mvalue();
+  
+  if (item) {
+    char msg[256];
+    sprintf(msg, "Selected: %s (index: %d)", 
+            item->label(), choice->value());
+    output->copy_label(msg);
+  }
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300, "Choice Demo");
+  
+  // Font choice
+  Fl_Choice *font = new Fl_Choice(100, 30, 200, 25, "Font:");
+  font->callback(choice_cb);
+  font->add("Helvetica");
+  font->add("Times");
+  font->add("Courier");
+  font->add("Symbol");
+  font->value(0);
+  
+  // Size choice
+  Fl_Choice *size = new Fl_Choice(100, 70, 200, 25, "Size:");
+  size->callback(choice_cb);
+  size->add("Small");
+  size->add("Medium");
+  size->add("Large");
+  size->add("Extra Large");
+  size->value(1);
+  
+  // Color choice with user data
+  Fl_Choice *color = new Fl_Choice(100, 110, 200, 25, "Color:");
+  color->callback(choice_cb);
+  color->add("Red",   0, 0, (void*)FL_RED);
+  color->add("Green", 0, 0, (void*)FL_GREEN);
+  color->add("Blue",  0, 0, (void*)FL_BLUE);
+  color->add("Yellow", 0, 0, (void*)FL_YELLOW);
+  color->value(0);
+  
+  // Output display
+  output = new Fl_Box(50, 160, 300, 100);
+  output->box(FL_DOWN_BOX);
+  output->label("Select an option");
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Advanced Usage
+
+### Submenu Support
+
+Like other menu widgets, `Fl_Choice` supports submenus:
+
+```cpp
+Fl_Choice *choice = new Fl_Choice(100, 50, 200, 25, "Font:");
+
+// Add items with pathname notation
+choice->add("Sans Serif/Helvetica");
+choice->add("Sans Serif/Arial");
+choice->add("Serif/Times");
+choice->add("Serif/Palatino");
+choice->add("Monospace/Courier");
+choice->add("Monospace/Monaco");
+
+choice->value(0);
+```
+
+### Programmatic Selection
+
+```cpp
+// Select by index
+choice->value(2);
+
+// Select by label
+int index = choice->find_index("Medium");
+if (index >= 0) {
+  choice->value(index);
+}
+
+// Select by menu item pointer
+const Fl_Menu_Item *item = choice->find_item("Large");
+if (item) {
+  choice->value(item);
+}
+```
+
+### Getting Selection Information
+
+```cpp
+// Get selected index
+int idx = choice->value();  // -1 if none selected
+
+// Get selected label
+const char *label = choice->text();
+
+// Get selected menu item
+const Fl_Menu_Item *item = choice->mvalue();
+if (item) {
+  void *userdata = item->user_data();
+  long argument = item->argument();
+  int shortcut = item->shortcut();
+}
+```
+
+## Common Patterns
+
+### Font Selector
+
+```cpp
+Fl_Choice *font_choice = new Fl_Choice(100, 50, 150, 25, "Font:");
+font_choice->add("Helvetica");
+font_choice->add("Helvetica Bold");
+font_choice->add("Helvetica Italic");
+font_choice->add("Times");
+font_choice->add("Times Bold");
+font_choice->add("Courier");
+font_choice->value(0);
+```
+
+### Size Selector
+
+```cpp
+Fl_Choice *size_choice = new Fl_Choice(100, 90, 150, 25, "Size:");
+size_choice->add("8");
+size_choice->add("10");
+size_choice->add("12");
+size_choice->add("14");
+size_choice->add("18");
+size_choice->add("24");
+size_choice->value(2);  // Select "12"
+```
+
+### Enum-Based Selection
+
+```cpp
+enum ChartType {
+  BAR_CHART = 0,
+  LINE_CHART = 1,
+  PIE_CHART = 2
+};
+
+Fl_Choice *chart = new Fl_Choice(100, 130, 150, 25, "Chart:");
+chart->add("Bar",  0, 0, (void*)BAR_CHART);
+chart->add("Line", 0, 0, (void*)LINE_CHART);
+chart->add("Pie",  0, 0, (void*)PIE_CHART);
+
+void chart_cb(Fl_Widget *w, void*) {
+  Fl_Choice *c = (Fl_Choice*)w;
+  ChartType type = (ChartType)c->mvalue()->argument();
+  update_chart(type);
+}
+```
+
+## See Also
+
+- [Fl_Menu_Item](/api/fl-menu-item) - Menu item structure and flags
+- [Fl_Menu_Bar](/api/fl-menu-bar) - Menu bar widget
+- [Fl_Menu_Button](/api/fl-menu-button) - Popup menu button

@@ -1,0 +1,549 @@
+---
+title: Fl_Tabs
+description: Tabbed interface widget for organizing multiple pages in a compact space
+---
+
+Fl_Tabs creates a tabbed interface where each child group represents a tab page. Only one tab's content is visible at a time, making it ideal for organizing related controls in limited space.
+
+## Key Features
+
+- Multiple pages in same space
+- Tab labels from child group labels
+- Tab colors from child selection_color
+- Keyboard shortcuts with '&' prefix
+- Closeable tabs with callback support
+- Four overflow handling modes
+- Automatic or always-visible tabs
+- Top or bottom tab placement
+
+## Creating Fl_Tabs
+
+```cpp
+Fl_Tabs(int x, int y, int w, int h, const char *label = 0)
+```
+
+```cpp
+Fl_Tabs *tabs = new Fl_Tabs(10, 10, 480, 280);
+
+tabs->begin();
+  // Each Fl_Group becomes a tab
+  Fl_Group *tab1 = new Fl_Group(20, 35, 460, 245, "First");
+  tab1->begin();
+    new Fl_Button(50, 60, 100, 30, "Button 1");
+  tab1->end();
+  
+  Fl_Group *tab2 = new Fl_Group(20, 35, 460, 245, "Second");
+  tab2->begin();
+    new Fl_Button(50, 60, 100, 30, "Button 2");
+  tab2->end();
+tabs->end();
+```
+
+<Note>
+  **Important:** Leave 5+ pixels of space at top or bottom of tab groups (where tabs appear) to prevent children from interfering with tab drawing.
+</Note>
+
+## Tab Positioning
+
+Tabs appear at top or bottom based on available space:
+
+- **More space above children:** Tabs at top
+- **More space below children:** Tabs at bottom
+
+Control this by adjusting child group positions within Fl_Tabs:
+
+```cpp
+Fl_Tabs *tabs = new Fl_Tabs(0, 0, 400, 300);
+
+// Tabs at top (default)
+Fl_Group *g1 = new Fl_Group(10, 30, 380, 260, "Tab 1");
+// ... 30px space above = tabs at top
+
+// Tabs at bottom
+Fl_Group *g2 = new Fl_Group(10, 10, 380, 260, "Tab 2");
+// ... 30px space below = tabs at bottom
+```
+
+## Tab Labels and Shortcuts
+
+### Label from Child Group
+
+```cpp
+Fl_Group *tab = new Fl_Group(20, 35, 460, 245, "&File");
+```
+
+The group's label becomes the tab label. Use `&` to create keyboard shortcuts:
+
+```cpp
+new Fl_Group(20, 35, 460, 245, "&File");     // Alt+F
+new Fl_Group(20, 35, 460, 245, "&Edit");     // Alt+E
+new Fl_Group(20, 35, 460, 245, "&&Special"); // && = literal &
+```
+
+### Tab Label Alignment
+
+```cpp
+void tab_align(Fl_Align a)
+Fl_Align tab_align() const
+```
+
+```cpp
+// Show icon next to text
+tabs->tab_align(FL_ALIGN_IMAGE_NEXT_TO_TEXT);
+
+// Center text (default)
+tabs->tab_align(FL_ALIGN_CENTER);
+```
+
+## Tab Colors
+
+### Individual Tab Colors
+
+Set each child group's `color()` and `selection_color()`:
+
+```cpp
+Fl_Group *tab1 = new Fl_Group(20, 35, 460, 245, "Red");
+tab1->color(FL_RED);           // Panel background
+tab1->selection_color(FL_RED); // Tab color
+
+Fl_Group *tab2 = new Fl_Group(20, 35, 460, 245, "Blue");
+tab2->color(FL_BLUE);
+tab2->selection_color(FL_BLUE);
+```
+
+### Highlighting Selected Tab
+
+Set Fl_Tabs selection_color to highlight active tab:
+
+```cpp
+tabs->selection_color(FL_DARK3);  // Darker selected tab
+```
+
+### Uniform Appearance
+
+Update Fl_Tabs selection_color in callback:
+
+```cpp
+void tab_cb(Fl_Widget *w, void*) {
+  Fl_Tabs *tabs = (Fl_Tabs*)w;
+  // Match tabs color to active group color
+  tabs->selection_color(tabs->value()->color());
+}
+
+int main() {
+  Fl_Tabs *tabs = new Fl_Tabs(10, 10, 480, 280);
+  tabs->callback(tab_cb);
+  
+  tabs->begin();
+  Fl_Group *tab1 = new Fl_Group(20, 35, 460, 245, "One");
+  tab1->color(9);
+  tab1->selection_color(9);
+  tab1->end();
+  
+  Fl_Group *tab2 = new Fl_Group(20, 35, 460, 245, "Two");
+  tab2->color(10);
+  tab2->selection_color(10);
+  tab2->end();
+  tabs->end();
+  
+  // Initialize to first tab's color
+  tabs->selection_color(tabs->value()->color());
+  
+  // ...
+}
+```
+
+## Selecting Tabs
+
+### Get Current Tab
+
+```cpp
+Fl_Widget *value()
+```
+
+```cpp
+Fl_Widget *current = tabs->value();
+if (current) {
+  printf("Current tab: %s\n", current->label());
+}
+```
+
+### Set Current Tab
+
+```cpp
+int value(Fl_Widget *group)
+```
+
+Returns 1 if changed, 0 if already current:
+
+```cpp
+Fl_Group *my_tab = /* ... */;
+if (tabs->value(my_tab)) {
+  printf("Switched to %s\n", my_tab->label());
+}
+```
+
+### Push State
+
+Get the tab user is clicking on:
+
+```cpp
+Fl_Widget *push() const
+int push(Fl_Widget *group)
+```
+
+```cpp
+Fl_Widget *clicking = tabs->push();
+if (clicking) {
+  printf("User clicking on: %s\n", clicking->label());
+}
+```
+
+<Note>
+  `push()` returns non-NULL only while mouse button is down on a tab. Returns NULL after release or if dragged away.
+</Note>
+
+## Closeable Tabs
+
+Enable close buttons on tabs:
+
+<Steps>
+  <Step title="Set FL_WHEN_CLOSED flag">
+    ```cpp
+    Fl_Group *tab = new Fl_Group(20, 35, 460, 245, "Closeable");
+    tab->when(FL_WHEN_CLOSED);
+    tab->callback(tab_close_cb);
+    ```
+  </Step>
+  
+  <Step title="Handle close callback">
+    ```cpp
+    void tab_close_cb(Fl_Widget *w, void *data) {
+      if (Fl::callback_reason() == FL_REASON_CLOSED) {
+        // User clicked close button
+        Fl_Tabs *tabs = (Fl_Tabs*)w->parent();
+        tabs->remove(w);  // Remove from tabs
+        delete w;         // Delete the group
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+**Close button:**
+- Displays "X" to left of tab label
+- Only shown when tab is fully expanded (not compressed)
+- Calls callback with `FL_REASON_CLOSED`
+
+## Overflow Handling
+
+When tabs don't fit, use one of four modes:
+
+```cpp
+enum {
+  OVERFLOW_COMPRESS,  // Compress tabs (default)
+  OVERFLOW_CLIP,      // Clip tabs that don't fit
+  OVERFLOW_PULLDOWN,  // Pulldown menu for hidden tabs
+  OVERFLOW_DRAG       // Drag tab bar horizontally
+};
+
+void handle_overflow(int mode)
+```
+
+<Tabs>
+  <Tab title="COMPRESS">
+    ```cpp
+    tabs->handle_overflow(Fl_Tabs::OVERFLOW_COMPRESS);
+    ```
+    Proportionally compress tabs to left/right of selected tab.
+  </Tab>
+  
+  <Tab title="CLIP">
+    ```cpp
+    tabs->handle_overflow(Fl_Tabs::OVERFLOW_CLIP);
+    ```
+    Clip tabs that extend beyond right edge (some unreachable).
+  </Tab>
+  
+  <Tab title="PULLDOWN">
+    ```cpp
+    tabs->handle_overflow(Fl_Tabs::OVERFLOW_PULLDOWN);
+    ```
+    Show pulldown menu button at right with all tabs.
+  </Tab>
+  
+  <Tab title="DRAG">
+    ```cpp
+    tabs->handle_overflow(Fl_Tabs::OVERFLOW_DRAG);
+    ```
+    Maintain original sizes, allow horizontal dragging with mouse/wheel.
+  </Tab>
+</Tabs>
+
+## Resize Behavior
+
+To keep tab height constant during resize:
+
+```cpp
+tabs->resizable(tab_group);  // Set one of the tab groups as resizable
+```
+
+```cpp
+Fl_Tabs *tabs = new Fl_Tabs(10, 10, 480, 280);
+
+tabs->begin();
+Fl_Group *tab1 = new Fl_Group(20, 35, 460, 245, "First");
+// ... add widgets ...
+tab1->end();
+
+Fl_Group *tab2 = new Fl_Group(20, 35, 460, 245, "Second");
+tab2->end();
+tabs->end();
+
+tabs->resizable(tab1);  // Keep tab height constant
+```
+
+## Callbacks
+
+Control when callback is invoked:
+
+```cpp
+tabs->when(FL_WHEN_CHANGED);  // Tab changed (default)
+tabs->when(FL_WHEN_NOT_CHANGED);  // Tab reselected
+tabs->when(FL_WHEN_RELEASE);  // On mouse release
+tabs->when(FL_WHEN_NEVER);    // No callbacks
+```
+
+**In callback:**
+- `changed()` - True if tab changed
+- `Fl::callback_reason()` - Returns `FL_REASON_SELECTED` or `FL_REASON_RESELECTED`
+
+```cpp
+void tabs_cb(Fl_Widget *w, void*) {
+  Fl_Tabs *tabs = (Fl_Tabs*)w;
+  
+  if (tabs->changed()) {
+    printf("Switched to: %s\n", tabs->value()->label());
+  } else {
+    printf("Reselected: %s\n", tabs->value()->label());
+  }
+  
+  if (Fl::callback_reason() == FL_REASON_SELECTED) {
+    // New tab selected
+  } else if (Fl::callback_reason() == FL_REASON_RESELECTED) {
+    // Same tab clicked again
+  }
+}
+```
+
+## Complete Example
+
+From `examples/tabs-simple.cxx`:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Tabs.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char *argv[]) {
+  Fl::scheme("gtk+");
+  Fl_Window *win = new Fl_Window(500, 200, "Tabs Example");
+  
+  // Create the tab widget
+  Fl_Tabs *tabs = new Fl_Tabs(10, 10, 480, 180);
+  
+  // Tab 1: "Aaa"
+  Fl_Group *aaa = new Fl_Group(10, 35, 480, 155, "Aaa");
+  aaa->begin();
+    Fl_Button *b1 = new Fl_Button(50, 60, 90, 25, "Button A1");
+    b1->color(88 + 1);
+    Fl_Button *b2 = new Fl_Button(50, 90, 90, 25, "Button A2");
+    b2->color(88 + 2);
+    Fl_Button *b3 = new Fl_Button(50, 120, 90, 25, "Button A3");
+    b3->color(88 + 3);
+  aaa->end();
+  
+  // Tab 2: "Bbb"
+  Fl_Group *bbb = new Fl_Group(10, 35, 480, 155, "Bbb");
+  bbb->begin();
+    Fl_Button *b4 = new Fl_Button(50, 60, 90, 25, "Button B1");
+    b4->color(88 + 1);
+    Fl_Button *b5 = new Fl_Button(150, 60, 90, 25, "Button B2");
+    b5->color(88 + 3);
+    Fl_Button *b6 = new Fl_Button(250, 60, 90, 25, "Button B3");
+    b6->color(88 + 5);
+    Fl_Button *b7 = new Fl_Button(50, 90, 90, 25, "Button B4");
+    b7->color(88 + 2);
+    Fl_Button *b8 = new Fl_Button(150, 90, 90, 25, "Button B5");
+    b8->color(88 + 4);
+    Fl_Button *b9 = new Fl_Button(250, 90, 90, 25, "Button B6");
+    b9->color(88 + 6);
+  bbb->end();
+  
+  tabs->end();
+  win->end();
+  win->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Patterns
+
+### Settings Dialog
+
+```cpp
+Fl_Tabs *settings = new Fl_Tabs(10, 10, 500, 400);
+
+settings->begin();
+
+// General settings tab
+Fl_Group *general = new Fl_Group(20, 40, 480, 360, "&General");
+general->begin();
+  new Fl_Check_Button(30, 60, 200, 25, "Enable notifications");
+  new Fl_Check_Button(30, 90, 200, 25, "Auto-save");
+general->end();
+
+// Appearance tab
+Fl_Group *appearance = new Fl_Group(20, 40, 480, 360, "&Appearance");
+appearance->begin();
+  new Fl_Choice(150, 60, 200, 25, "Theme:");
+  new Fl_Value_Slider(150, 95, 200, 25, "Font Size:");
+appearance->end();
+
+// Advanced tab
+Fl_Group *advanced = new Fl_Group(20, 40, 480, 360, "Ad&vanced");
+advanced->begin();
+  new Fl_Input(150, 60, 200, 25, "Config Path:");
+advanced->end();
+
+settings->end();
+```
+
+### Document Tabs with Close
+
+```cpp
+void doc_close_cb(Fl_Widget *w, void*) {
+  if (Fl::callback_reason() == FL_REASON_CLOSED) {
+    Fl_Tabs *tabs = (Fl_Tabs*)w->parent();
+    tabs->remove(w);
+    delete w;
+  }
+}
+
+Fl_Tabs *docs = new Fl_Tabs(0, 0, 600, 400);
+
+docs->begin();
+for (int i = 1; i <= 3; i++) {
+  char label[32];
+  snprintf(label, 32, "Document %d", i);
+  
+  Fl_Group *doc = new Fl_Group(10, 30, 580, 360, label);
+  doc->when(FL_WHEN_CLOSED);
+  doc->callback(doc_close_cb);
+  doc->begin();
+    // ... document content ...
+  doc->end();
+}
+docs->end();
+```
+
+### Nested Tabs
+
+```cpp
+Fl_Tabs *outer = new Fl_Tabs(10, 10, 600, 400);
+
+outer->begin();
+
+Fl_Group *main_tab = new Fl_Group(20, 40, 580, 360, "Main");
+main_tab->begin();
+  // ... content ...
+main_tab->end();
+
+Fl_Group *options_tab = new Fl_Group(20, 40, 580, 360, "Options");
+options_tab->begin();
+  
+  // Nested tabs
+  Fl_Tabs *inner = new Fl_Tabs(30, 50, 560, 340);
+  inner->begin();
+    Fl_Group *opt1 = new Fl_Group(40, 80, 540, 300, "Basic");
+    opt1->end();
+    Fl_Group *opt2 = new Fl_Group(40, 80, 540, 300, "Advanced");
+    opt2->end();
+  inner->end();
+  
+options_tab->end();
+
+outer->end();
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Leave Space for Tabs" icon="ruler">
+    Keep 5+ pixels clear at top/bottom:
+    ```cpp
+    Fl_Group *tab = new Fl_Group(20, 40, 460, 250, "Tab");
+    // 40px from top leaves space for tabs
+    ```
+  </Card>
+
+  <Card title="Set Resizable" icon="expand">
+    Keep tab height constant:
+    ```cpp
+    tabs->resizable(first_tab);
+    ```
+  </Card>
+
+  <Card title="Use Shortcuts" icon="keyboard">
+    Add '&' for keyboard access:
+    ```cpp
+    new Fl_Group(..., "&File");  // Alt+F
+    ```
+  </Card>
+
+  <Card title="Match Colors" icon="palette">
+    Sync tab and panel colors in callback:
+    ```cpp
+    tabs->selection_color(tabs->value()->color());
+    ```
+  </Card>
+</CardGroup>
+
+## Reference
+
+### Header File
+
+```cpp
+#include <FL/Fl_Tabs.H>
+```
+
+### Key Methods
+
+| Method | Description |
+|--------|-------------|
+| `value()` | Get current tab group |
+| `value(Fl_Widget*)` | Set current tab group |
+| `push()` | Get tab being clicked |
+| `tab_align(Fl_Align)` | Set tab label alignment |
+| `handle_overflow(int)` | Set overflow mode |
+| `which(int x, int y)` | Find tab at position |
+| `client_area(...)` | Get content area bounds |
+
+### Overflow Modes
+
+```cpp
+enum {
+  OVERFLOW_COMPRESS,  // Compress tabs to fit
+  OVERFLOW_CLIP,      // Clip overflowing tabs
+  OVERFLOW_PULLDOWN,  // Pulldown menu for all tabs
+  OVERFLOW_DRAG       // Drag tab bar horizontally
+};
+```
+
+## See Also
+
+- [Fl_Group](/layout/group) - Base container widget
+- [Callbacks](/concepts/callbacks) - Event handling
+- [FL_WHEN_* Flags](/reference/enums#when-flags) - Callback timing

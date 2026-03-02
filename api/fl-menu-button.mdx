@@ -1,0 +1,499 @@
+---
+title: Fl_Menu_Button
+description: Button widget that displays a popup menu when clicked
+---
+
+# Fl_Menu_Button
+
+The `Fl_Menu_Button` widget is a button that pops up a menu (or hierarchy of menus) when pushed. The menu is defined by an array of `Fl_Menu_Item` objects.
+
+## Header
+
+```cpp
+#include <FL/Fl_Menu_Button.H>
+```
+
+## Inheritance
+
+```
+Fl_Widget → Fl_Menu_ → Fl_Menu_Button
+```
+
+## Constructor
+
+### Fl_Menu_Button()
+
+Creates a new menu button widget.
+
+```cpp
+Fl_Menu_Button(int X, int Y, int W, int H, const char *label = 0);
+```
+
+<ParamField path="X" type="int">
+  X coordinate of the widget
+</ParamField>
+
+<ParamField path="Y" type="int">
+  Y coordinate of the widget
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget
+</ParamField>
+
+<ParamField path="label" type="const char*">
+  Optional label for the button
+</ParamField>
+
+**Example:**
+```cpp
+Fl_Menu_Button *menu_btn = new Fl_Menu_Button(100, 100, 120, 30, "Options");
+```
+
+## Overview
+
+The `Fl_Menu_Button` can operate in two modes:
+- **Normal menu button**: Any mouse button pops up the menu, aligned below the button
+- **Popup menu**: Only specific mouse buttons trigger the menu (configured via `type()`)
+
+The menu will also pop up in response to shortcuts indicated by putting a `&` character in the label.
+
+## Popup Button Types
+
+The `type()` value determines which mouse buttons trigger the menu:
+
+### enum popup_buttons
+
+```cpp
+enum popup_buttons {
+  POPUP1 = 1,    // Pops up with mouse button 1 (left)
+  POPUP2,        // Pops up with mouse button 2 (middle)
+  POPUP12,       // Pops up with mouse button 1 or 2
+  POPUP3,        // Pops up with mouse button 3 (right)
+  POPUP13,       // Pops up with mouse button 1 or 3
+  POPUP23,       // Pops up with mouse button 2 or 3
+  POPUP123       // Pops up with any mouse button
+};
+```
+
+<Note>
+  `POPUP3` is the most commonly used type for right-click context menus.
+</Note>
+
+**Example:**
+```cpp
+Fl_Menu_Button *menu = new Fl_Menu_Button(10, 10, 100, 30);
+menu->type(Fl_Menu_Button::POPUP3);  // Right-click only
+```
+
+## Methods
+
+### popup()
+
+Displays the popup menu and returns the selected item.
+
+```cpp
+const Fl_Menu_Item* popup();
+```
+
+**Returns:** Pointer to the selected `Fl_Menu_Item`, or `NULL` if no selection was made.
+
+**Example:**
+```cpp
+const Fl_Menu_Item *item = menu_btn->popup();
+if (item) {
+  printf("Selected: %s\n", item->label());
+}
+```
+
+### handle()
+
+Handles events for the widget.
+
+```cpp
+int handle(int event) override;
+```
+
+<ParamField path="event" type="int">
+  FLTK event type (e.g., `FL_PUSH`, `FL_RELEASE`)
+</ParamField>
+
+**Returns:** Non-zero if the event was handled.
+
+## Adding Menu Items
+
+### Using add()
+
+Dynamically add menu items using pathname syntax:
+
+```cpp
+Fl_Menu_Button *menu = new Fl_Menu_Button(100, 100, 120, 30, "Menu");
+menu->add("File/New",   FL_CTRL+'n', new_cb);
+menu->add("File/Open",  FL_CTRL+'o', open_cb);
+menu->add("File/Save",  FL_CTRL+'s', save_cb, 0, FL_MENU_DIVIDER);
+menu->add("File/Quit",  FL_CTRL+'q', quit_cb);
+menu->add("Edit/Copy",  FL_CTRL+'c', copy_cb);
+menu->add("Edit/Paste", FL_CTRL+'v', paste_cb);
+```
+
+### Using Static Array
+
+Define menu items as a static array:
+
+```cpp
+static Fl_Menu_Item items[] = {
+  {"&New",   FL_CTRL+'n', new_cb},
+  {"&Open",  FL_CTRL+'o', open_cb},
+  {"&Save",  FL_CTRL+'s', save_cb, 0, FL_MENU_DIVIDER},
+  {"&Quit",  FL_CTRL+'q', quit_cb},
+  {0}
+};
+
+Fl_Menu_Button *menu = new Fl_Menu_Button(100, 100, 120, 30, "File");
+menu->copy(items);
+```
+
+## Callbacks
+
+When a user clicks a menu item:
+
+1. `value()` is set to that item
+2. If the item has a callback, it's invoked with:
+   - The `Fl_Menu_Button` as the first argument
+   - The item's `user_data()` as the second argument
+3. If the item doesn't have a callback, the `Fl_Menu_Button`'s callback is invoked instead
+
+### Example: Single Callback
+
+```cpp
+void menu_cb(Fl_Widget *w, void*) {
+  Fl_Menu_Button *menu = (Fl_Menu_Button*)w;
+  const Fl_Menu_Item *item = menu->mvalue();
+  
+  if (item) {
+    printf("Selected: %s\n", item->label());
+  }
+}
+
+Fl_Menu_Button *menu = new Fl_Menu_Button(100, 100, 120, 30);
+menu->callback(menu_cb);
+menu->add("Option 1");
+menu->add("Option 2");
+menu->add("Option 3");
+```
+
+### Example: Individual Callbacks
+
+```cpp
+void opt1_cb(Fl_Widget*, void*) { printf("Option 1\n"); }
+void opt2_cb(Fl_Widget*, void*) { printf("Option 2\n"); }
+void opt3_cb(Fl_Widget*, void*) { printf("Option 3\n"); }
+
+menu->add("Option 1", 0, opt1_cb);
+menu->add("Option 2", 0, opt2_cb);
+menu->add("Option 3", 0, opt3_cb);
+```
+
+## Context Menus (Right-Click)
+
+Create right-click context menus by setting the type to `POPUP3`:
+
+```cpp
+class MyWidget : public Fl_Widget {
+  Fl_Menu_Button *context_menu;
+  
+public:
+  MyWidget(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H) {
+    context_menu = new Fl_Menu_Button(0, 0, 0, 0);
+    context_menu->type(Fl_Menu_Button::POPUP3);
+    context_menu->add("Cut",   FL_CTRL+'x', cut_cb);
+    context_menu->add("Copy",  FL_CTRL+'c', copy_cb);
+    context_menu->add("Paste", FL_CTRL+'v', paste_cb);
+  }
+  
+  int handle(int event) override {
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE) {
+      const Fl_Menu_Item *item = context_menu->popup();
+      if (item && item->callback()) {
+        item->do_callback((Fl_Widget*)this);
+      }
+      return 1;
+    }
+    return Fl_Widget::handle(event);
+  }
+};
+```
+
+## Dynamic Context Menus
+
+Create menus on-the-fly for context-sensitive operations:
+
+From `examples/table-with-right-click-menu.cxx`:
+
+```cpp
+void PostContextMenu() {
+  int row = callback_row();
+  int col = callback_col();
+  
+  char label[80];
+  sprintf(label, "Cell %c%d", 'A' + col, row);
+  
+  // Create menu at mouse position
+  Fl_Menu_Button menu(Fl::event_x(), Fl::event_y(), 80, 1);
+  menu.add(label, 0, 0, 0, FL_MENU_DIVIDER | FL_MENU_INACTIVE);
+  menu.add("Cut");
+  menu.add("Copy");
+  menu.add("Paste");
+  
+  const Fl_Menu_Item *item = menu.popup();
+  if (item) {
+    printf("You chose '%s' for %s\n", item->label(), label);
+  }
+}
+```
+
+## Events
+
+### FL_BEFORE_MENU Event
+
+FLTK triggers an `FL_BEFORE_MENU` event right before displaying the menu. This provides an opportunity to update menu item states:
+
+```cpp
+class MyMenuButton : public Fl_Menu_Button {
+public:
+  MyMenuButton(int X, int Y, int W, int H) : Fl_Menu_Button(X, Y, W, H) {}
+  
+  int handle(int event) override {
+    if (event == FL_BEFORE_MENU) {
+      // Update menu states before showing
+      Fl_Menu_Item *paste = (Fl_Menu_Item*)find_item("Paste");
+      if (clipboard_has_data()) {
+        paste->activate();
+      } else {
+        paste->deactivate();
+      }
+    }
+    return Fl_Menu_Button::handle(event);
+  }
+};
+```
+
+## Menu Item Types
+
+### Checkboxes
+
+```cpp
+menu->add("Options/Auto Save", 0, 0, 0, FL_MENU_TOGGLE);
+menu->add("Options/Verbose",   0, 0, 0, FL_MENU_TOGGLE | FL_MENU_VALUE);
+```
+
+### Radio Buttons
+
+```cpp
+menu->add("Size/Small",  0, 0, 0, FL_MENU_RADIO);
+menu->add("Size/Medium", 0, 0, 0, FL_MENU_RADIO | FL_MENU_VALUE);
+menu->add("Size/Large",  0, 0, 0, FL_MENU_RADIO);
+```
+
+### Submenus
+
+```cpp
+menu->add("File/Recent/Document1.txt");
+menu->add("File/Recent/Document2.txt");
+menu->add("File/Recent/Document3.txt");
+```
+
+### Dividers
+
+```cpp
+menu->add("Copy",  FL_CTRL+'c', copy_cb, 0, FL_MENU_DIVIDER);
+menu->add("Paste", FL_CTRL+'v', paste_cb);
+```
+
+### Inactive Items
+
+```cpp
+menu->add("Paste", FL_CTRL+'v', paste_cb, 0, FL_MENU_INACTIVE);
+```
+
+### Invisible Items
+
+```cpp
+menu->add("Debug Mode", 0, debug_cb, 0, FL_MENU_INVISIBLE);
+// Item is hidden but shortcut still works
+```
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Box.H>
+#include <stdio.h>
+
+void menu_callback(Fl_Widget *w, void*) {
+  Fl_Menu_Button *menu = (Fl_Menu_Button*)w;
+  const Fl_Menu_Item *item = menu->mvalue();
+  
+  if (item) {
+    printf("Selected: %s\n", item->label());
+    
+    if (item->flags & FL_MENU_TOGGLE) {
+      printf("Toggle value: %s\n", item->value() ? "on" : "off");
+    }
+  }
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300, "Menu Button Demo");
+  
+  // Normal menu button
+  Fl_Menu_Button *menu1 = new Fl_Menu_Button(50, 50, 120, 30, "Menu");
+  menu1->callback(menu_callback);
+  menu1->add("File/New",   FL_CTRL+'n');
+  menu1->add("File/Open",  FL_CTRL+'o');
+  menu1->add("File/Save",  FL_CTRL+'s', 0, 0, FL_MENU_DIVIDER);
+  menu1->add("File/Quit",  FL_CTRL+'q');
+  menu1->add("Edit/Copy",  FL_CTRL+'c');
+  menu1->add("Edit/Paste", FL_CTRL+'v');
+  
+  // Right-click popup menu button
+  Fl_Menu_Button *menu2 = new Fl_Menu_Button(50, 100, 120, 30, "Right-Click Me");
+  menu2->type(Fl_Menu_Button::POPUP3);
+  menu2->callback(menu_callback);
+  menu2->add("Cut");
+  menu2->add("Copy");
+  menu2->add("Paste", 0, 0, 0, FL_MENU_DIVIDER);
+  menu2->add("Select All");
+  
+  // Menu with checkboxes and radio buttons
+  Fl_Menu_Button *menu3 = new Fl_Menu_Button(50, 150, 120, 30, "Options");
+  menu3->callback(menu_callback);
+  menu3->add("View/Show Toolbar",  0, 0, 0, FL_MENU_TOGGLE | FL_MENU_VALUE);
+  menu3->add("View/Show Statusbar", 0, 0, 0, FL_MENU_TOGGLE);
+  menu3->add("View/Zoom/50%",  0, 0, 0, FL_MENU_RADIO);
+  menu3->add("View/Zoom/100%", 0, 0, 0, FL_MENU_RADIO | FL_MENU_VALUE);
+  menu3->add("View/Zoom/200%", 0, 0, 0, FL_MENU_RADIO);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Advanced Usage
+
+### Finding and Modifying Items
+
+```cpp
+// Find an item
+Fl_Menu_Item *item = (Fl_Menu_Item*)menu->find_item("Edit/Paste");
+
+if (item) {
+  // Enable/disable
+  item->activate();
+  item->deactivate();
+  
+  // Show/hide
+  item->show();
+  item->hide();
+  
+  // Check/uncheck
+  item->set();
+  item->clear();
+  
+  // Change label
+  item->label("Paste Special");
+  
+  // Change shortcut
+  item->shortcut(FL_CTRL+FL_SHIFT+'v');
+}
+```
+
+### Getting Item Information
+
+```cpp
+const Fl_Menu_Item *item = menu->mvalue();
+
+if (item) {
+  const char *label = item->label();
+  int shortcut = item->shortcut();
+  int is_active = item->active();
+  int is_visible = item->visible();
+  int is_checked = item->value();
+  int is_checkbox = item->checkbox();
+  int is_radio = item->radio();
+  int is_submenu = item->submenu();
+}
+```
+
+### Removing Items
+
+```cpp
+// Remove by index
+int index = menu->find_index("File/Save");
+if (index >= 0) {
+  menu->remove(index);
+}
+
+// Clear entire menu
+menu->clear();
+```
+
+## Appearance Customization
+
+```cpp
+// Button appearance
+menu->box(FL_FLAT_BOX);
+menu->color(FL_LIGHT2);
+menu->labelcolor(FL_BLACK);
+menu->labelfont(FL_HELVETICA_BOLD);
+menu->labelsize(14);
+
+// Menu popup appearance
+menu->textfont(FL_HELVETICA);
+menu->textsize(12);
+menu->textcolor(FL_BLACK);
+menu->menu_box(FL_BORDER_BOX);
+```
+
+## Common Patterns
+
+### File Menu
+
+```cpp
+menu->add("File/New",      FL_CTRL+'n', new_cb);
+menu->add("File/Open",     FL_CTRL+'o', open_cb);
+menu->add("File/Save",     FL_CTRL+'s', save_cb);
+menu->add("File/Save As",  FL_CTRL+FL_SHIFT+'s', save_as_cb, 0, FL_MENU_DIVIDER);
+menu->add("File/Exit",     FL_ALT+FL_F+4, exit_cb);
+```
+
+### Edit Menu
+
+```cpp
+menu->add("Edit/Undo",  FL_CTRL+'z', undo_cb);
+menu->add("Edit/Redo",  FL_CTRL+'y', redo_cb, 0, FL_MENU_DIVIDER);
+menu->add("Edit/Cut",   FL_CTRL+'x', cut_cb);
+menu->add("Edit/Copy",  FL_CTRL+'c', copy_cb);
+menu->add("Edit/Paste", FL_CTRL+'v', paste_cb);
+```
+
+### Settings Menu with Checkboxes
+
+```cpp
+menu->add("Settings/Auto Save",        0, 0, 0, FL_MENU_TOGGLE);
+menu->add("Settings/Show Line Numbers", 0, 0, 0, FL_MENU_TOGGLE | FL_MENU_VALUE);
+menu->add("Settings/Word Wrap",        0, 0, 0, FL_MENU_TOGGLE);
+```
+
+## See Also
+
+- [Fl_Menu_Item](/api/fl-menu-item) - Menu item structure and flags
+- [Fl_Menu_Bar](/api/fl-menu-bar) - Menu bar widget
+- [Fl_Choice](/api/fl-choice-menu) - Dropdown choice widget

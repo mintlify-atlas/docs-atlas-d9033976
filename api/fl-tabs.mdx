@@ -1,0 +1,534 @@
+---
+title: Fl_Tabs
+description: API reference for Fl_Tabs tabbed interface container
+---
+
+## Overview
+
+Fl_Tabs is a container widget that displays a set of tabs, with each tab representing a different child group. Users can select tabs by clicking, and the corresponding child widget becomes visible while others are hidden.
+
+**Header:** `<FL/Fl_Tabs.H>`
+
+**Inherits:** [Fl_Group](/api/fl-group)
+
+### Key Features
+
+- Multiple tabbed panels
+- Click or keyboard navigation
+- Customizable tab appearance
+- Label shortcuts with '&' prefix
+- Close buttons on tabs
+- Overflow handling (compress, clip, pulldown, drag)
+- Configurable tab alignment
+- Selection and reselection callbacks
+
+### Use Cases
+
+- Multi-page dialogs and preferences
+- Organizing controls into categories
+- Document viewers with multiple tabs
+- Application settings panels
+- Wizard-style interfaces
+- Property sheets
+
+## Layout Algorithm
+
+Fl_Tabs manages visibility of child groups:
+
+1. Each child group represents one tab
+2. Child group's `label()` becomes the tab label
+3. Child group's `color()` determines panel background
+4. Child group's `selection_color()` colors the tab
+5. Clicking a tab calls `show()` on that child, `hide()` on others
+6. Tab height and position determined by bounding box of children
+7. Tabs appear at top or bottom (whichever has more space)
+
+### Tab Appearance
+
+- Tab labels use child group's label font and style
+- '&' in labels creates underlined keyboard shortcuts
+- '&&' displays a single '&' (no shortcut)
+- Tab color from child's `selection_color()`
+- Panel color from child's `color()`
+
+## Constructor
+
+```cpp
+Fl_Tabs(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates an Fl_Tabs container.
+
+<ParamField path="X" type="int">
+X position of the tabs widget
+</ParamField>
+
+<ParamField path="Y" type="int">
+Y position of the tabs widget
+</ParamField>
+
+<ParamField path="W" type="int">
+Width of the tabs widget
+</ParamField>
+
+<ParamField path="H" type="int">
+Height of the tabs widget
+</ParamField>
+
+<ParamField path="L" type="const char*">
+Optional label (default: NULL)
+</ParamField>
+
+## Tab Selection
+
+### value()
+
+```cpp
+Fl_Widget *value()
+int value(Fl_Widget *newvalue)
+```
+
+Gets or sets the currently visible tab.
+
+<ParamField path="newvalue" type="Fl_Widget*">
+Child group to make visible
+</ParamField>
+
+**Returns (getter):** Pointer to currently visible child group  
+**Returns (setter):** 1 if successful, 0 if widget not found
+
+```cpp
+// Get current tab
+Fl_Widget *current = tabs->value();
+
+// Switch to specific tab
+tabs->value(my_tab_group);
+```
+
+### push()
+
+```cpp
+Fl_Widget *push() const
+int push(Fl_Widget *newpush)
+```
+
+Gets or sets the tab the user is currently pressing.
+
+**Returns (getter):** Tab group user is pressing, or NULL if none
+
+The push value is the tab group while the user has the mouse button down on a tab, and until they release. Returns NULL after release or if dragged off the tab.
+
+### which()
+
+```cpp
+Fl_Widget *which(int event_x, int event_y)
+```
+
+Returns the tab group at the specified screen coordinates.
+
+<ParamField path="event_x" type="int">
+X coordinate in screen pixels
+</ParamField>
+
+<ParamField path="event_y" type="int">
+Y coordinate in screen pixels
+</ParamField>
+
+**Returns:** Child group at coordinates, or NULL
+
+## Tab Appearance
+
+### Default Appearance
+
+By default, tabs use the child group's colors:
+
+```cpp
+Fl_Tabs *tabs = new Fl_Tabs(10, 10, 400, 300);
+
+Fl_Group *tab1 = new Fl_Group(20, 35, 380, 265, "First");
+tab1->end();
+
+// Tab appearance from group colors (defaults)
+```
+
+### Highlighting Selected Tab
+
+Highlight the selected tab by setting Fl_Tabs selection_color:
+
+```cpp
+tabs->selection_color(FL_DARK3);
+```
+
+### Uniform Tab Colors
+
+For uniform appearance, set colors on each child group and update Fl_Tabs in callback:
+
+```cpp
+void tab_callback(Fl_Widget *w, void*) {
+  Fl_Tabs *tabs = (Fl_Tabs*)w;
+  // Match tab color to selected group
+  tabs->selection_color(tabs->value()->color());
+}
+
+int main() {
+  Fl_Tabs *tabs = new Fl_Tabs(10, 10, 400, 300);
+  tabs->callback(tab_callback);
+  
+  Fl_Group *grp1 = new Fl_Group(20, 35, 380, 265, "Red");
+  grp1->color(FL_RED);
+  grp1->selection_color(FL_RED);
+  grp1->end();
+  
+  Fl_Group *grp2 = new Fl_Group(20, 35, 380, 265, "Green");
+  grp2->color(FL_GREEN);
+  grp2->selection_color(FL_GREEN);
+  grp2->end();
+  
+  tabs->end();
+  // Initialize with first tab's color
+  tabs->selection_color(tabs->value()->color());
+  // ...
+}
+```
+
+### Tab Label Alignment
+
+```cpp
+void tab_align(Fl_Align a)
+Fl_Align tab_align() const
+```
+
+Sets or gets tab label alignment.
+
+<ParamField path="a" type="Fl_Align">
+Alignment flags (default: FL_ALIGN_CENTER)
+</ParamField>
+
+**Common use:** Show icons next to text:
+
+```cpp
+tabs->tab_align(FL_ALIGN_IMAGE_NEXT_TO_TEXT);
+```
+
+## Client Area
+
+### client_area()
+
+```cpp
+void client_area(int &rx, int &ry, int &rw, int &rh, int tabh=0)
+```
+
+Calculates the area available for child widget content.
+
+<ParamField path="rx" type="int&">
+Returns X coordinate of client area
+</ParamField>
+
+<ParamField path="ry" type="int&">
+Returns Y coordinate of client area
+</ParamField>
+
+<ParamField path="rw" type="int&">
+Returns width of client area
+</ParamField>
+
+<ParamField path="rh" type="int&">
+Returns height of client area
+</ParamField>
+
+<ParamField path="tabh" type="int">
+Tab height (0 = auto-calculate)
+</ParamField>
+
+## Close Buttons
+
+Tabs can display close buttons when the child group has the `FL_WHEN_CLOSED` flag set:
+
+```cpp
+Fl_Group *tab = new Fl_Group(20, 35, 380, 265, "Closable");
+tab->when(FL_WHEN_CLOSED);  // Show close button
+tab->callback(close_callback);
+tab->end();
+
+// Callback receives FL_REASON_CLOSED
+void close_callback(Fl_Widget *w, void*) {
+  if (Fl::callback_reason() == FL_REASON_CLOSED) {
+    // Remove tab from parent Fl_Tabs
+    Fl_Tabs *tabs = (Fl_Tabs*)w->parent();
+    tabs->remove(w);
+    delete w;
+  }
+}
+```
+
+<Note>
+Compressed tabs don't display close buttons until fully expanded.
+</Note>
+
+## Overflow Handling
+
+### Overflow Modes
+
+```cpp
+enum {
+  OVERFLOW_COMPRESS = 0,  // Compress tabs (default)
+  OVERFLOW_CLIP,          // Clip tabs at edge
+  OVERFLOW_PULLDOWN,      // Show pulldown menu
+  OVERFLOW_DRAG           // Drag to scroll tabs
+}
+```
+
+### handle_overflow()
+
+```cpp
+void handle_overflow(int ov)
+```
+
+Sets the overflow handling mode.
+
+<ParamField path="ov" type="int">
+Overflow mode constant
+</ParamField>
+
+```cpp
+// Compress tabs to fit
+tabs->handle_overflow(Fl_Tabs::OVERFLOW_COMPRESS);
+
+// Show pulldown menu for overflow
+tabs->handle_overflow(Fl_Tabs::OVERFLOW_PULLDOWN);
+
+// Allow horizontal dragging
+tabs->handle_overflow(Fl_Tabs::OVERFLOW_DRAG);
+```
+
+## Callbacks and Events
+
+### when() Flags
+
+Since FLTK 1.3.3, Fl_Tabs supports:
+
+```cpp
+FL_WHEN_NEVER        // Never invoke callback
+FL_WHEN_CHANGED      // Invoke when tab changes
+FL_WHEN_NOT_CHANGED  // Invoke when tab stays same (reselect)
+FL_WHEN_RELEASE      // Invoke on mouse release
+```
+
+**Default:** `FL_WHEN_RELEASE`
+
+**Behavior:**
+- If only `FL_WHEN_RELEASE` is set, acts like `FL_WHEN_RELEASE | FL_WHEN_CHANGED`
+- Use `changed()` to test if tab actually changed
+- `Fl::callback_reason()` returns `FL_REASON_SELECTED` or `FL_REASON_RESELECTED`
+
+```cpp
+void tab_callback(Fl_Widget *w, void*) {
+  Fl_Tabs *tabs = (Fl_Tabs*)w;
+  
+  if (tabs->changed()) {
+    printf("Tab changed to: %s\n", tabs->value()->label());
+  } else {
+    printf("Same tab clicked again\n");
+  }
+  
+  if (Fl::callback_reason() == FL_REASON_RESELECTED) {
+    printf("User reselected current tab\n");
+  }
+}
+
+tabs->callback(tab_callback);
+tabs->when(FL_WHEN_CHANGED | FL_WHEN_NOT_CHANGED);
+```
+
+## Resize Behavior
+
+### Keeping Tab Height Constant
+
+By default, resizing Fl_Tabs scales tab height. To keep tab height constant, set resizable() to one of the child groups:
+
+```cpp
+Fl_Tabs *tabs = new Fl_Tabs(10, 10, 400, 300);
+
+Fl_Group *grp1 = new Fl_Group(20, 35, 380, 265, "First");
+// ... add widgets ...
+grp1->end();
+
+Fl_Group *grp2 = new Fl_Group(20, 35, 380, 265, "Second");
+// ... add widgets ...
+grp2->end();
+
+tabs->end();
+tabs->resizable(grp1);  // Keeps tab height constant
+```
+
+## Example: Simple Tabs
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Tabs.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char *argv[]) {
+  Fl_Window *win = new Fl_Window(500, 200, "Tabs Example");
+  
+  // Create tabs widget
+  Fl_Tabs *tabs = new Fl_Tabs(10, 10, 480, 180);
+  
+  // First tab
+  Fl_Group *tab1 = new Fl_Group(10, 35, 480, 155, "First");
+  Fl_Button *b1 = new Fl_Button(50, 60, 90, 25, "Button A1");
+  Fl_Button *b2 = new Fl_Button(50, 90, 90, 25, "Button A2");
+  Fl_Button *b3 = new Fl_Button(50, 120, 90, 25, "Button A3");
+  tab1->end();
+  
+  // Second tab
+  Fl_Group *tab2 = new Fl_Group(10, 35, 480, 155, "Second");
+  Fl_Button *b4 = new Fl_Button(50, 60, 90, 25, "Button B1");
+  Fl_Button *b5 = new Fl_Button(150, 60, 90, 25, "Button B2");
+  Fl_Button *b6 = new Fl_Button(250, 60, 90, 25, "Button B3");
+  tab2->end();
+  
+  tabs->end();
+  
+  win->end();
+  win->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Example: Tabs with Keyboard Shortcuts
+
+```cpp
+// Use '&' to create keyboard shortcuts
+Fl_Group *file_tab = new Fl_Group(10, 35, 480, 155, "&File");
+// Alt+F activates this tab
+file_tab->end();
+
+Fl_Group *edit_tab = new Fl_Group(10, 35, 480, 155, "&Edit");
+// Alt+E activates this tab
+edit_tab->end();
+
+// Display literal '&' with '&&'
+Fl_Group *about = new Fl_Group(10, 35, 480, 155, "Q&&A");
+// Displays as "Q&A", no shortcut
+about->end();
+```
+
+## Example: Dynamic Tab Management
+
+```cpp
+#include <FL/Fl_Tabs.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+
+void add_tab(Fl_Tabs *tabs) {
+  static int count = 0;
+  char label[20];
+  sprintf(label, "Tab %d", ++count);
+  
+  Fl_Group *grp = new Fl_Group(10, 35, 480, 155, label);
+  Fl_Button *btn = new Fl_Button(50, 60, 90, 25, "Content");
+  grp->end();
+  
+  tabs->value(grp);  // Switch to new tab
+  tabs->redraw();
+}
+
+void remove_tab(Fl_Tabs *tabs) {
+  Fl_Widget *current = tabs->value();
+  if (current && tabs->children() > 1) {
+    tabs->remove(current);
+    delete current;
+    tabs->value(tabs->child(0));  // Switch to first tab
+    tabs->redraw();
+  }
+}
+```
+
+## Example: Tabs Inside Fl_Scroll
+
+```cpp
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Pack.H>
+#include <FL/Fl_Tabs.H>
+
+// Scrollable list of collapsible panels
+Fl_Scroll *scroll = new Fl_Scroll(10, 10, 330, 380);
+Fl_Pack *pack = new Fl_Pack(10, 10, 310, 0);
+
+for (int i = 0; i < 20; i++) {
+  char label[20];
+  sprintf(label, "Panel %d", i);
+  
+  Fl_Tabs *tabs = new Fl_Tabs(0, 0, 310, 80);
+  Fl_Group *grp = new Fl_Group(0, 25, 310, 55, label);
+  // Add content...
+  grp->end();
+  tabs->end();
+}
+
+pack->end();
+scroll->end();
+```
+
+## Best Practices
+
+### Tab Content Spacing
+
+<Warning>
+Leave 5 pixels clear space at top or bottom of child groups (where tabs appear) to avoid interference with tab selection border.
+</Warning>
+
+Especially important with Fl_Scroll children:
+
+```cpp
+// Inset Fl_Scroll by 5 pixels from tab edge
+Fl_Group *tab = new Fl_Group(10, 35, 480, 155, "Scrollable");
+Fl_Scroll *scroll = new Fl_Scroll(15, 40, 470, 145);  // 5px inset
+// ...
+scroll->end();
+tab->end();
+
+// OR wrap in another group
+Fl_Group *tab = new Fl_Group(10, 35, 480, 155, "Scrollable");
+Fl_Group *wrapper = new Fl_Group(15, 40, 470, 145);
+Fl_Scroll *scroll = new Fl_Scroll(0, 0, 470, 145);
+// ...
+scroll->end();
+wrapper->end();
+tab->end();
+```
+
+### Background Transparency
+
+The background area behind and to the right of tabs is transparent, exposing parent background:
+
+```cpp
+// Force parent redraw if resizing Fl_Tabs without parent
+tabs->parent()->redraw();
+```
+
+### Empty Tabs
+
+If Fl_Tabs has no children, it draws as a flat rectangle using `color()`.
+
+## Notes
+
+- Each child group represents one tab
+- Tab labels from child group labels
+- Tab colors from child `selection_color()`
+- Panel colors from child `color()`
+- Tabs appear at top or bottom (whichever gap is larger)
+- Default: both changed and unchanged callbacks on release
+- Use `changed()` in callback to determine if tab changed
+- Cannot use Fl_Window as direct child
+- Use `tab_align()` to show icons with labels
+
+## See Also
+
+- [Fl_Group](/api/fl-group) - Base container class
+- [Fl_Scroll](/api/fl-scroll) - Can contain Fl_Tabs or be contained by tab
+- [Fl_Pack](/api/fl-pack) - Works well with Fl_Tabs for collapsible panels
+- [Fl_Wizard](/api/fl-wizard) - Similar but for wizard-style navigation

@@ -1,0 +1,425 @@
+---
+title: Colors
+description: FLTK color system, palettes, and color manipulation
+---
+
+## Overview
+
+FLTK uses a flexible color system supporting both indexed colors (0-255) and full 24-bit RGB values. The `Fl_Color` type stores colors as 32-bit values with the format `0xRRGGBBII`.
+
+## Color Format
+
+```cpp
+// Color encoding: 0xRRGGBBII
+//   RR = Red component (8 bits)
+//   GG = Green component (8 bits) 
+//   BB = Blue component (8 bits)
+//   II = Index (8 bits, for indexed colors)
+```
+
+## Standard Colors
+
+### Named Colors
+
+<CodeGroup>
+```cpp Grays
+FL_BLACK              // 56
+FL_WHITE              // 255
+FL_GRAY0              // Darkest gray (32)
+FL_DARK3              // Very dark gray (39)
+FL_DARK2              // Dark gray (45)
+FL_DARK1              // Medium dark (47)
+FL_BACKGROUND_COLOR   // Default background (49)
+FL_LIGHT1             // Light gray (50)
+FL_LIGHT2             // Lighter gray (52)
+FL_LIGHT3             // Very light (54)
+```
+
+```cpp Primary Colors
+FL_RED                // 88
+FL_GREEN              // 63
+FL_BLUE               // 216
+FL_YELLOW             // 95
+FL_MAGENTA            // 248
+FL_CYAN               // 223
+```
+
+```cpp Dark Variants
+FL_DARK_RED           // 72
+FL_DARK_GREEN         // 60
+FL_DARK_BLUE          // 136
+FL_DARK_YELLOW        // 76
+FL_DARK_MAGENTA       // 152
+FL_DARK_CYAN          // 140
+```
+
+```cpp UI Colors
+FL_FOREGROUND_COLOR   // Text/labels (0)
+FL_BACKGROUND2_COLOR  // Input fields (7)
+FL_INACTIVE_COLOR     // Disabled items (8)
+FL_SELECTION_COLOR    // Highlights (15)
+```
+</CodeGroup>
+
+## Creating Colors
+
+### RGB Colors
+
+```cpp
+// Create RGB color
+Fl_Color orange = fl_rgb_color(255, 128, 0);
+Fl_Color blue = fl_rgb_color(0, 0, 255);
+
+// Create grayscale
+Fl_Color gray = fl_rgb_color(128);  // 128, 128, 128
+
+// Using bytes
+uchar r = 255, g = 100, b = 50;
+Fl_Color c = fl_rgb_color(r, g, b);
+```
+
+### From Color Cube
+
+```cpp
+// 5x8x5 color cube (0-4, 0-7, 0-4)
+Fl_Color c = fl_color_cube(r, g, b);
+
+// Map 8-bit RGB to color cube
+Fl_Color c = fl_color_cube(
+  R * (FL_NUM_RED - 1) / 255,    // 5 red levels
+  G * (FL_NUM_GREEN - 1) / 255,  // 8 green levels  
+  B * (FL_NUM_BLUE - 1) / 255    // 5 blue levels
+);
+```
+
+### From Gray Ramp
+
+```cpp
+// 24-level gray ramp (0-23)
+Fl_Color gray = fl_gray_ramp(12);  // Middle gray
+
+// Map 8-bit grayscale
+uchar gray_value = 128;
+Fl_Color c = fl_gray_ramp(
+  gray_value * (FL_NUM_GRAY - 1) / 255
+);
+```
+
+## Using Colors
+
+### Setting Draw Color
+
+```cpp
+#include <FL/fl_draw.H>
+
+// By index
+fl_color(FL_RED);
+fl_color(FL_BACKGROUND_COLOR);
+
+// By RGB
+fl_color(255, 128, 0);  // Orange
+
+// By Fl_Color value
+Fl_Color c = fl_rgb_color(100, 150, 200);
+fl_color(c);
+
+// Get current color
+Fl_Color current = fl_color();
+```
+
+### Widget Colors
+
+```cpp
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Click");
+
+// Background color
+btn->color(FL_BLUE);
+btn->color(fl_rgb_color(200, 220, 255));
+
+// Selection color
+btn->selection_color(FL_RED);
+
+// Label color
+btn->labelcolor(FL_WHITE);
+
+// When highlighted
+btn->color2(FL_DARK_BLUE);  // Not all widgets support this
+```
+
+## Color Manipulation
+
+### Lighter and Darker
+
+```cpp
+Fl_Color base = FL_BLUE;
+
+// Make lighter (67% toward white)
+Fl_Color light = fl_lighter(base);
+
+// Make darker (67% toward black)
+Fl_Color dark = fl_darker(base);
+
+// Multiple steps
+Fl_Color very_light = fl_lighter(fl_lighter(base));
+```
+
+### Color Averaging
+
+```cpp
+// Average two colors with weight
+Fl_Color c1 = FL_RED;
+Fl_Color c2 = FL_BLUE;
+
+// 50/50 blend
+Fl_Color purple = fl_color_average(c1, c2, 0.5f);
+
+// 75% c1, 25% c2
+Fl_Color mostly_red = fl_color_average(c1, c2, 0.75f);
+
+// Tint toward color
+Fl_Color tinted = fl_color_average(FL_WHITE, FL_GREEN, 0.2f);
+```
+
+### Inactive Colors
+
+```cpp
+// Get grayed-out version
+Fl_Color active = FL_RED;
+Fl_Color grayed = fl_inactive(active);
+```
+
+## Contrast Functions
+
+### Automatic Contrast
+
+```cpp
+// Get contrasting color for readability
+Fl_Color fg = fl_contrast(FL_BLACK, FL_WHITE);  // Returns black
+Fl_Color fg = fl_contrast(FL_WHITE, FL_BLACK);  // Returns white
+
+// With context (0 = text, 1 = graphics)
+Fl_Color text = fl_contrast(FL_BLACK, background, 0);
+
+// With size hint
+Fl_Color small = fl_contrast(FL_BLACK, background, 0, 10);
+```
+
+### Contrast Settings
+
+```cpp
+// Set contrast mode
+fl_contrast_mode(FL_CONTRAST_CIELAB);    // Default (1.4.0+)
+fl_contrast_mode(FL_CONTRAST_LEGACY);    // Old algorithm
+fl_contrast_mode(FL_CONTRAST_NONE);      // Always use foreground
+
+// Get current mode
+int mode = fl_contrast_mode();
+
+// Set contrast level (0-100)
+fl_contrast_level(75);  // Higher = more contrast required
+
+// Get current level  
+int level = fl_contrast_level();
+```
+
+### Custom Contrast Function
+
+```cpp
+Fl_Color my_contrast(Fl_Color fg, Fl_Color bg, int context, int size) {
+  // Custom contrast calculation
+  double bg_lum = fl_luminance(bg);
+  return (bg_lum > 0.5) ? FL_BLACK : FL_WHITE;
+}
+
+// Register custom function
+fl_contrast_function(my_contrast);
+fl_contrast_mode(FL_CONTRAST_CUSTOM);
+```
+
+## Color Analysis
+
+### Lightness and Luminance
+
+```cpp
+// CIE lightness (perceptual, 0-100)
+double light = fl_lightness(FL_BLUE);  // ~32
+
+// Relative luminance (0-1)
+double lum = fl_luminance(FL_WHITE);   // 1.0
+lum = fl_luminance(FL_BLACK);          // 0.0
+
+// Use for contrast decisions
+if (fl_luminance(bg) > 0.5) {
+  text_color = FL_BLACK;
+} else {
+  text_color = FL_WHITE;
+}
+```
+
+## Custom Color Palette
+
+### Free Color Slots
+
+```cpp
+// 16 user-definable colors (16-31)
+Fl_Color custom1 = FL_FREE_COLOR;      // 16
+Fl_Color custom2 = FL_FREE_COLOR + 1;  // 17
+// ... up to FL_FREE_COLOR + 15
+
+// Set custom color
+Fl::set_color(custom1, 255, 128, 64);  // RGB
+Fl::set_color(custom2, fl_rgb_color(100, 200, 150));
+
+// Use custom color
+fl_color(custom1);
+```
+
+### Reading Color Values
+
+```cpp
+// Get RGB components of indexed color
+uchar r, g, b;
+Fl::get_color(FL_RED, r, g, b);
+
+// Get as Fl_Color
+Fl_Color c = Fl::get_color(FL_BLUE);
+```
+
+## Color Maps
+
+FLTK provides three color ranges:
+
+<Steps>
+  <Step title="Free Colors (16-31)">
+    16 user-definable colors for application use
+  </Step>
+  
+  <Step title="Gray Ramp (32-55)">
+    24 shades from black to white (FL_GRAY_RAMP)
+  </Step>
+  
+  <Step title="Color Cube (56-255)">
+    5x8x5 RGB color cube (FL_COLOR_CUBE)
+  </Step>
+</Steps>
+
+## Transparency
+
+<Warning>
+FLTK's basic drawing functions don't support alpha transparency. Use Cairo or OpenGL for transparency effects.
+</Warning>
+
+```cpp
+// For images only
+Fl_PNG_Image *img = new Fl_PNG_Image("transparent.png");
+// Alpha channel is preserved and respected
+```
+
+## System Colors
+
+```cpp
+// Update colors from system theme
+Fl::get_system_colors();
+
+// Colors adapt to:
+// - Windows themes
+// - macOS appearance (light/dark mode)
+// - GTK+ themes on Linux
+```
+
+## Performance Tips
+
+```cpp
+// Cache color calculations
+class ColorCacheWidget : public Fl_Widget {
+  Fl_Color cached_light;
+  Fl_Color cached_dark;
+  
+public:
+  ColorCacheWidget(int X, int Y, int W, int H) 
+    : Fl_Widget(X, Y, W, H) {
+    Fl_Color base = FL_BLUE;
+    cached_light = fl_lighter(base);
+    cached_dark = fl_darker(base);
+  }
+  
+  void draw() override {
+    // Use cached colors
+    fl_color(cached_light);
+    fl_rectf(x(), y(), w()/2, h());
+    fl_color(cached_dark);
+    fl_rectf(x() + w()/2, y(), w()/2, h());
+  }
+};
+```
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Widget.H>
+#include <FL/fl_draw.H>
+
+class ColorDemo : public Fl_Widget {
+public:
+  ColorDemo(int X, int Y, int W, int H)
+    : Fl_Widget(X, Y, W, H) {}
+  
+  void draw() override {
+    // Background gradient
+    for (int i = 0; i < h(); i++) {
+      float t = (float)i / h();
+      Fl_Color c = fl_color_average(FL_BLUE, FL_WHITE, t);
+      fl_color(c);
+      fl_line(x(), y() + i, x() + w(), y() + i);
+    }
+    
+    // Color swatches
+    Fl_Color colors[] = {
+      FL_RED, FL_GREEN, FL_BLUE,
+      FL_YELLOW, FL_MAGENTA, FL_CYAN
+    };
+    
+    int sw = 40;  // Swatch width
+    int sh = 40;  // Swatch height
+    int sx = x() + 10;
+    int sy = y() + 10;
+    
+    for (int i = 0; i < 6; i++) {
+      // Draw swatch
+      fl_color(colors[i]);
+      fl_rectf(sx, sy, sw, sh);
+      
+      // Draw border
+      fl_color(FL_BLACK);
+      fl_rect(sx, sy, sw, sh);
+      
+      // Lighter variant below
+      fl_color(fl_lighter(colors[i]));
+      fl_rectf(sx, sy + sh + 5, sw, sh);
+      fl_color(FL_BLACK);
+      fl_rect(sx, sy + sh + 5, sw, sh);
+      
+      sx += sw + 5;
+    }
+    
+    // Contrast demo
+    Fl_Color bg = FL_BLUE;
+    fl_color(bg);
+    fl_rectf(x() + 10, y() + h() - 60, w() - 20, 50);
+    
+    fl_color(fl_contrast(FL_BLACK, bg));
+    fl_font(FL_HELVETICA_BOLD, 16);
+    fl_draw("Automatic Contrast", x() + 20, y() + h() - 30);
+  }
+};
+
+int main() {
+  Fl_Window win(300, 250, "Color Demo");
+  ColorDemo demo(0, 0, 300, 250);
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```

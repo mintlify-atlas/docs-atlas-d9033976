@@ -1,0 +1,403 @@
+---
+title: Clipboard Operations
+description: Copy, paste, and clipboard management in FLTK
+---
+
+## Overview
+
+FLTK provides cross-platform clipboard support through `Fl::copy()` and `Fl::paste()`. The system supports both the selection buffer (Unix/Linux) and the clipboard, with text and image data.
+
+## Basic Copy/Paste
+
+### Copying Text
+
+```cpp
+#include <FL/Fl.H>
+
+// Copy to clipboard
+const char *text = "Hello, World!";
+Fl::copy(text, strlen(text), 1);  // 1 = clipboard
+
+// Copy to selection (Unix/Linux)
+Fl::copy(text, strlen(text), 0);  // 0 = selection buffer
+```
+
+### Pasting Text
+
+```cpp
+class MyWidget : public Fl_Widget {
+public:
+  int handle(int event) override {
+    if (event == FL_PASTE) {
+      // Get pasted text
+      const char *text = Fl::event_text();
+      int length = Fl::event_length();
+      
+      // Process pasted text
+      printf("Pasted: %.*s\n", length, text);
+      return 1;
+    }
+    return Fl_Widget::handle(event);
+  }
+  
+  void request_paste() {
+    // Request paste from clipboard
+    Fl::paste(*this, 1);  // 1 = clipboard
+    
+    // Or from selection
+    Fl::paste(*this, 0);  // 0 = selection
+  }
+};
+```
+
+## Text Input Integration
+
+### In Input Widgets
+
+```cpp
+Fl_Input *input = new Fl_Input(10, 10, 200, 30);
+
+// Copy selected text
+if (input->position() != input->mark()) {
+  int start = std::min(input->position(), input->mark());
+  int end = std::max(input->position(), input->mark());
+  int len = end - start;
+  
+  const char *value = input->value();
+  Fl::copy(value + start, len, 1);
+}
+
+// Paste replaces selection
+void paste_to_input(Fl_Input *inp) {
+  Fl::paste(*inp, 1);
+}
+```
+
+## Image Clipboard
+
+### Copying Images
+
+```cpp
+// Copy image to clipboard
+Fl_RGB_Image *img = new Fl_PNG_Image("photo.png");
+
+// Convert to clipboard format (platform-specific)
+Fl::copy_image(img->data()[0], img->w(), img->h(), img->d());
+```
+
+### Pasting Images
+
+```cpp
+class ImageReceiver : public Fl_Widget {
+  Fl_RGB_Image *pasted_img;
+  
+public:
+  int handle(int event) override {
+    if (event == FL_PASTE) {
+      // Check clipboard type
+      const char *type = Fl::event_clipboard_type();
+      
+      if (strcmp(type, Fl::clipboard_image) == 0) {
+        // Get image from clipboard
+        Fl_RGB_Image *img = (Fl_RGB_Image*)Fl::event_clipboard();
+        
+        if (pasted_img) pasted_img->release();
+        pasted_img = img;
+        
+        redraw();
+        return 1;  // Accept image
+      }
+      else if (strcmp(type, Fl::clipboard_plain_text) == 0) {
+        // Handle text paste
+        const char *text = Fl::event_text();
+        return 1;
+      }
+    }
+    return Fl_Widget::handle(event);
+  }
+};
+```
+
+## Clipboard Types
+
+### Type Constants
+
+```cpp
+// Predefined clipboard types
+Fl::clipboard_plain_text  // UTF-8 text
+Fl::clipboard_image       // Image data
+
+// Check what's available
+if (Fl::clipboard_contains(Fl::clipboard_plain_text)) {
+  // Text is available
+}
+
+if (Fl::clipboard_contains(Fl::clipboard_image)) {
+  // Image is available
+}
+```
+
+### Requesting Specific Types
+
+```cpp
+// Request text paste
+Fl::paste(*widget, 1, Fl::clipboard_plain_text);
+
+// Request image paste  
+Fl::paste(*widget, 1, Fl::clipboard_image);
+```
+
+## Clipboard Notifications
+
+### Monitoring Changes
+
+```cpp
+void clipboard_changed(int source, void *data) {
+  if (source == 0) {
+    printf("Selection buffer changed\n");
+  } else if (source == 1) {
+    printf("Clipboard changed\n");
+  }
+}
+
+int main() {
+  // Register notification handler
+  Fl::add_clipboard_notify(clipboard_changed, nullptr);
+  
+  // ... application code ...
+  
+  // Cleanup
+  Fl::remove_clipboard_notify(clipboard_changed);
+}
+```
+
+## Selection Owner
+
+### Tracking Selection
+
+```cpp
+class SelectableWidget : public Fl_Widget {
+public:
+  int handle(int event) override {
+    if (event == FL_PUSH) {
+      // Take selection ownership
+      Fl::selection_owner(this);
+      return 1;
+    }
+    
+    if (event == FL_SELECTIONCLEAR) {
+      // Lost selection to another widget
+      clear_selection();
+      redraw();
+      return 1;
+    }
+    
+    return Fl_Widget::handle(event);
+  }
+  
+  void provide_selection() {
+    // Provide selection data
+    const char *data = get_selected_text();
+    Fl::copy(data, strlen(data), 0);  // To selection
+  }
+};
+
+// Check current owner
+Fl_Widget *owner = Fl::selection_owner();
+```
+
+## Drag and Drop
+
+### DND with Clipboard
+
+```cpp
+class DragSource : public Fl_Widget {
+public:
+  int handle(int event) override {
+    if (event == FL_PUSH) {
+      // Start drag
+      const char *data = "Dragged text";
+      Fl::copy(data, strlen(data), 0);  // To selection
+      Fl::dnd();  // Initiate DND
+      return 1;
+    }
+    return Fl_Widget::handle(event);
+  }
+};
+
+class DropTarget : public Fl_Widget {
+public:
+  int handle(int event) override {
+    if (event == FL_DND_ENTER || event == FL_DND_DRAG) {
+      return 1;  // Accept drops
+    }
+    
+    if (event == FL_DND_RELEASE) {
+      return 1;  // Will receive FL_PASTE
+    }
+    
+    if (event == FL_PASTE) {
+      // Check if this is DND or regular paste
+      const char *text = Fl::event_text();
+      
+      // File drag-and-drop returns file paths
+      if (text[0] == '/') {
+        // Likely a file path
+        load_file(text);
+      } else {
+        // Regular text
+        insert_text(text);
+      }
+      return 1;
+    }
+    
+    return Fl_Widget::handle(event);
+  }
+};
+```
+
+## Platform Differences
+
+<Tabs>
+  <Tab title="Windows">
+    - Single clipboard (no selection buffer)
+    - Supports CF_TEXT, CF_UNICODETEXT
+    - Images as DIB or Enhanced Metafile
+    - Rich text via CF_RTF (not directly supported)
+  </Tab>
+  
+  <Tab title="macOS">
+    - Pasteboard services
+    - Supports NSString, NSImage
+    - PDF vector data supported for images
+    - Multiple items per paste operation
+  </Tab>
+  
+  <Tab title="X11/Wayland">
+    - Two buffers: selection (0) and clipboard (1)
+    - Selection: middle-click paste
+    - Clipboard: Ctrl+C/V
+    - Supports multiple targets/formats
+    - Images as PNG or BMP (requires fltk_images)
+  </Tab>
+</Tabs>
+
+## Advanced Usage
+
+### Custom Data Types
+
+```cpp
+// Platform-specific clipboard access
+#ifdef _WIN32
+  #include <windows.h>
+  
+  void copy_custom_format() {
+    if (!OpenClipboard(NULL)) return;
+    EmptyClipboard();
+    
+    UINT format = RegisterClipboardFormat("MyAppFormat");
+    // ... create HGLOBAL with data ...
+    SetClipboardData(format, hData);
+    
+    CloseClipboard();
+  }
+#endif
+```
+
+### Multiple Formats
+
+```cpp
+void copy_rich_text(const char *plain, const char *html) {
+  // Copy plain text to FLTK clipboard
+  Fl::copy(plain, strlen(plain), 1);
+  
+  // Use platform APIs for HTML format
+  #ifdef _WIN32
+    UINT html_format = RegisterClipboardFormat("HTML Format");
+    // Set HTML data...
+  #endif
+}
+```
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+#include <FL/fl_ask.H>
+
+Fl_Input *input;
+Fl_Box *status;
+
+void copy_cb(Fl_Widget*, void*) {
+  const char *text = input->value();
+  Fl::copy(text, strlen(text), 1);
+  status->label("Copied to clipboard");
+}
+
+void paste_cb(Fl_Widget*, void*) {
+  Fl::paste(*input, 1);
+  status->label("Paste requested");
+}
+
+void clipboard_notify(int source, void*) {
+  if (source == 1) {
+    status->label("Clipboard changed by another app");
+  }
+}
+
+int main() {
+  Fl_Window win(300, 150, "Clipboard Demo");
+  
+  input = new Fl_Input(10, 10, 280, 30, 0);
+  input->value("Copy or paste this text");
+  
+  Fl_Button *copy = new Fl_Button(10, 50, 135, 30, "Copy");
+  copy->callback(copy_cb);
+  
+  Fl_Button *paste = new Fl_Button(155, 50, 135, 30, "Paste");
+  paste->callback(paste_cb);
+  
+  status = new Fl_Box(10, 90, 280, 50, "Ready");
+  status->box(FL_DOWN_BOX);
+  status->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT);
+  
+  // Monitor clipboard
+  Fl::add_clipboard_notify(clipboard_notify, nullptr);
+  
+  win.end();
+  win.show();
+  
+  int ret = Fl::run();
+  
+  Fl::remove_clipboard_notify(clipboard_notify);
+  return ret;
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Handle Both Sources">
+    Support both clipboard (1) and selection (0) on Unix/Linux systems for better user experience.
+  </Accordion>
+  
+  <Accordion title="Check Paste Type">
+    Always check `Fl::event_clipboard_type()` before casting clipboard data.
+  </Accordion>
+  
+  <Accordion title="Async Paste">
+    Paste operations are asynchronous. Don't assume immediate availability.
+  </Accordion>
+  
+  <Accordion title="UTF-8 Encoding">
+    All text is UTF-8. Convert if needed for your application.
+  </Accordion>
+  
+  <Accordion title="Image Ownership">
+    When accepting pasted images, take ownership (handle deletion) if you return 1.
+  </Accordion>
+</AccordionGroup>

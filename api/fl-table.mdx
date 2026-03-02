@@ -1,0 +1,413 @@
+---
+title: Fl_Table
+description: Base class for table widgets with rows, columns, and scrolling
+---
+
+## Overview
+
+The `Fl_Table` widget is a table of rows and columns with scrolling support. This is the base class that must be subclassed to be useful. Applications typically use widgets derived from this class rather than using it directly.
+
+<Note>
+Fl_Table does not handle the data in the table. The `draw_cell()` method must be overridden by a subclass to manage drawing the contents of cells.
+</Note>
+
+## Constructor
+
+<ParamField path="Fl_Table" type="constructor">
+  Creates a new table widget.
+  
+  <ParamField body="X" type="int" required>
+    X position of the widget
+  </ParamField>
+  
+  <ParamField body="Y" type="int" required>
+    Y position of the widget
+  </ParamField>
+  
+  <ParamField body="W" type="int" required>
+    Width of the widget
+  </ParamField>
+  
+  <ParamField body="H" type="int" required>
+    Height of the widget
+  </ParamField>
+  
+  <ParamField body="L" type="const char*" default="0">
+    Optional label for the widget
+  </ParamField>
+</ParamField>
+
+## Table Context
+
+The `TableContext` enum indicates where an event or draw operation is occurring:
+
+- `CONTEXT_NONE` - No known context
+- `CONTEXT_STARTPAGE` - Before table is redrawn
+- `CONTEXT_ENDPAGE` - After table is redrawn
+- `CONTEXT_ROW_HEADER` - In row header
+- `CONTEXT_COL_HEADER` - In column header
+- `CONTEXT_CELL` - In a data cell
+- `CONTEXT_TABLE` - In dead zone of table
+- `CONTEXT_RC_RESIZE` - Column or row being resized
+
+## Size Configuration
+
+<ParamField path="rows" type="void">
+  Sets the number of rows in the table.
+  
+  <ParamField body="val" type="int" required>
+    Number of rows
+  </ParamField>
+</ParamField>
+
+<ParamField path="cols" type="void">
+  Sets the number of columns in the table.
+  
+  <ParamField body="val" type="int" required>
+    Number of columns
+  </ParamField>
+</ParamField>
+
+<ParamField path="row_height" type="void">
+  Sets the height of a specific row.
+  
+  <ParamField body="row" type="int" required>
+    Row number
+  </ParamField>
+  
+  <ParamField body="height" type="int" required>
+    Height in pixels
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_width" type="void">
+  Sets the width of a specific column.
+  
+  <ParamField body="col" type="int" required>
+    Column number
+  </ParamField>
+  
+  <ParamField body="width" type="int" required>
+    Width in pixels
+  </ParamField>
+</ParamField>
+
+<ParamField path="row_height_all" type="void">
+  Sets all rows to the same height.
+  
+  <ParamField body="height" type="int" required>
+    Height in pixels
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_width_all" type="void">
+  Sets all columns to the same width.
+  
+  <ParamField body="width" type="int" required>
+    Width in pixels
+  </ParamField>
+</ParamField>
+
+## Headers
+
+<ParamField path="row_header" type="void">
+  Enables or disables row headers.
+  
+  <ParamField body="flag" type="int" required>
+    1 to enable, 0 to disable
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_header" type="void">
+  Enables or disables column headers.
+  
+  <ParamField body="flag" type="int" required>
+    1 to enable, 0 to disable
+  </ParamField>
+</ParamField>
+
+<ParamField path="row_header_width" type="void">
+  Sets the row header width.
+  
+  <ParamField body="width" type="int" required>
+    Width in pixels
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_header_height" type="void">
+  Sets the column header height.
+  
+  <ParamField body="height" type="int" required>
+    Height in pixels
+  </ParamField>
+</ParamField>
+
+<ParamField path="row_header_color" type="void">
+  Sets the row header color.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_header_color" type="void">
+  Sets the column header color.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value
+  </ParamField>
+</ParamField>
+
+## Resizing
+
+<ParamField path="row_resize" type="void">
+  Allows or disallows interactive row resizing.
+  
+  <ParamField body="flag" type="int" required>
+    1 to allow, 0 to disallow
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_resize" type="void">
+  Allows or disallows interactive column resizing.
+  
+  <ParamField body="flag" type="int" required>
+    1 to allow, 0 to disallow
+  </ParamField>
+</ParamField>
+
+<ParamField path="row_resize_min" type="void">
+  Sets minimum row resize height.
+  
+  <ParamField body="val" type="int" required>
+    Minimum height in pixels (≥1)
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_resize_min" type="void">
+  Sets minimum column resize width.
+  
+  <ParamField body="val" type="int" required>
+    Minimum width in pixels (≥1)
+  </ParamField>
+</ParamField>
+
+## Scrolling and Position
+
+<ParamField path="row_position" type="void">
+  Scrolls to show the specified row at the top.
+  
+  <ParamField body="row" type="int" required>
+    Row number to position at top
+  </ParamField>
+</ParamField>
+
+<ParamField path="col_position" type="void">
+  Scrolls to show the specified column at the left.
+  
+  <ParamField body="col" type="int" required>
+    Column number to position at left
+  </ParamField>
+</ParamField>
+
+<ParamField path="visible_cells" type="void">
+  Returns the range of visible cells.
+  
+  <ParamField body="r1" type="int&" required>
+    Returns top visible row
+  </ParamField>
+  
+  <ParamField body="r2" type="int&" required>
+    Returns bottom visible row
+  </ParamField>
+  
+  <ParamField body="c1" type="int&" required>
+    Returns left visible column
+  </ParamField>
+  
+  <ParamField body="c2" type="int&" required>
+    Returns right visible column
+  </ParamField>
+</ParamField>
+
+## Selection
+
+<ParamField path="is_selected" type="int">
+  Checks if a cell is selected.
+  
+  <ParamField body="r" type="int" required>
+    Row number
+  </ParamField>
+  
+  <ParamField body="c" type="int" required>
+    Column number
+  </ParamField>
+  
+  Returns 1 if selected, 0 otherwise.
+</ParamField>
+
+<ParamField path="get_selection" type="void">
+  Gets the current selection range.
+  
+  <ParamField body="row_top" type="int&" required>
+    Returns top row of selection
+  </ParamField>
+  
+  <ParamField body="col_left" type="int&" required>
+    Returns left column of selection
+  </ParamField>
+  
+  <ParamField body="row_bot" type="int&" required>
+    Returns bottom row of selection
+  </ParamField>
+  
+  <ParamField body="col_right" type="int&" required>
+    Returns right column of selection
+  </ParamField>
+</ParamField>
+
+<ParamField path="set_selection" type="void">
+  Sets the selection range.
+  
+  <ParamField body="row_top" type="int" required>
+    Top row of selection
+  </ParamField>
+  
+  <ParamField body="col_left" type="int" required>
+    Left column of selection
+  </ParamField>
+  
+  <ParamField body="row_bot" type="int" required>
+    Bottom row of selection
+  </ParamField>
+  
+  <ParamField body="col_right" type="int" required>
+    Right column of selection
+  </ParamField>
+</ParamField>
+
+## Callbacks
+
+<ParamField path="callback_row" type="int">
+  Returns the row number where the event occurred (call from callback).
+</ParamField>
+
+<ParamField path="callback_col" type="int">
+  Returns the column number where the event occurred (call from callback).
+</ParamField>
+
+<ParamField path="callback_context" type="TableContext">
+  Returns the table context where the event occurred (call from callback).
+</ParamField>
+
+<ParamField path="is_interactive_resize" type="int">
+  Returns 1 if user is interactively resizing a row or column.
+</ParamField>
+
+## Virtual Methods to Override
+
+<ParamField path="draw_cell" type="virtual void">
+  Override this method to handle drawing cells.
+  
+  <ParamField body="context" type="TableContext" required>
+    Where the draw is occurring
+  </ParamField>
+  
+  <ParamField body="R" type="int" default="0">
+    Row number
+  </ParamField>
+  
+  <ParamField body="C" type="int" default="0">
+    Column number
+  </ParamField>
+  
+  <ParamField body="X" type="int" default="0">
+    X position to draw
+  </ParamField>
+  
+  <ParamField body="Y" type="int" default="0">
+    Y position to draw
+  </ParamField>
+  
+  <ParamField body="W" type="int" default="0">
+    Width of cell
+  </ParamField>
+  
+  <ParamField body="H" type="int" default="0">
+    Height of cell
+  </ParamField>
+</ParamField>
+
+## Example
+
+```cpp
+#include <FL/Fl_Table.H>
+#include <FL/fl_draw.H>
+#include <stdio.h>
+
+class MyTable : public Fl_Table {
+  void draw_cell(TableContext context, int R, int C, 
+                 int X, int Y, int W, int H) override {
+    static char s[40];
+    sprintf(s, "%d/%d", R, C);
+    
+    switch (context) {
+      case CONTEXT_STARTPAGE:
+        fl_font(FL_HELVETICA, 16);
+        return;
+        
+      case CONTEXT_ROW_HEADER:
+      case CONTEXT_COL_HEADER:
+        fl_push_clip(X, Y, W, H);
+        fl_draw_box(FL_THIN_UP_BOX, X, Y, W, H, color());
+        fl_color(FL_BLACK);
+        fl_draw(s, X, Y, W, H, FL_ALIGN_CENTER);
+        fl_pop_clip();
+        return;
+        
+      case CONTEXT_CELL:
+        fl_push_clip(X, Y, W, H);
+        // Background
+        fl_color(is_selected(R,C) ? selection_color() : FL_WHITE);
+        fl_rectf(X, Y, W, H);
+        // Text
+        fl_color(FL_BLACK);
+        fl_draw(s, X, Y, W, H, FL_ALIGN_CENTER);
+        // Border
+        fl_color(FL_LIGHT2);
+        fl_rect(X, Y, W, H);
+        fl_pop_clip();
+        return;
+        
+      default:
+        return;
+    }
+  }
+  
+public:
+  MyTable(int X, int Y, int W, int H, const char *L=0)
+    : Fl_Table(X, Y, W, H, L) {
+    rows(30);
+    cols(10);
+    row_header(1);
+    col_header(1);
+    col_header_height(25);
+    row_header_width(60);
+    col_resize(1);
+    row_resize(1);
+    end();
+  }
+};
+
+int main() {
+  Fl_Window *win = new Fl_Window(800, 600, "Table Example");
+  MyTable *table = new MyTable(10, 10, 780, 580);
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## See Also
+
+- [Fl_Table_Row](/api/fl-table-row) - Table with row selection support

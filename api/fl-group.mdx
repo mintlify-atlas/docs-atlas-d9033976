@@ -1,0 +1,445 @@
+---
+title: Fl_Group
+description: Container widget for managing child widgets
+---
+
+Fl_Group is the main FLTK container widget that maintains an ordered list of child widgets. Children can be any widget including other Fl_Groups. The most important subclass is Fl_Window, but groups are also used for layout management (Fl_Pack, Fl_Flex, Fl_Grid) and controlling radio buttons.
+
+The Tab and arrow keys move focus between widgets in a group.
+
+## Constructor
+
+```cpp
+Fl_Group(int x, int y, int w, int h, const char *label = 0);
+```
+
+<ParamField path="x, y" type="int" required>
+  Position relative to parent window
+</ParamField>
+
+<ParamField path="w, h" type="int" required>
+  Size in pixels
+</ParamField>
+
+<ParamField path="label" type="const char*">
+  Optional label text
+</ParamField>
+
+**Description:** Creates a new group. The default boxtype is FL_NO_BOX.
+
+## Group Management
+
+### begin()
+
+Begins adding widgets to this group.
+
+```cpp
+void begin();
+```
+
+**Description:** Makes this group the current group. All widgets created after this call are automatically added as children until `end()` is called.
+
+### end()
+
+Ends adding widgets to this group.
+
+```cpp
+void end();
+```
+
+**Description:** Sets the current group back to the previous group.
+
+**Example:**
+```cpp
+Fl_Group *group = new Fl_Group(10, 10, 200, 100);
+group->begin();
+  Fl_Button *btn1 = new Fl_Button(20, 20, 80, 30, "Button 1");
+  Fl_Button *btn2 = new Fl_Button(110, 20, 80, 30, "Button 2");
+group->end();
+```
+
+### current()
+
+Gets or sets the current group.
+
+```cpp
+static Fl_Group *current();
+static void current(Fl_Group *g);
+```
+
+<ParamField path="g" type="Fl_Group*">
+  Group to make current (for setter)
+</ParamField>
+
+**Returns:** Pointer to current group (for getter)
+
+## Child Management
+
+### children()
+
+Gets the number of children.
+
+```cpp
+int children() const;
+```
+
+**Returns:** Number of child widgets
+
+### child()
+
+Gets a child by index.
+
+```cpp
+Fl_Widget *child(int n) const;
+```
+
+<ParamField path="n" type="int" required>
+  Child index (0 to children()-1)
+</ParamField>
+
+**Returns:** Pointer to child widget or nullptr if index is out of range
+
+**Example:**
+```cpp
+for (int i = 0; i < group->children(); i++) {
+  Fl_Widget *w = group->child(i);
+  printf("Child %d: %s\n", i, w->label());
+}
+```
+
+### array()
+
+Gets array of all children.
+
+```cpp
+Fl_Widget* const* array() const;
+```
+
+**Returns:** Pointer to internal array of child pointers
+
+### find()
+
+Finds the index of a child widget.
+
+```cpp
+int find(const Fl_Widget* widget) const;
+int find(const Fl_Widget& widget) const;
+```
+
+<ParamField path="widget" type="const Fl_Widget*" required>
+  Widget to find
+</ParamField>
+
+**Returns:** Index of child, or `children()` if not found
+
+## Adding Children
+
+### add()
+
+Adds a widget as a child.
+
+```cpp
+void add(Fl_Widget& widget);
+void add(Fl_Widget* widget);
+```
+
+<ParamField path="widget" type="Fl_Widget*" required>
+  Widget to add
+</ParamField>
+
+**Description:** Adds the widget to the end of the child list. The widget is removed from its current parent if it has one.
+
+**Example:**
+```cpp
+Fl_Button *btn = new Fl_Button(10, 10, 80, 30, "Click");
+group->add(btn);
+```
+
+### insert()
+
+Inserts a widget at a specific position.
+
+```cpp
+void insert(Fl_Widget& widget, int i);
+void insert(Fl_Widget& widget, Fl_Widget* before);
+```
+
+<ParamField path="widget" type="Fl_Widget&" required>
+  Widget to insert
+</ParamField>
+
+<ParamField path="i" type="int">
+  Index to insert at
+</ParamField>
+
+<ParamField path="before" type="Fl_Widget*">
+  Insert before this widget
+</ParamField>
+
+**Description:** Inserts the widget at the specified position or before the specified widget.
+
+## Removing Children
+
+### remove()
+
+Removes a widget from the group.
+
+```cpp
+void remove(int index);
+void remove(Fl_Widget& widget);
+void remove(Fl_Widget* widget);
+```
+
+<ParamField path="index" type="int">
+  Index of widget to remove
+</ParamField>
+
+<ParamField path="widget" type="Fl_Widget*">
+  Widget to remove
+</ParamField>
+
+**Description:** Removes the widget from the group but does not delete it. To delete a widget, use `delete`.
+
+**Example:**
+```cpp
+group->remove(button);   // Remove from group
+delete button;           // Delete the widget
+```
+
+### clear()
+
+Removes all children.
+
+```cpp
+void clear();
+```
+
+**Description:** Removes all children from the group. The children are not deleted, only removed.
+
+### delete_child()
+
+Deletes a child by index.
+
+```cpp
+virtual int delete_child(int n);
+```
+
+<ParamField path="n" type="int" required>
+  Index of child to delete
+</ParamField>
+
+**Returns:** 0 if successful
+
+**Description:** Removes and deletes the child widget at the specified index.
+
+## Resizing
+
+### resizable()
+
+Gets or sets the resizable widget.
+
+```cpp
+Fl_Widget* resizable() const;
+void resizable(Fl_Widget* widget);
+void resizable(Fl_Widget& widget);
+```
+
+<ParamField path="widget" type="Fl_Widget*">
+  Widget to use as resizable
+</ParamField>
+
+**Description:** The resizable widget defines the resize behavior:
+- NULL: Fixed size group, all children maintain position/size
+- this: All children resize proportionally
+- child widget: Widgets inside the resizable bounds are scaled, widgets outside are moved
+
+**Important:** The resizable must be NULL, the group itself, or a direct child of the group.
+
+**Example:**
+```cpp
+// Make the group itself resizable
+group->resizable(group);
+
+// Use a specific child as the resize box
+Fl_Box *box = new Fl_Box(20, 20, 100, 60);
+group->resizable(box);
+```
+
+### add_resizable()
+
+Adds a widget and makes it resizable.
+
+```cpp
+void add_resizable(Fl_Widget& widget);
+```
+
+<ParamField path="widget" type="Fl_Widget&" required>
+  Widget to add and make resizable
+</ParamField>
+
+**Description:** Convenience method that adds the widget and sets it as the resizable.
+
+### init_sizes()
+
+Initializes internal resize data.
+
+```cpp
+void init_sizes();
+```
+
+**Description:** Records the current sizes and positions of all children for use by the resizing code. Called automatically by `resize()`.
+
+## Drawing
+
+### clip_children()
+
+Gets or sets child clipping.
+
+```cpp
+unsigned int clip_children();
+void clip_children(int c);
+```
+
+<ParamField path="c" type="int" required>
+  1 to enable clipping, 0 to disable
+</ParamField>
+
+**Returns:** True if clipping is enabled (for getter)
+
+**Description:** When enabled, child widgets are clipped to the group's bounding box. Default is disabled.
+
+**Example:**
+```cpp
+group->clip_children(1);  // Enable clipping
+```
+
+## Protected Drawing Methods
+
+### draw_child()
+
+Draws a single child widget.
+
+```cpp
+void draw_child(Fl_Widget& widget) const;
+```
+
+<ParamField path="widget" type="Fl_Widget&" required>
+  Child widget to draw
+</ParamField>
+
+**Description:** For use in custom `draw()` methods to draw specific children.
+
+### draw_children()
+
+Draws all child widgets.
+
+```cpp
+void draw_children();
+```
+
+**Description:** Called by the default `draw()` method to draw all children.
+
+### draw_outside_label()
+
+Draws a child's outside label.
+
+```cpp
+void draw_outside_label(const Fl_Widget& widget) const;
+```
+
+<ParamField path="widget" type="const Fl_Widget&" required>
+  Child widget whose label to draw
+</ParamField>
+
+### update_child()
+
+Updates (redraws) a specific child.
+
+```cpp
+void update_child(Fl_Widget& widget) const;
+```
+
+<ParamField path="widget" type="Fl_Widget&" required>
+  Child widget to update
+</ParamField>
+
+## Type Checking
+
+### as_group()
+
+Returns this as an Fl_Group pointer.
+
+```cpp
+Fl_Group* as_group() override;
+```
+
+**Returns:** Pointer to this group
+
+## Example: Radio Button Group
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Radio_Button.H>
+
+int main() {
+  Fl_Window *window = new Fl_Window(300, 200);
+  
+  // Create a group for radio buttons
+  Fl_Group *radio_group = new Fl_Group(10, 10, 280, 100);
+  radio_group->begin();
+    new Fl_Radio_Button(20, 20, 100, 25, "Option 1");
+    new Fl_Radio_Button(20, 50, 100, 25, "Option 2");
+    new Fl_Radio_Button(20, 80, 100, 25, "Option 3");
+  radio_group->end();
+  
+  window->end();
+  window->show();
+  return Fl::run();
+}
+```
+
+## Example: Resizable Group
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300);
+  
+  Fl_Group *group = new Fl_Group(10, 10, 380, 280);
+  group->box(FL_DOWN_BOX);
+  group->begin();
+  
+    // Fixed position buttons
+    new Fl_Button(20, 20, 80, 30, "Top Left");
+    new Fl_Button(290, 20, 80, 30, "Top Right");
+    
+    // Resizable area in the middle
+    Fl_Box *resizable_box = new Fl_Box(110, 60, 180, 180);
+    resizable_box->box(FL_FLAT_BOX);
+    
+    new Fl_Button(20, 250, 80, 30, "Bottom Left");
+    new Fl_Button(290, 250, 80, 30, "Bottom Right");
+  
+  group->end();
+  group->resizable(resizable_box);
+  
+  win->end();
+  win->resizable(group);
+  win->show();
+  
+  return Fl::run();
+}
+```
+
+## Related
+
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Window](/api/fl-window) - Window class (derived from Fl_Group)
+- [Fl (Global Namespace)](/api/fl) - Global functions

@@ -1,0 +1,184 @@
+---
+title: Fl_Box
+description: API reference for the Fl_Box class in FLTK
+---
+
+# Fl_Box
+
+The `Fl_Box` widget simply draws its box and optionally its label. It is useful as a visual frame around other widgets or as a placeholder in layouts.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Box.H>
+```
+
+## Class Overview
+
+`Fl_Box` is a simple widget that displays a box with an optional label. While invisible by default (with `FL_NO_BOX`), it can be made visible by setting an appropriate box type. It's commonly used to:
+
+- Draw frames around groups of widgets
+- Display static text labels
+- Serve as placeholders in resizable layouts
+- Act as `Fl_Group::resizable()` values
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Box
+```
+
+Inherits from: `Fl_Widget`
+
+## Constructors
+
+### Default Constructor
+
+```cpp
+Fl_Box(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a new `Fl_Box` widget with the given coordinates, size, and label.
+
+<ParamField path="X" type="int">
+  The X coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*" default="nullptr">
+  Optional text for the widget label
+</ParamField>
+
+<Note>
+This constructor sets `box()` to `FL_NO_BOX`, making the widget invisible by default. Use `box(Fl_Boxtype)` to make it visible.
+</Note>
+
+### Boxtype Constructor
+
+```cpp
+Fl_Box(Fl_Boxtype B, int X, int Y, int W, int H, const char *L)
+```
+
+Creates a new `Fl_Box` widget with a specific box type.
+
+<ParamField path="B" type="Fl_Boxtype">
+  The box type to display (e.g., `FL_UP_BOX`, `FL_DOWN_BOX`, `FL_BORDER_BOX`)
+</ParamField>
+
+<ParamField path="X" type="int">
+  The X coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*">
+  Text for the widget label (can be `nullptr`)
+</ParamField>
+
+## Public Methods
+
+### handle()
+
+```cpp
+int handle(int event) override
+```
+
+Handles events for the widget. Returns 1 if the event was handled, 0 otherwise.
+
+<ParamField path="event" type="int">
+  The FLTK event type (e.g., `FL_PUSH`, `FL_DRAG`, `FL_RELEASE`)
+</ParamField>
+
+**Returns:** `int` - 1 if handled, 0 otherwise
+
+## Protected Methods
+
+### draw()
+
+```cpp
+void draw() override
+```
+
+Draws the box and its label. This method is called automatically by FLTK and should not be called directly.
+
+## Inherited Methods
+
+As a subclass of `Fl_Widget`, `Fl_Box` inherits all standard widget methods including:
+
+- `box()` / `box(Fl_Boxtype)` - Get or set the box type
+- `label()` / `label(const char*)` - Get or set the label text
+- `color()` / `color(Fl_Color)` - Get or set the background color
+- `labelcolor()` / `labelcolor(Fl_Color)` - Get or set the label color
+- `labelfont()` / `labelfont(Fl_Font)` - Get or set the label font
+- `labelsize()` / `labelsize(Fl_Fontsize)` - Get or set the label size
+- `align()` / `align(Fl_Align)` - Get or set label alignment
+
+## Usage Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(340, 180);
+  
+  // Create a visible box with a border as a frame
+  Fl_Box *frame = new Fl_Box(FL_UP_BOX, 10, 10, 320, 160, "Information Panel");
+  frame->labelsize(16);
+  frame->labelfont(FL_BOLD);
+  frame->align(FL_ALIGN_TOP | FL_ALIGN_INSIDE);
+  
+  // Create an invisible box as a label holder
+  Fl_Box *label = new Fl_Box(20, 50, 300, 30, "This is a static text display");
+  label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+  
+  // Create a box with custom styling
+  Fl_Box *colorbox = new Fl_Box(FL_FLAT_BOX, 20, 90, 100, 40, "Status: OK");
+  colorbox->color(FL_GREEN);
+  colorbox->labelcolor(FL_WHITE);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Box Types
+
+- `FL_NO_BOX` - No box (invisible, default for default constructor)
+- `FL_FLAT_BOX` - Flat box with color fill
+- `FL_UP_BOX` - Raised box
+- `FL_DOWN_BOX` - Sunken box
+- `FL_BORDER_BOX` - Box with border outline
+- `FL_SHADOW_BOX` - Box with drop shadow
+- `FL_ROUNDED_BOX` - Box with rounded corners
+- `FL_ENGRAVED_BOX` - Engraved border effect
+
+## See Also
+
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Group](/api/fl-group) - Container for multiple widgets

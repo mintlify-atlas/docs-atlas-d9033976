@@ -1,0 +1,388 @@
+---
+title: Widgets
+description: Understanding FLTK's widget system and the Fl_Widget base class
+---
+
+Widgets are the fundamental building blocks of FLTK applications. Every visible element in your interface—buttons, text fields, windows, and more—is a widget derived from the `Fl_Widget` base class.
+
+## The Fl_Widget Base Class
+
+All widgets in FLTK inherit from `Fl_Widget`, which provides the core functionality for:
+
+- Position and size management
+- Visual appearance (colors, box types, labels)
+- Event handling
+- Parent-child relationships
+- Callback mechanisms
+
+<Note>
+  You cannot create an `Fl_Widget` directly because its constructor is protected. Instead, use one of FLTK's many derived widget classes or create your own subclass.
+</Note>
+
+## Creating Widgets
+
+All FLTK widgets follow a consistent constructor pattern:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+
+int main() {
+  Fl_Window *window = new Fl_Window(300, 200, "My Window");
+  
+  // Widget constructor: (x, y, width, height, label)
+  Fl_Button *btn = new Fl_Button(100, 80, 100, 30, "Click Me");
+  
+  window->end();
+  window->show();
+  return Fl::run();
+}
+```
+
+## Widget Properties
+
+### Position and Size
+
+Every widget has four fundamental dimensions stored in `FL/Fl_Widget.H:118`:
+
+<CodeGroup>
+```cpp Position
+int x = widget->x();  // X position relative to parent
+int y = widget->y();  // Y position relative to parent
+```
+
+```cpp Size
+int w = widget->w();  // Width in pixels
+int h = widget->h();  // Height in pixels
+```
+
+```cpp Modify
+widget->position(50, 100);  // Move to new position
+widget->size(200, 150);     // Resize
+widget->resize(50, 100, 200, 150);  // Move and resize together
+```
+</CodeGroup>
+
+### Colors
+
+Widgets have two primary colors defined in `FL/Fl_Widget.H:121-122`:
+
+```cpp
+// Background color
+widget->color(FL_WHITE);
+widget->color(FL_RED);
+widget->color(fl_rgb_color(200, 220, 240));  // Custom RGB
+
+// Selection/highlight color
+widget->selection_color(FL_BLUE);
+
+// Set both at once
+widget->color(FL_WHITE, FL_BLUE);
+```
+
+### Box Types
+
+The box type defines the widget's border and background appearance:
+
+```cpp
+widget->box(FL_NO_BOX);        // No background
+widget->box(FL_FLAT_BOX);      // Flat filled rectangle
+widget->box(FL_UP_BOX);        // Raised 3D box
+widget->box(FL_DOWN_BOX);      // Depressed 3D box
+widget->box(FL_BORDER_BOX);    // Simple border
+widget->box(FL_SHADOW_BOX);    // Box with shadow
+```
+
+## Labels
+
+### Basic Labels
+
+The `Fl_Label` struct (`FL/Fl_Widget.H:49-76`) stores all label information:
+
+```cpp
+// Set label text
+widget->label("Hello World");
+
+// Make a copy (widget manages memory)
+widget->copy_label("Temporary String");
+
+// Label with image
+Fl_PNG_Image *icon = new Fl_PNG_Image("icon.png");
+widget->image(icon);
+```
+
+### Label Styling
+
+<Tabs>
+  <Tab title="Font">
+    ```cpp
+    widget->labelfont(FL_HELVETICA);
+    widget->labelfont(FL_COURIER);
+    widget->labelfont(FL_TIMES_BOLD_ITALIC);
+    ```
+  </Tab>
+  <Tab title="Size">
+    ```cpp
+    widget->labelsize(14);  // Default size
+    widget->labelsize(18);  // Larger
+    widget->labelsize(10);  // Smaller
+    ```
+  </Tab>
+  <Tab title="Color">
+    ```cpp
+    widget->labelcolor(FL_BLACK);
+    widget->labelcolor(FL_RED);
+    widget->labelcolor(fl_rgb_color(50, 50, 200));
+    ```
+  </Tab>
+  <Tab title="Alignment">
+    ```cpp
+    widget->align(FL_ALIGN_CENTER);      // Default
+    widget->align(FL_ALIGN_LEFT);
+    widget->align(FL_ALIGN_TOP);
+    widget->align(FL_ALIGN_INSIDE);
+    widget->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+    ```
+  </Tab>
+</Tabs>
+
+## Widget State
+
+### Visibility
+
+```cpp
+widget->show();     // Make visible
+widget->hide();     // Make invisible
+
+if (widget->visible()) {
+  // Widget is set to visible
+}
+
+if (widget->visible_r()) {
+  // Widget AND all parents are visible
+}
+```
+
+### Active/Inactive
+
+```cpp
+widget->activate();    // Enable widget
+widget->deactivate();  // Disable (grayed out)
+
+if (widget->active()) {
+  // Widget can receive events
+}
+
+if (widget->active_r()) {
+  // Widget AND all parents are active
+}
+```
+
+### Output Mode
+
+```cpp
+widget->set_output();   // Display only, no input
+widget->clear_output(); // Can receive input
+
+if (widget->output()) {
+  // Widget is output-only
+}
+```
+
+## Parent-Child Relationships
+
+```cpp
+// Get widget's parent group
+Fl_Group *parent = widget->parent();
+
+// Get containing window
+Fl_Window *win = widget->window();
+
+// Get top-level window
+Fl_Window *top = widget->top_window();
+
+// Check relationships
+if (widget->inside(parent)) {
+  // widget is child of parent
+}
+
+if (parent->contains(widget)) {
+  // Same check from parent's perspective
+}
+```
+
+## Type Checking
+
+Safe downcasting without dynamic_cast:
+
+```cpp
+Fl_Widget *w = get_some_widget();
+
+// Check if it's a group
+if (Fl_Group *g = w->as_group()) {
+  int n = g->children();
+}
+
+// Check if it's a window
+if (Fl_Window *win = w->as_window()) {
+  win->show();
+}
+
+// Check widget type
+if (w->type() >= FL_WINDOW) {
+  // It's a window or derived type
+}
+```
+
+## Drawing and Damage
+
+Widgets use a damage system to minimize redraws:
+
+```cpp
+// Mark widget for redraw
+widget->redraw();
+
+// Redraw just the label area
+widget->redraw_label();
+
+// Check damage state
+if (widget->damage()) {
+  // Widget needs redrawing
+}
+
+// Clear damage flags
+widget->clear_damage();
+```
+
+## Custom Widgets
+
+Create your own widgets by subclassing `Fl_Widget`:
+
+<Steps>
+  <Step title="Subclass Fl_Widget">
+    ```cpp
+    class My_Widget : public Fl_Widget {
+    public:
+      My_Widget(int X, int Y, int W, int H, const char *L = 0)
+        : Fl_Widget(X, Y, W, H, L) {
+        box(FL_UP_BOX);
+        color(FL_WHITE);
+      }
+      
+      void draw() override;
+      int handle(int event) override;
+    };
+    ```
+  </Step>
+  
+  <Step title="Implement draw()">
+    ```cpp
+    void My_Widget::draw() {
+      // Draw the box background
+      draw_box();
+      
+      // Draw the label
+      draw_label();
+      
+      // Custom drawing code
+      fl_color(FL_RED);
+      fl_line(x(), y(), x()+w(), y()+h());
+    }
+    ```
+  </Step>
+  
+  <Step title="Implement handle()">
+    ```cpp
+    int My_Widget::handle(int event) {
+      switch(event) {
+        case FL_PUSH:
+          printf("Mouse down at %d,%d\n", Fl::event_x(), Fl::event_y());
+          return 1;  // Event handled
+        
+        case FL_RELEASE:
+          do_callback();
+          return 1;
+        
+        default:
+          return Fl_Widget::handle(event);
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Memory Management">
+    Widgets are typically allocated with `new` and automatically deleted when their parent is deleted. The parent window deletes all children when it's destroyed.
+    
+    ```cpp
+    Fl_Window *win = new Fl_Window(400, 300);
+    Fl_Button *btn = new Fl_Button(10, 10, 100, 30);
+    // btn will be automatically deleted when win is deleted
+    ```
+  </Accordion>
+  
+  <Accordion title="Call redraw() After Property Changes">
+    FLTK doesn't automatically redraw when you change widget properties:
+    
+    ```cpp
+    widget->color(FL_RED);   // Change color
+    widget->redraw();        // Request redraw
+    ```
+  </Accordion>
+  
+  <Accordion title="Use resize() for Layout Changes">
+    Override `resize()` to handle dynamic layout:
+    
+    ```cpp
+    void My_Widget::resize(int X, int Y, int W, int H) {
+      Fl_Widget::resize(X, Y, W, H);
+      // Reposition child widgets based on new size
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Check State Before Operations">
+    Always verify widget state before operations:
+    
+    ```cpp
+    if (widget->visible_r() && widget->active_r()) {
+      // Safe to interact with widget
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common Widget Flags
+
+From `FL/Fl_Widget.H:166-200`, widgets use internal flags for state:
+
+| Flag | Meaning |
+|------|--------|
+| `INACTIVE` | Widget is disabled |
+| `INVISIBLE` | Widget is hidden |
+| `OUTPUT` | Widget is output-only |
+| `CHANGED` | Value has changed |
+| `VISIBLE_FOCUS` | Shows focus rectangle |
+| `COPIED_LABEL` | Label memory is managed |
+| `COPIED_TOOLTIP` | Tooltip memory is managed |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Windows" icon="window" href="/concepts/windows">
+    Learn about top-level windows and subwindows
+  </Card>
+  <Card title="Events" icon="bolt" href="/concepts/events">
+    Handle user interaction with the event system
+  </Card>
+  <Card title="Drawing" icon="paintbrush" href="/concepts/drawing">
+    Custom drawing with FLTK's graphics API
+  </Card>
+  <Card title="Callbacks" icon="bell" href="/concepts/callbacks">
+    Respond to user actions with callbacks
+  </Card>
+</CardGroup>

@@ -1,0 +1,518 @@
+---
+title: Custom Widget Example
+description: Creating your own custom FLTK widgets by deriving from base classes
+---
+
+## What This Example Demonstrates
+
+This example shows how to create custom widgets in FLTK:
+- Deriving from existing widget classes
+- Overriding event handling with `handle()`
+- Custom drawing with `draw()`
+- Implementing widget-specific behavior
+- Managing widget state
+- Proper constructor and destructor patterns
+
+Custom widgets allow you to extend FLTK's functionality for specialized needs.
+
+## Complete Draggable Widget Example
+
+Source file: `examples/draggable-group.cxx`
+
+This example creates a group where children can be dragged with the right mouse button:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <stdio.h>
+
+/**
+ * \class DraggableGroup
+ * \brief Class with draggable children, derived from Fl_Group.
+ *
+ * Use this class if you want the user to be able to drag the children
+ * of a group inside the borders of the group. DraggableGroup widgets
+ * can be nested, but only direct children of the DraggableGroup widget
+ * can be dragged.
+ */
+class DraggableGroup : public Fl_Group {
+protected:
+  int xoff, yoff;         // start offsets while dragging
+  int drag_index;         // index of dragged child
+  Fl_Widget *drag_widget; // dragged child widget
+
+public:
+  DraggableGroup(int X, int Y, int W, int H, const char *L = 0)
+    : Fl_Group(X, Y, W, H, L)
+    , xoff(0)
+    , yoff(0)
+    , drag_index(0)
+    , drag_widget(0) {
+    box(FL_UP_BOX);
+  }
+
+  /** Raise the dragged widget to the top (last child) of its group.
+   *
+   * This ensures that the widget is always visible while it is dragged.
+   * The original index is saved in 'drag_index' and restored when the
+   * mouse button is released.
+   */
+  void top_level(Fl_Widget *q) {
+    drag_index = find(q); // save the widget's current index
+    add(q);               // raise to top (make it the last child)
+  }
+
+  /** Handle FL_PUSH, FL_DRAG, and FL_RELEASE events.
+   *
+   * All other events are handled in Fl_Group::handle().
+   * Dragged widgets are limited inside the borders of their parent group.
+   */
+  int handle(int e) FL_OVERRIDE {
+    switch (e) {
+      case FL_PUSH: {
+        if (Fl::event_button() == FL_RIGHT_MOUSE) {
+          Fl_Widget *q = Fl_Group::handle(e) ? Fl::belowmouse() : NULL;
+          if (q && q != this) {
+            // Found a child widget, start dragging
+            drag_widget = q;
+            top_level(drag_widget);
+            xoff = Fl::event_x() - drag_widget->x();
+            yoff = Fl::event_y() - drag_widget->y();
+            return 1; // We handled this event
+          }
+        }
+        break;
+      }
+
+      case FL_DRAG: {
+        if (drag_widget) {
+          int new_x = Fl::event_x() - xoff;
+          int new_y = Fl::event_y() - yoff;
+          
+          // Limit to parent group boundaries
+          if (new_x < x()) new_x = x();
+          if (new_y < y()) new_y = y();
+          if (new_x + drag_widget->w() > x() + w())
+            new_x = x() + w() - drag_widget->w();
+          if (new_y + drag_widget->h() > y() + h())
+            new_y = y() + h() - drag_widget->h();
+          
+          drag_widget->position(new_x, new_y);
+          redraw();
+          return 1;
+        }
+        break;
+      }
+
+      case FL_RELEASE: {
+        if (drag_widget) {
+          // Restore original child order
+          insert(*drag_widget, drag_index);
+          drag_widget = NULL;
+          redraw();
+          return 1;
+        }
+        break;
+      }
+    }
+    
+    // Let parent class handle other events
+    return Fl_Group::handle(e);
+  }
+};
+
+int main(int argc, char **argv) {
+  Fl_Double_Window *win = new Fl_Double_Window(400, 300, "Draggable Widgets Demo");
+  
+  DraggableGroup *group = new DraggableGroup(10, 10, 380, 280);
+  group->color(FL_WHITE);
+  
+  // Add some draggable children
+  Fl_Button *btn1 = new Fl_Button(20, 20, 100, 40, "Drag me");
+  btn1->color(FL_RED);
+  
+  Fl_Button *btn2 = new Fl_Button(150, 80, 100, 40, "Drag me too");
+  btn2->color(FL_GREEN);
+  
+  Fl_Box *box = new Fl_Box(250, 150, 120, 60, "Box\n(Right-click\nto drag)");
+  box->box(FL_BORDER_BOX);
+  box->color(FL_YELLOW);
+  
+  group->end();
+  win->end();
+  win->show(argc, argv);
+  
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+fltk-config --compile draggable-group.cxx
+```
+
+## Expected Behavior
+
+- Window with three widgets inside a DraggableGroup
+- Right-click and drag any widget to move it
+- Widgets stay within group boundaries
+- Dragged widget appears on top during drag
+- Original stacking order restored on release
+
+## Key Concepts
+
+### Custom Widget Structure
+
+```cpp
+class MyWidget : public Fl_Widget {
+protected:
+  // Private data members
+  int my_value;
+  
+public:
+  // Constructor
+  MyWidget(int x, int y, int w, int h, const char *l=0)
+    : Fl_Widget(x, y, w, h, l), my_value(0) {
+    // Initialize
+  }
+  
+  // Destructor
+  virtual ~MyWidget() {
+    // Cleanup
+  }
+  
+  // Override draw()
+  void draw() FL_OVERRIDE {
+    // Custom drawing code
+  }
+  
+  // Override handle()
+  int handle(int event) FL_OVERRIDE {
+    // Custom event handling
+    // Return 1 if handled, 0 otherwise
+  }
+  
+  // Custom methods
+  void value(int v) { my_value = v; redraw(); }
+  int value() const { return my_value; }
+};
+```
+
+### The draw() Method
+
+```cpp
+void draw() FL_OVERRIDE {
+  // Draw the widget box/background
+  draw_box();
+  
+  // Draw the widget label
+  draw_label();
+  
+  // Custom drawing
+  fl_color(FL_RED);
+  fl_rectf(x()+10, y()+10, w()-20, h()-20);
+  
+  // Draw children (if this is a group)
+  // Fl_Group::draw();
+}
+```
+
+### The handle() Method
+
+```cpp
+int handle(int event) FL_OVERRIDE {
+  switch(event) {
+    case FL_PUSH:
+      // Mouse button pressed
+      if (Fl::event_button() == FL_LEFT_MOUSE) {
+        // Handle left click
+        return 1; // Event handled
+      }
+      break;
+      
+    case FL_DRAG:
+      // Mouse dragged with button down
+      redraw();
+      return 1;
+      
+    case FL_RELEASE:
+      // Mouse button released
+      do_callback();
+      return 1;
+      
+    case FL_ENTER:
+      // Mouse entered widget
+      return 1;
+      
+    case FL_LEAVE:
+      // Mouse left widget
+      return 1;
+      
+    case FL_FOCUS:
+      // Widget gained focus
+      return 1;
+      
+    case FL_UNFOCUS:
+      // Widget lost focus
+      return 1;
+      
+    case FL_KEYBOARD:
+      // Key pressed
+      int key = Fl::event_key();
+      if (key == FL_Enter) {
+        // Handle Enter key
+        return 1;
+      }
+      break;
+  }
+  
+  // Let parent class handle unhandled events
+  return Fl_Widget::handle(event);
+}
+```
+
+## Simple Custom Button Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Widget.H>
+#include <FL/fl_draw.H>
+
+class RoundButton : public Fl_Widget {
+  int button_down;
+  
+public:
+  RoundButton(int x, int y, int w, int h, const char *l=0)
+    : Fl_Widget(x, y, w, h, l), button_down(0) {
+    box(FL_NO_BOX);
+  }
+  
+  void draw() FL_OVERRIDE {
+    // Draw circular button
+    int cx = x() + w()/2;
+    int cy = y() + h()/2;
+    int radius = (w() < h() ? w() : h()) / 2 - 2;
+    
+    // Background circle
+    fl_color(button_down ? FL_DARK_BLUE : FL_BLUE);
+    fl_pie(cx - radius, cy - radius, radius*2, radius*2, 0, 360);
+    
+    // Border
+    fl_color(FL_BLACK);
+    fl_arc(cx - radius, cy - radius, radius*2, radius*2, 0, 360);
+    
+    // Label
+    fl_color(FL_WHITE);
+    fl_font(labelfont(), labelsize());
+    fl_draw(label(), x(), y(), w(), h(), FL_ALIGN_CENTER);
+  }
+  
+  int handle(int event) FL_OVERRIDE {
+    switch(event) {
+      case FL_PUSH:
+        button_down = 1;
+        redraw();
+        return 1;
+        
+      case FL_RELEASE:
+        if (button_down) {
+          button_down = 0;
+          redraw();
+          do_callback(); // Trigger callback
+        }
+        return 1;
+        
+      case FL_ENTER:
+      case FL_LEAVE:
+        return 1;
+    }
+    return Fl_Widget::handle(event);
+  }
+};
+
+void button_cb(Fl_Widget *w, void*) {
+  printf("Round button '%s' clicked\n", w->label());
+}
+
+int main() {
+  Fl_Window win(300, 200, "Custom Round Buttons");
+  
+  RoundButton *btn1 = new RoundButton(50, 50, 80, 80, "Click");
+  btn1->callback(button_cb);
+  
+  RoundButton *btn2 = new RoundButton(170, 50, 80, 80, "Me");
+  btn2->callback(button_cb);
+  
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```
+
+## Custom Slider Widget
+
+```cpp
+class ColorSlider : public Fl_Widget {
+  double value_;
+  
+public:
+  ColorSlider(int x, int y, int w, int h, const char *l=0)
+    : Fl_Widget(x, y, w, h, l), value_(0.5) {}
+  
+  void draw() FL_OVERRIDE {
+    // Draw background with gradient
+    for (int i = 0; i < w(); i++) {
+      int r = (int)(255 * i / w());
+      fl_color(r, 255-r, 128);
+      fl_line(x()+i, y(), x()+i, y()+h());
+    }
+    
+    // Draw slider handle
+    int handle_x = x() + (int)(value_ * w());
+    fl_color(FL_WHITE);
+    fl_rectf(handle_x - 3, y(), 7, h());
+    fl_color(FL_BLACK);
+    fl_rect(handle_x - 3, y(), 7, h());
+    
+    // Draw label
+    draw_label();
+  }
+  
+  int handle(int event) FL_OVERRIDE {
+    switch(event) {
+      case FL_PUSH:
+      case FL_DRAG:
+        value_ = (double)(Fl::event_x() - x()) / w();
+        if (value_ < 0.0) value_ = 0.0;
+        if (value_ > 1.0) value_ = 1.0;
+        redraw();
+        do_callback();
+        return 1;
+    }
+    return Fl_Widget::handle(event);
+  }
+  
+  double value() const { return value_; }
+  void value(double v) { 
+    value_ = v; 
+    if (value_ < 0.0) value_ = 0.0;
+    if (value_ > 1.0) value_ = 1.0;
+    redraw(); 
+  }
+};
+```
+
+## Custom Drawing Functions
+
+```cpp
+#include <FL/fl_draw.H>
+
+// Colors
+fl_color(Fl_Color c);              // Set drawing color
+fl_color(int r, int g, int b);     // RGB color
+fl_rgb_color(uchar r, uchar g, uchar b);  // Get Fl_Color from RGB
+
+// Lines and shapes
+fl_point(int x, int y);
+fl_line(int x1, int y1, int x2, int y2);
+fl_rect(int x, int y, int w, int h);       // Rectangle outline
+fl_rectf(int x, int y, int w, int h);      // Filled rectangle
+fl_circle(double x, double y, double r);   // Circle outline
+fl_pie(int x, int y, int w, int h, double a1, double a2);  // Filled arc
+fl_arc(int x, int y, int w, int h, double a1, double a2);  // Arc outline
+fl_polygon(int x1, int y1, int x2, int y2, int x3, int y3);
+
+// Text
+fl_font(Fl_Font font, Fl_Fontsize size);
+fl_draw(const char *str, int x, int y);
+fl_draw(const char *str, int x, int y, int w, int h, Fl_Align align);
+fl_measure(const char *str, int &w, int &h, int draw_symbols=1);
+
+// Images
+fl_draw_image(const uchar *buf, int x, int y, int w, int h, int d=3, int ld=0);
+
+// Clipping
+fl_push_clip(int x, int y, int w, int h);  // Start clipping region
+fl_pop_clip();                              // End clipping region
+```
+
+## Best Practices
+
+1. **Always call parent class methods** when appropriate:
+   ```cpp
+   return Fl_Widget::handle(event);  // For unhandled events
+   ```
+
+2. **Return 1 from handle() only if you handled the event**
+
+3. **Call redraw()** after changing visual state
+
+4. **Call do_callback()** when action occurs (button click, value change)
+
+5. **Use FL_OVERRIDE macro** for overridden methods (C++11 compatibility)
+
+6. **Initialize all member variables** in constructor
+
+7. **Use draw_box() and draw_label()** for standard appearance
+
+8. **Respect the box() type** - don't draw outside widget bounds
+
+9. **Handle resize()** if widget has dynamic layout:
+   ```cpp
+   void resize(int X, int Y, int W, int H) FL_OVERRIDE {
+     Fl_Widget::resize(X, Y, W, H);
+     // Update internal layout
+   }
+   ```
+
+10. **Clean up resources** in destructor
+
+## Common Widget Patterns
+
+### Value-based Widget
+```cpp
+class MyValueWidget : public Fl_Widget {
+  double value_;
+public:
+  double value() const { return value_; }
+  void value(double v) { value_ = v; redraw(); do_callback(); }
+};
+```
+
+### Toggle Widget
+```cpp
+class MyToggle : public Fl_Widget {
+  int state_;
+public:
+  int value() const { return state_; }
+  void value(int v) { state_ = v; redraw(); }
+  void toggle() { state_ = !state_; redraw(); do_callback(); }
+};
+```
+
+### Container Widget
+```cpp
+class MyContainer : public Fl_Group {
+public:
+  MyContainer(int x, int y, int w, int h, const char *l=0)
+    : Fl_Group(x, y, w, h, l) {
+    end();  // Don't auto-add children
+  }
+  
+  void draw() FL_OVERRIDE {
+    draw_box();
+    // Custom background
+    Fl_Group::draw();  // Draw children
+  }
+};
+```
+
+## Next Steps
+
+- Learn about [callbacks](/examples/callbacks)
+- Explore [responsive design](/examples/responsive-design)
+- See [multithreading](/examples/multithreading)

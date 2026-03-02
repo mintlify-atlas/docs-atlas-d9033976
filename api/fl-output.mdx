@@ -1,0 +1,237 @@
+---
+title: Fl_Output
+description: API reference for the Fl_Output class in FLTK
+---
+
+# Fl_Output
+
+The `Fl_Output` widget displays a piece of text in a read-only field. Users can select and copy the text but cannot edit it.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Output.H>
+```
+
+## Class Overview
+
+`Fl_Output` is a read-only text display widget that:
+
+- Displays static or program-generated text
+- Allows users to select text with the mouse
+- Supports copying selected text to clipboard
+- Uses `strcpy()` to maintain its own copy of the value
+- Handles UTF-8 and displays control characters using ^X notation
+
+<Note>
+For multiline output, use `Fl_Multiline_Output`. For more advanced text display with scrolling, use `Fl_Text_Display`.
+</Note>
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Input_
+        └── Fl_Input
+              └── Fl_Output
+```
+
+Inherits from: `Fl_Input` (which inherits from `Fl_Input_` and `Fl_Widget`)
+
+## Constructor
+
+```cpp
+Fl_Output(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a new `Fl_Output` widget with the given position, size, and label.
+
+<ParamField path="X" type="int">
+  The X coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*" default="nullptr">
+  Label text displayed next to the output field
+</ParamField>
+
+<Note>
+The default box type is `FL_DOWN_BOX`, giving it a sunken appearance.
+</Note>
+
+## Inherited Methods
+
+Since `Fl_Output` inherits from `Fl_Input`, it has access to all input methods, but editing operations are disabled. The most commonly used methods include:
+
+### Text Management
+
+- `value()` / `value(const char*)` - Get or set the displayed text
+- `size()` - Get the length of text in bytes
+
+### Selection
+
+- `position()` / `position(int)` - Get or set cursor/selection position
+- `mark()` / `mark(int)` - Get or set selection mark
+- `position(int, int)` - Set selection range
+
+### Appearance
+
+- `textcolor()` / `textcolor(Fl_Color)` - Get or set text color
+- `textfont()` / `textfont(Fl_Font)` - Get or set text font
+- `textsize()` / `textsize(Fl_Fontsize)` - Get or set text size
+- `color()` / `color(Fl_Color)` - Get or set background color
+
+## Display Behavior
+
+The text displayed in `Fl_Output`:
+
+- Can contain any characters except `\0`
+- Displays unprintable control characters using ^X notation (e.g., ^M for carriage return)
+- Displays unprintable characters with the high bit set using \\nnn notation
+- Assumes the font can draw any characters in the ISO-Latin1 character set
+- Supports full UTF-8 text rendering
+
+## Usage Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Output.H>
+#include <FL/Fl_Button.H>
+#include <stdio.h>
+#include <time.h>
+
+void update_time(void *data) {
+  Fl_Output *output = (Fl_Output*)data;
+  
+  time_t now = time(0);
+  char *timestr = ctime(&now);
+  timestr[24] = '\0';  // Remove newline
+  
+  output->value(timestr);
+  
+  // Schedule next update in 1 second
+  Fl::repeat_timeout(1.0, update_time, data);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 100);
+  
+  // Display current time (read-only)
+  Fl_Output *time_display = new Fl_Output(100, 30, 280, 30, "Current Time:");
+  time_display->textfont(FL_COURIER);
+  time_display->textsize(14);
+  
+  window->end();
+  window->show(argc, argv);
+  
+  // Start the timer
+  Fl::add_timeout(0.0, update_time, time_display);
+  
+  return Fl::run();
+}
+```
+
+## Status Display Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Output.H>
+#include <FL/Fl_Button.H>
+
+Fl_Output *status_output;
+int counter = 0;
+
+void button_cb(Fl_Widget *, void *) {
+  counter++;
+  char buffer[100];
+  sprintf(buffer, "Button clicked %d times", counter);
+  status_output->value(buffer);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(350, 120);
+  
+  Fl_Button *btn = new Fl_Button(100, 20, 150, 30, "Click Me");
+  btn->callback(button_cb);
+  
+  status_output = new Fl_Output(50, 70, 250, 30, "Status:");
+  status_output->value("Ready");
+  status_output->color(FL_BACKGROUND2_COLOR);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Multiline Output Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Multiline_Output.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 300);
+  
+  Fl_Multiline_Output *info = new Fl_Multiline_Output(10, 10, 380, 280, 0);
+  info->value(
+    "System Information\n"
+    "=================\n\n"
+    "Application: FLTK Demo\n"
+    "Version: 1.4.0\n"
+    "Platform: Cross-platform\n\n"
+    "This is a read-only multiline\n"
+    "output field. You can select\n"
+    "and copy this text, but you\n"
+    "cannot edit it."
+  );
+  info->textfont(FL_COURIER);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Differences from Fl_Input
+
+While `Fl_Output` inherits from `Fl_Input`, the key differences are:
+
+| Feature | Fl_Input | Fl_Output |
+|---------|----------|----------|
+| **Editing** | Allowed | Not allowed |
+| **Text Selection** | Yes | Yes |
+| **Copy to Clipboard** | Yes | Yes |
+| **Paste from Clipboard** | Yes | No |
+| **Keyboard Input** | Accepted | Ignored (except copy commands) |
+| **Default Box** | `FL_DOWN_BOX` | `FL_DOWN_BOX` |
+| **Primary Use** | User input | Display program output |
+
+## Common Use Cases
+
+- **Status displays** - Show application status or messages
+- **Calculated results** - Display computation results
+- **Read-only information** - Show configuration or system info
+- **Log viewers** - Display log messages (single line)
+- **Data presentation** - Show formatted data to users
+
+## See Also
+
+- [Fl_Input](/api/fl-input) - Editable text input widget
+- [Fl_Text_Display](/api/fl-text-display) - Multi-line text display with scrolling
+- [Fl_Multiline_Output](/api/fl-multiline-output) - Multi-line read-only output
+- [Fl_Box](/api/fl-box) - Simple label display

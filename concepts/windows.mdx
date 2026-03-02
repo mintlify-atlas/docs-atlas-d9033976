@@ -1,0 +1,517 @@
+---
+title: Windows
+description: Creating and managing top-level windows and subwindows in FLTK
+---
+
+Windows are the container widgets that provide the actual operating system windows for your FLTK applications. The `Fl_Window` class manages both top-level windows (with borders and title bars) and embedded subwindows.
+
+## Window Types
+
+FLTK provides two main window types defined in `FL/Fl_Window.H:27-28`:
+
+- **FL_WINDOW (0xF0)**: Standard single-buffered window
+- **FL_DOUBLE_WINDOW (0xF1)**: Double-buffered window (flicker-free)
+
+```cpp
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
+
+// Single-buffered window
+Fl_Window *win = new Fl_Window(400, 300);
+
+// Double-buffered window (recommended for animation)
+Fl_Double_Window *dbl_win = new Fl_Double_Window(400, 300);
+```
+
+## Creating Windows
+
+### Constructor Forms
+
+Windows can be created with or without explicit position (`FL/Fl_Window.H:139-190`):
+
+<Tabs>
+  <Tab title="Auto-positioned">
+    ```cpp
+    // Window manager chooses position
+    Fl_Window *win = new Fl_Window(640, 480);
+    Fl_Window *titled = new Fl_Window(640, 480, "My Application");
+    ```
+  </Tab>
+  <Tab title="Explicit Position">
+    ```cpp
+    // Position at specific screen coordinates
+    Fl_Window *win = new Fl_Window(100, 100, 640, 480);
+    Fl_Window *titled = new Fl_Window(100, 100, 640, 480, "My App");
+    ```
+  </Tab>
+  <Tab title="Subwindow">
+    ```cpp
+    // Create parent window
+    Fl_Window *parent = new Fl_Window(800, 600);
+    parent->begin();
+    
+    // Subwindow positioned relative to parent
+    Fl_Window *child = new Fl_Window(50, 50, 300, 200);
+    child->end();
+    
+    parent->end();
+    ```
+  </Tab>
+</Tabs>
+
+## Window Properties
+
+### Labels and Icons
+
+```cpp
+// Set window title
+win->label("Application Title");
+
+// Set icon label (for taskbar/iconified state)
+win->iconlabel("App");
+
+// Set both at once
+win->label("Window Title", "Icon Title");
+
+// Copy label (widget manages memory)
+win->copy_label(temp_string);
+```
+
+### Window Icons
+
+<CodeGroup>
+```cpp Cross-platform
+Fl_PNG_Image *icon = new Fl_PNG_Image("icon.png");
+win->icon(icon);
+
+// Multiple sizes for best quality
+Fl_RGB_Image *icons[] = {icon16, icon32, icon48};
+win->icons(icons, 3);
+
+// Set default icon for all windows
+Fl_Window::default_icon(icon);
+```
+
+```cpp Windows-specific
+#ifdef _WIN32
+// Use native Windows icons
+HICON big_icon = LoadIcon(...);
+HICON small_icon = LoadIcon(...);
+win->icons(big_icon, small_icon);
+#endif
+```
+</CodeGroup>
+
+### Border and Decoration
+
+```cpp
+// Show/hide window border
+win->border(1);        // Show border
+win->border(0);        // Hide border
+win->clear_border();   // Hide border (faster)
+
+if (win->border()) {
+  // Window has border
+}
+
+// Override window manager (no border + always on top)
+win->set_override();
+
+// Get decorated window size (including title bar)
+int total_width = win->decorated_w();
+int total_height = win->decorated_h();
+```
+
+## Window Modality
+
+From `FL/Fl_Window.H:239-296`, FLTK supports three window states:
+
+<Steps>
+  <Step title="Normal Windows">
+    ```cpp
+    Fl_Window *win = new Fl_Window(400, 300);
+    // Normal window - allows interaction with other windows
+    ```
+  </Step>
+  
+  <Step title="Modal Windows">
+    ```cpp
+    Fl_Window *dialog = new Fl_Window(300, 200, "Dialog");
+    dialog->set_modal();
+    dialog->show();
+    // Blocks all other windows until closed
+    
+    if (dialog->modal()) {
+      // Window is modal
+    }
+    ```
+  </Step>
+  
+  <Step title="Non-Modal Windows">
+    ```cpp
+    Fl_Window *toolbar = new Fl_Window(400, 60, "Tools");
+    toolbar->set_non_modal();
+    toolbar->show();
+    // Stays on top but doesn't block other windows
+    
+    if (toolbar->non_modal()) {
+      // Window is non-modal
+    }
+    ```
+  </Step>
+</Steps>
+
+### Changing Modality
+
+```cpp
+// Must hide window first to change modality
+win->hide();
+win->clear_modal_states();  // Clear modal/non-modal
+win->set_non_modal();       // Set new state
+win->show();
+```
+
+## Showing and Hiding Windows
+
+### Basic Display
+
+```cpp
+// Show window
+win->show();
+
+// Show with command-line arguments (for main window)
+win->show(argc, argv);
+
+// Hide window
+win->hide();
+
+// Check if shown
+if (win->shown()) {
+  // Window has been show() called
+}
+
+// Wait for window to be fully displayed
+win->wait_for_expose();
+```
+
+### Window Positioning
+
+<Tabs>
+  <Tab title="Manual Position">
+    ```cpp
+    win->position(100, 100);  // Position before show()
+    win->show();
+    
+    // Free position (let window manager decide)
+    win->free_position();
+    ```
+  </Tab>
+  <Tab title="Hotspot Positioning">
+    ```cpp
+    // Center on mouse cursor
+    win->hotspot(widget);
+    win->show();
+    
+    // Position relative to coordinates
+    win->hotspot(x, y);
+    win->show();
+    ```
+  </Tab>
+  <Tab title="Multi-screen">
+    ```cpp
+    // Get screen dimensions
+    int X, Y, W, H;
+    Fl::screen_xywh(X, Y, W, H, 1);  // Screen #1
+    
+    // Position on specific screen
+    win->position(X + 100, Y + 100);
+    win->screen_num(1);
+    win->show();
+    ```
+  </Tab>
+</Tabs>
+
+## Window States
+
+### Fullscreen
+
+```cpp
+// Enter fullscreen mode
+win->fullscreen();
+
+if (win->fullscreen_active()) {
+  // Window is fullscreen
+}
+
+// Exit fullscreen
+win->fullscreen_off();
+
+// Exit fullscreen and resize
+win->fullscreen_off(100, 100, 800, 600);
+
+// Fullscreen across multiple monitors
+win->fullscreen_screens(0, 0, 0, 1);  // top, bottom, left, right screen
+```
+
+### Maximize and Iconify
+
+```cpp
+// Maximize window
+win->maximize();
+
+if (win->maximize_active()) {
+  // Window is maximized
+}
+
+// Restore from maximized
+win->un_maximize();
+
+// Iconify (minimize)
+win->iconize();
+```
+
+## Size Constraints
+
+From `FL/Fl_Window.H:362`, control how users can resize windows:
+
+```cpp
+// Set minimum and maximum size
+win->size_range(
+  400, 300,      // minimum width, height
+  1920, 1080     // maximum width, height (0 = no limit)
+);
+
+// Allow resize in fixed aspect ratio
+win->size_range(
+  200, 150,      // min size
+  0, 0,          // no max size
+  0, 0,          // width/height step (for grid snapping)
+  1              // keep aspect ratio
+);
+
+// Get current size constraints
+int minw, minh, maxw, maxh;
+win->get_size_range(&minw, &minh, &maxw, &maxh);
+```
+
+## Special Window Types
+
+### Menu and Tooltip Windows
+
+For internal use, but available for custom implementations:
+
+```cpp
+// Create popup menu window
+Fl_Window *menu = new Fl_Window(200, 150);
+menu->set_menu_window();
+menu->border(0);
+
+if (menu->menu_window()) {
+  // Special menu window handling
+}
+
+// Create tooltip window
+Fl_Window *tip = new Fl_Window(100, 30);
+tip->set_tooltip_window();
+tip->border(0);
+
+if (tip->tooltip_window()) {
+  // Tooltip-specific behavior
+}
+```
+
+## Window Graphics Context
+
+### Making a Window Current
+
+```cpp
+// Set as current drawing context
+win->make_current();
+
+// Get current window
+Fl_Window *current = Fl_Window::current();
+
+// Flush buffered graphics
+win->flush();
+```
+
+### Drawing to Windows
+
+```cpp
+class My_Window : public Fl_Window {
+public:
+  My_Window(int W, int H, const char *L = 0) 
+    : Fl_Window(W, H, L) {}
+  
+  void draw() override {
+    // Clear background
+    fl_color(FL_WHITE);
+    fl_rectf(0, 0, w(), h());
+    
+    // Draw content
+    fl_color(FL_BLACK);
+    fl_line(0, 0, w(), h());
+    fl_line(0, h(), w(), 0);
+  }
+};
+```
+
+## Mouse Cursors
+
+```cpp
+// Set window cursor
+win->cursor(FL_CURSOR_DEFAULT);
+win->cursor(FL_CURSOR_WAIT);
+win->cursor(FL_CURSOR_CROSS);
+win->cursor(FL_CURSOR_HAND);
+win->cursor(FL_CURSOR_MOVE);
+
+// Custom cursor from image
+Fl_RGB_Image *cursor_img = new Fl_RGB_Image(...);
+win->cursor(cursor_img, hot_x, hot_y);
+
+// Set default cursor (used when mouse is over window)
+win->default_cursor(FL_CURSOR_ARROW);
+```
+
+## Window Shapes
+
+Create non-rectangular windows:
+
+```cpp
+// Create shaped window from image alpha channel
+Fl_PNG_Image *shape = new Fl_PNG_Image("shape.png");
+win->border(0);
+win->shape(shape);
+
+// Get current shape
+const Fl_Image *s = win->shape();
+```
+
+## Window Callbacks
+
+Windows have a default callback for the close button:
+
+```cpp
+void my_close_callback(Fl_Widget *w, void *data) {
+  Fl_Window *win = (Fl_Window*)w;
+  
+  // Check why callback was triggered
+  if (Fl::callback_reason() == FL_REASON_CLOSED) {
+    // User clicked close button
+    if (confirm_exit()) {
+      win->hide();
+    }
+  }
+}
+
+win->callback(my_close_callback);
+```
+
+## Platform-Specific Features
+
+### X11 Window Class
+
+```cpp
+// Set X11 window class (for window manager hints)
+Fl_Window::default_xclass("MyApplication");
+win->xclass("SpecialWindow");
+
+const char *wm_class = win->xclass();
+```
+
+### Window System ID
+
+```cpp
+// Get native window handle
+fl_uintptr_t id = win->os_id();
+// Use for platform-specific operations
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Double Buffering for Smooth Graphics">
+    ```cpp
+    // Prefer Fl_Double_Window to avoid flicker
+    Fl_Double_Window *win = new Fl_Double_Window(800, 600);
+    ```
+  </Accordion>
+  
+  <Accordion title="Set Size Constraints">
+    ```cpp
+    // Prevent windows from becoming too small
+    win->size_range(400, 300);
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle Close Events">
+    ```cpp
+    void close_cb(Fl_Widget *w, void *data) {
+      if (Fl::callback_reason() == FL_REASON_CLOSED) {
+        // Save state before closing
+        if (confirm_exit()) {
+          ((Fl_Window*)w)->hide();
+        }
+      }
+    }
+    win->callback(close_cb);
+    ```
+  </Accordion>
+  
+  <Accordion title="Use show(argc, argv) for Main Window">
+    ```cpp
+    int main(int argc, char **argv) {
+      Fl_Window *win = new Fl_Window(640, 480);
+      // ... add widgets ...
+      win->show(argc, argv);  // Parses command-line args
+      return Fl::run();
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Window Events
+
+Windows receive special events defined in `FL/Enumerations.H`:
+
+| Event | When Triggered |
+|-------|---------------|
+| `FL_SHOW` | Window becomes visible |
+| `FL_HIDE` | Window becomes hidden/minimized |
+| `FL_FULLSCREEN` | Fullscreen state changes |
+| `FL_CLOSE` | User clicks close button |
+
+```cpp
+int My_Window::handle(int event) {
+  switch(event) {
+    case FL_SHOW:
+      printf("Window shown\n");
+      break;
+    case FL_HIDE:
+      printf("Window hidden\n");
+      break;
+    case FL_FULLSCREEN:
+      printf("Fullscreen toggled\n");
+      break;
+  }
+  return Fl_Window::handle(event);
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Widgets" icon="cube" href="/concepts/widgets">
+    Add widgets to your windows
+  </Card>
+  <Card title="Layout" icon="table-cells" href="/concepts/layout">
+    Arrange widgets with layout managers
+  </Card>
+  <Card title="Events" icon="bolt" href="/concepts/events">
+    Handle window and widget events
+  </Card>
+  <Card title="Drawing" icon="paintbrush" href="/concepts/drawing">
+    Custom drawing in windows
+  </Card>
+</CardGroup>

@@ -1,0 +1,356 @@
+---
+title: Fl_Pixmap
+description: XPM colormap image class with transparency support
+---
+
+## Overview
+
+The Fl_Pixmap class supports caching and drawing of colormap (pixmap) images in XPM format, including transparency. XPM is a text-based image format commonly used for icons and small graphics in X Window System applications.
+
+**Header:** `<FL/Fl_Pixmap.H>`
+
+**Base Class:** [Fl_Image](/api/fl-image)
+
+## Constructors
+
+All constructors create a new pixmap from the specified XPM data:
+
+<ParamField path="Fl_Pixmap" type="constructor">
+  Creates a pixmap from XPM data.
+  
+  <ParamField path="D" type="char* const*">
+    Pointer to XPM image data array
+  </ParamField>
+</ParamField>
+
+```cpp
+explicit Fl_Pixmap(char * const * D);
+```
+
+<ParamField path="Fl_Pixmap" type="constructor">
+  Creates a pixmap from unsigned char XPM data.
+  
+  <ParamField path="D" type="uchar* const*">
+    Pointer to XPM image data array
+  </ParamField>
+</ParamField>
+
+```cpp
+explicit Fl_Pixmap(uchar* const * D);
+```
+
+<ParamField path="Fl_Pixmap" type="constructor">
+  Creates a pixmap from const char XPM data.
+  
+  <ParamField path="D" type="const char* const*">
+    Pointer to XPM image data array
+  </ParamField>
+</ParamField>
+
+```cpp
+explicit Fl_Pixmap(const char * const * D);
+```
+
+<ParamField path="Fl_Pixmap" type="constructor">
+  Creates a pixmap from const unsigned char XPM data.
+  
+  <ParamField path="D" type="const uchar* const*">
+    Pointer to XPM image data array
+  </ParamField>
+</ParamField>
+
+```cpp
+explicit Fl_Pixmap(const uchar* const * D);
+```
+
+## Public Members
+
+<ParamField path="alloc_data" type="int">
+  Non-zero if data was allocated internally and should be freed when the object is destroyed.
+</ParamField>
+
+## Image Operations
+
+<ParamField path="copy" type="Fl_Image* copy(int W, int H) const">
+  Creates a copy of the pixmap scaled to the specified dimensions.
+  
+  <ParamField path="W" type="int">
+    Width of the copy
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Height of the copy
+  </ParamField>
+  
+  Returns a new Fl_Pixmap that should be released when done.
+</ParamField>
+
+<ParamField path="copy" type="Fl_Image* copy() const">
+  Creates a copy of the pixmap in the same size.
+</ParamField>
+
+<ParamField path="color_average" type="void color_average(Fl_Color c, float i)">
+  Averages the pixmap colors with the specified color.
+  
+  <ParamField path="c" type="Fl_Color">
+    Color to average with
+  </ParamField>
+  
+  <ParamField path="i" type="float">
+    Intensity/blend factor (0.0 to 1.0)
+  </ParamField>
+</ParamField>
+
+<ParamField path="desaturate" type="void desaturate()">
+  Converts the pixmap to grayscale.
+</ParamField>
+
+## Drawing Methods
+
+<ParamField path="draw" type="void draw(int X, int Y, int W, int H, int cx = 0, int cy = 0)">
+  Draws the pixmap to the current drawing surface with a bounding box.
+  
+  <ParamField path="X" type="int">
+    X coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="Y" type="int">
+    Y coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="W" type="int">
+    Width of bounding box
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Height of bounding box
+  </ParamField>
+  
+  <ParamField path="cx" type="int" default="0">
+    X offset of pixmap origin
+  </ParamField>
+  
+  <ParamField path="cy" type="int" default="0">
+    Y offset of pixmap origin
+  </ParamField>
+</ParamField>
+
+<ParamField path="draw" type="void draw(int X, int Y)">
+  Draws the pixmap at the specified position.
+  
+  <ParamField path="X" type="int">
+    X coordinate for upper-left corner
+  </ParamField>
+  
+  <ParamField path="Y" type="int">
+    Y coordinate for upper-left corner
+  </ParamField>
+</ParamField>
+
+## Cache Management
+
+<ParamField path="uncache" type="void uncache()">
+  Releases cached platform-specific pixmap data, freeing memory while keeping the pixmap object.
+</ParamField>
+
+<ParamField path="cache_w" type="int cache_w()">
+  Returns the width of the cached pixmap data.
+</ParamField>
+
+<ParamField path="cache_h" type="int cache_h()">
+  Returns the height of the cached pixmap data.
+</ParamField>
+
+## Widget Integration
+
+<ParamField path="label" type="void label(Fl_Widget* w)">
+  Sets this pixmap as the label for a widget.
+  
+  <ParamField path="w" type="Fl_Widget*">
+    Pointer to the widget
+  </ParamField>
+</ParamField>
+
+<ParamField path="label" type="void label(Fl_Menu_Item* m)">
+  Sets this pixmap as the label for a menu item.
+  
+  <ParamField path="m" type="Fl_Menu_Item*">
+    Pointer to the menu item
+  </ParamField>
+</ParamField>
+
+## XPM Format
+
+XPM (X PixMap) is a text-based image format. An XPM image is defined as a C array of strings:
+
+```cpp
+const char *xpm_data[] = {
+    "<width> <height> <num_colors> <chars_per_pixel>",
+    "<char> c <color>",  // Color definitions
+    "...",               // More colors
+    "<pixel_data>",      // Image rows
+    "...",
+    NULL                 // Optional terminator
+};
+```
+
+### Format Components
+
+- **Header line:** Width, height, number of colors, characters per pixel
+- **Color definitions:** Map characters to colors (supports names and hex values)
+- **Pixel data:** Each string represents one row of pixels
+
+## Example Usage
+
+### Basic Pixmap Creation
+
+```cpp
+// Define a simple 16x16 icon
+const char *icon_xpm[] = {
+    "16 16 4 1",
+    ". c None",       // Transparent
+    "# c #000000",    // Black
+    "X c #FF0000",    // Red
+    "o c #FFFFFF",    // White
+    "................",
+    "...##########...",
+    "..#XXXXXXXXXX#..",
+    ".#XXXXooXXXXXX#.",
+    ".#XXXooooXXXXX#.",
+    ".#XXooXXooXXXX#.",
+    ".#XXXXXXXXooXX#.",
+    ".#XXXXXXXXXooX#.",
+    ".#XXXXXXXXXXoo#.",
+    ".#XXXXXXXXXXoo#.",
+    ".#XXXXXXXXXXoo#.",
+    ".#XXXXXXXXXXoo#.",
+    "..#XXXXXXXXXX#..",
+    "...##########...",
+    "................",
+    "................"
+};
+
+Fl_Pixmap *icon = new Fl_Pixmap(icon_xpm);
+```
+
+### Using Pixmap as Widget Label
+
+```cpp
+// Create a button with a pixmap icon
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Click Me");
+Fl_Pixmap *icon = new Fl_Pixmap(icon_xpm);
+icon->label(btn);
+```
+
+### Drawing Pixmap Directly
+
+```cpp
+void MyWidget::draw() {
+    Fl_Widget::draw();
+    
+    // Draw pixmap at position (20, 20)
+    my_pixmap->draw(x() + 20, y() + 20);
+}
+```
+
+### Converting to RGB Image
+
+```cpp
+Fl_Pixmap *pixmap = new Fl_Pixmap(xpm_data);
+
+// Convert to RGB image with white background
+Fl_RGB_Image *rgb = new Fl_RGB_Image(pixmap, FL_WHITE);
+
+// Now you can manipulate as RGB
+rgb->desaturate();
+rgb->draw(10, 10);
+
+delete pixmap;
+delete rgb;
+```
+
+### Menu Item with Icon
+
+```cpp
+Fl_Menu_Item menu_items[] = {
+    {"File", 0, 0, 0, FL_SUBMENU},
+        {"New", 0, callback_new},
+        {"Open", 0, callback_open},
+        {"Save", 0, callback_save},
+        {0},
+    {0}
+};
+
+// Add icon to "New" menu item
+Fl_Pixmap *new_icon = new Fl_Pixmap(new_file_xpm);
+new_icon->label(&menu_items[1]);
+```
+
+### Grayscale Icon
+
+```cpp
+const char *gray_icon[] = {
+    "8 8 4 1",
+    "  c #000000",   // Black
+    ". c #555555",   // Dark gray
+    "o c #AAAAAA",   // Light gray
+    "O c #FFFFFF",   // White
+    "  ..oo..",
+    " .oOOOo.",
+    "..OOOOoo",
+    ".oOOOOOo",
+    ".oOOOOOo",
+    "ooOOOOO.",
+    ".oOOOo. ",
+    "..oo..  "
+};
+
+Fl_Pixmap *icon = new Fl_Pixmap(gray_icon);
+icon->draw(100, 100);
+```
+
+### Transparency Example
+
+```cpp
+// Create icon with transparent background
+const char *transparent_icon[] = {
+    "32 32 3 1",
+    "  c None",        // Transparent
+    ". c #0000FF",     // Blue
+    "o c #FFFFFF",     // White
+    "                                ",
+    "       .........                ",
+    "      .ooooooooo.               ",
+    "     .ooooooooooo.              ",
+    "     .ooooooooooo.              ",
+    // ... more rows
+    NULL
+};
+
+Fl_Pixmap *icon = new Fl_Pixmap(transparent_icon);
+```
+
+## Color Specification
+
+Colors in XPM can be specified in multiple formats:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| Color name | `c red` | X11 color name |
+| Hex RGB | `c #FF0000` | 6-digit hex color |
+| Hex RGBA | `c #FF0000FF` | 8-digit hex with alpha |
+| None | `c None` | Transparent |
+| Symbolic | `s foreground` | Platform-specific |
+
+## Performance Considerations
+
+- Pixmaps are cached internally for faster redrawing
+- Use `uncache()` to free memory if pixmap won't be redrawn
+- For large images or photos, prefer Fl_RGB_Image or format-specific classes (PNG, JPEG)
+- XPM is best suited for small icons and interface elements
+
+## See Also
+
+- [Fl_Image](/api/fl-image) - Base image class
+- [Fl_RGB_Image](/api/fl-rgb-image) - RGB color images
+- [Drawing Functions](/api/drawing-functions) - Drawing API

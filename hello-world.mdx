@@ -1,0 +1,642 @@
+---
+title: Hello world tutorial
+description: Step-by-step guide to understanding your first FLTK window
+---
+
+# Hello world tutorial
+
+This tutorial provides a detailed walkthrough of creating a "Hello, World!" program in FLTK. We'll examine each line of code to understand how FLTK applications work.
+
+## The complete program
+
+Here's the complete Hello World example from the FLTK source tree:
+
+```cpp hello.cxx
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(340, 180);
+  Fl_Box *box = new Fl_Box(20, 40, 300, 100, "Hello, World!");
+  box->box(FL_UP_BOX);
+  box->labelfont(FL_BOLD + FL_ITALIC);
+  box->labelsize(36);
+  box->labeltype(FL_SHADOW_LABEL);
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+When compiled and run, this program creates a window displaying "Hello, World!" in a 3D raised box with a large, bold italic shadow label.
+
+## Line-by-line explanation
+
+Let's examine each part of the program in detail.
+
+### Header files
+
+<CodeGroup>
+```cpp Main FLTK header
+#include <FL/Fl.H>
+```
+
+```cpp Window class
+#include <FL/Fl_Window.H>
+```
+
+```cpp Box widget
+#include <FL/Fl_Box.H>
+```
+</CodeGroup>
+
+FLTK header files follow a naming convention:
+
+- `<FL/Fl.H>` - The main FLTK class containing static methods for the event loop, display settings, and application-wide utilities
+- `<FL/Fl_Window.H>` - The window class that creates top-level windows
+- `<FL/Fl_Box.H>` - A simple widget for displaying text or images
+
+<Note>
+FLTK header files use capital letters and `.H` extension. All headers are in the `FL/` directory.
+</Note>
+
+### Main function
+
+```cpp
+int main(int argc, char **argv) {
+```
+
+Standard C++ main function. FLTK can use the command-line arguments for:
+- Setting display options
+- Parsing standard X11/Wayland arguments on Linux
+- Handling macOS application bundle parameters
+
+### Creating the window
+
+```cpp
+Fl_Window *window = new Fl_Window(340, 180);
+```
+
+This creates a window with:
+- **Width**: 340 pixels
+- **Height**: 180 pixels
+- **Title**: None (will use default based on executable name)
+
+<Tabs>
+  <Tab title="Constructor variants">
+    FLTK provides several `Fl_Window` constructors:
+
+    ```cpp
+    // Width and height only
+    Fl_Window(int w, int h);
+    
+    // Width, height, and title
+    Fl_Window(int w, int h, const char *title);
+    
+    // Position, size, and title
+    Fl_Window(int x, int y, int w, int h, const char *title = 0);
+    ```
+
+    Example with title:
+    ```cpp
+    Fl_Window *window = new Fl_Window(340, 180, "My Application");
+    ```
+
+    Example with specific position:
+    ```cpp
+    // Position window at screen coordinates (100, 100)
+    Fl_Window *window = new Fl_Window(100, 100, 340, 180, "My Application");
+    ```
+  </Tab>
+
+  <Tab title="Window positioning">
+    When position is not specified, FLTK uses the window manager's default placement:
+    
+    - **Linux/Unix**: Window manager decides (usually smart placement)
+    - **Windows**: Cascading from top-left
+    - **macOS**: Centered on main screen
+
+    To position explicitly:
+    ```cpp
+    window->position(100, 100);  // Set position after creation
+    ```
+
+    To center on screen:
+    ```cpp
+    window->position((Fl::w() - window->w()) / 2, 
+                     (Fl::h() - window->h()) / 2);
+    ```
+  </Tab>
+
+  <Tab title="Window types">
+    Different window classes for specific needs:
+
+    ```cpp
+    #include <FL/Fl_Double_Window.H>
+    Fl_Double_Window *win = new Fl_Double_Window(340, 180);
+    // Double-buffered window (reduces flicker)
+    ```
+
+    ```cpp
+    #include <FL/Fl_Gl_Window.H>
+    Fl_Gl_Window *glwin = new Fl_Gl_Window(640, 480, "OpenGL");
+    // OpenGL-capable window
+    ```
+
+    <Tip>
+    Use `Fl_Double_Window` for complex interfaces that redraw frequently to eliminate flicker.
+    </Tip>
+  </Tab>
+</Tabs>
+
+### Creating the box widget
+
+```cpp
+Fl_Box *box = new Fl_Box(20, 40, 300, 100, "Hello, World!");
+```
+
+This creates a box widget with:
+- **X position**: 20 pixels from left edge of window
+- **Y position**: 40 pixels from top edge of window  
+- **Width**: 300 pixels
+- **Height**: 100 pixels
+- **Label**: "Hello, World!"
+
+<Frame>
+  <img src="/images/box-coordinates.png" alt="Box widget coordinates" />
+</Frame>
+
+<Info>
+Coordinates in FLTK are relative to the parent widget. The box's position (20, 40) is measured from the window's top-left corner.
+</Info>
+
+### Styling the box
+
+```cpp
+box->box(FL_UP_BOX);
+```
+
+Sets the box style to `FL_UP_BOX`, which draws a 3D raised box. FLTK provides many box types:
+
+<CodeGroup>
+```cpp Box styles
+FL_NO_BOX          // No box drawn
+FL_FLAT_BOX        // Flat, filled rectangle
+FL_UP_BOX          // 3D raised box
+FL_DOWN_BOX        // 3D pressed/lowered box
+FL_THIN_UP_BOX     // Thinner 3D raised box
+FL_THIN_DOWN_BOX   // Thinner 3D lowered box
+FL_ENGRAVED_BOX    // Engraved rectangular frame
+FL_EMBOSSED_BOX    // Embossed rectangular frame
+FL_BORDER_BOX      // Simple black border
+FL_SHADOW_BOX      // Box with drop shadow
+FL_ROUNDED_BOX     // Rounded corners
+```
+
+```cpp Example usage
+// Different box styles
+box1->box(FL_DOWN_BOX);      // Pressed appearance
+box2->box(FL_SHADOW_BOX);    // With shadow
+box3->box(FL_ROUNDED_BOX);   // Rounded corners
+
+// Change box color
+box->color(FL_WHITE);         // Background color
+```
+</CodeGroup>
+
+### Setting the font
+
+```cpp
+box->labelfont(FL_BOLD + FL_ITALIC);
+```
+
+Sets the label font to bold italic. FLTK provides built-in fonts:
+
+<Accordion title="Available fonts">
+  Basic fonts:
+  ```cpp
+  FL_HELVETICA              // Helvetica regular
+  FL_HELVETICA_BOLD         // Helvetica bold
+  FL_HELVETICA_ITALIC       // Helvetica italic
+  FL_HELVETICA_BOLD_ITALIC  // Helvetica bold italic
+  
+  FL_COURIER                // Courier regular (monospace)
+  FL_COURIER_BOLD           // Courier bold
+  FL_COURIER_ITALIC         // Courier italic  
+  FL_COURIER_BOLD_ITALIC    // Courier bold italic
+  
+  FL_TIMES                  // Times regular
+  FL_TIMES_BOLD             // Times bold
+  FL_TIMES_ITALIC           // Times italic
+  FL_TIMES_BOLD_ITALIC      // Times bold italic
+  
+  FL_SYMBOL                 // Symbol font
+  FL_SCREEN                 // Screen/terminal font
+  FL_SCREEN_BOLD            // Screen font bold
+  FL_ZAPF_DINGBATS          // Dingbats/symbols
+  ```
+
+  Font modifiers (can be combined with `+`):
+  ```cpp
+  FL_BOLD    // Make font bold
+  FL_ITALIC  // Make font italic
+  
+  // Examples
+  labelfont(FL_HELVETICA + FL_BOLD);
+  labelfont(FL_COURIER + FL_ITALIC);
+  labelfont(FL_TIMES + FL_BOLD + FL_ITALIC);
+  ```
+</Accordion>
+
+### Setting the font size
+
+```cpp
+box->labelsize(36);
+```
+
+Sets the label font size to 36 pixels. Default size is typically 14 pixels.
+
+```cpp
+// Different sizes
+box->labelsize(12);   // Small
+box->labelsize(14);   // Default
+box->labelsize(24);   // Large
+box->labelsize(48);   // Extra large
+```
+
+### Setting the label type
+
+```cpp
+box->labeltype(FL_SHADOW_LABEL);
+```
+
+Adds a shadow effect to the text. Available label types:
+
+<CodeGroup>
+```cpp Label types
+FL_NORMAL_LABEL    // Standard label (default)
+FL_SHADOW_LABEL    // Label with drop shadow
+FL_ENGRAVED_LABEL  // Engraved appearance
+FL_EMBOSSED_LABEL  // Embossed/raised appearance
+FL_NO_LABEL        // No label drawn
+```
+
+```cpp Example
+// Create dramatic heading
+Fl_Box *heading = new Fl_Box(10, 10, 380, 50, "Application Title");
+heading->labelfont(FL_HELVETICA_BOLD);
+heading->labelsize(28);
+heading->labeltype(FL_SHADOW_LABEL);
+heading->labelcolor(FL_WHITE);
+heading->color(FL_BLUE);
+heading->box(FL_FLAT_BOX);
+```
+</CodeGroup>
+
+### Finalizing the window
+
+```cpp
+window->end();
+```
+
+This critical call tells FLTK to stop adding widgets to the window. After `end()` is called:
+- The window's widget list is finalized
+- New widgets created won't automatically belong to this window
+- The window is ready to be shown
+
+<Warning>
+Forgetting `window->end()` can cause widgets to not appear or unexpected behavior. Always call `end()` before `show()`.
+</Warning>
+
+To add more widgets later:
+```cpp
+window->begin();  // Reopen window for adding widgets
+  Fl_Button *btn = new Fl_Button(20, 150, 80, 30, "New Button");
+window->end();    // Close again
+```
+
+### Showing the window
+
+```cpp
+window->show(argc, argv);
+```
+
+Makes the window visible on screen. Passing `argc` and `argv` allows FLTK to:
+- Parse command-line display options (`-display`, `-geometry`, etc. on X11)
+- Set up macOS application bundles correctly
+- Handle platform-specific startup parameters
+
+<Tabs>
+  <Tab title="show() variants">
+    ```cpp
+    // Basic show - no argument parsing
+    window->show();
+    
+    // With argument parsing (recommended for main window)
+    window->show(argc, argv);
+    
+    // Show modal window (blocks parent windows)
+    dialog->set_modal();
+    dialog->show();
+    
+    // Show non-modal window (independent window)
+    palette->set_non_modal();
+    palette->show();
+    ```
+  </Tab>
+
+  <Tab title="Window visibility">
+    ```cpp
+    // Check if window is visible
+    if (window->shown()) {
+      // Window is visible
+    }
+    
+    // Hide window (don't destroy)
+    window->hide();
+    
+    // Show again
+    window->show();
+    
+    // Iconify (minimize) window  
+    window->iconize();
+    ```
+  </Tab>
+
+  <Tab title="Window state">
+    ```cpp
+    // Make window fullscreen
+    window->fullscreen();
+    
+    // Exit fullscreen
+    window->fullscreen_off();
+    
+    // Maximize window
+    window->size(Fl::w(), Fl::h());
+    
+    // Set window size limits
+    window->size_range(320, 240);        // Minimum size
+    window->size_range(320, 240, 1920, 1080);  // Min and max
+    ```
+  </Tab>
+</Tabs>
+
+### Running the event loop
+
+```cpp
+return Fl::run();
+```
+
+Enters FLTK's main event loop, which:
+1. Waits for user events (mouse clicks, keyboard input, window events)
+2. Dispatches events to appropriate widgets and callbacks
+3. Handles window redraws when needed
+4. Continues until all windows are closed
+5. Returns 0 on normal exit
+
+<Info>
+`Fl::run()` blocks until the last window is closed. Everything that happens in your application (button clicks, drawing, etc.) occurs while `Fl::run()` is executing.
+</Info>
+
+<AccordionGroup>
+  <Accordion title="Event loop alternatives">
+    For advanced applications, you can manually control the event loop:
+
+    ```cpp
+    // Check for events without blocking
+    while (window->shown()) {
+      Fl::check();           // Process pending events
+      // Do other work here
+      Fl::wait(0.01);       // Wait up to 0.01 seconds for events
+    }
+    ```
+
+    ```cpp
+    // Wait for specific event
+    while (window->shown()) {
+      if (Fl::wait() == 0) {  // Returns 0 if no windows remain
+        break;
+      }
+      // Handle events
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Timers and callbacks">
+    Schedule functions to run periodically:
+
+    ```cpp
+    void timer_callback(void *data) {
+      // Update something
+      Fl::repeat_timeout(1.0, timer_callback, data);  // Every second
+    }
+
+    int main() {
+      // ... create window ...
+      
+      Fl::add_timeout(1.0, timer_callback);  // Start timer
+      return Fl::run();
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Idle callbacks">
+    Run code when no events are pending:
+
+    ```cpp
+    void idle_callback(void *data) {
+      // Background processing
+      // This runs whenever the event loop is idle
+    }
+
+    int main() {
+      // ... create window ...
+      
+      Fl::add_idle(idle_callback);
+      return Fl::run();
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Compiling and running
+
+<Steps>
+  <Step title="Save the source">
+    Save the code as `hello.cxx`
+  </Step>
+
+  <Step title="Compile with CMake">
+    Create `CMakeLists.txt`:
+    ```cmake
+    cmake_minimum_required(VERSION 3.15)
+    project(hello)
+
+    find_package(FLTK CONFIG REQUIRED)
+    add_executable(hello WIN32 MACOSX_BUNDLE hello.cxx)
+    target_link_libraries(hello PRIVATE fltk::fltk)
+    ```
+
+    Build:
+    ```bash
+    cmake -B build
+    cmake --build build
+    ```
+  </Step>
+
+  <Step title="Run the program">
+    ```bash
+    ./build/hello
+    ```
+
+    You should see a window with "Hello, World!" displayed in a 3D raised box.
+  </Step>
+</Steps>
+
+## Customizing the example
+
+Now that you understand the basics, try these modifications:
+
+### Change colors
+
+```cpp
+box->color(FL_BLUE);           // Background color
+box->labelcolor(FL_WHITE);      // Text color
+```
+
+Available colors:
+```cpp
+FL_BLACK, FL_RED, FL_GREEN, FL_YELLOW, FL_BLUE, 
+FL_MAGENTA, FL_CYAN, FL_WHITE, FL_GRAY
+```
+
+Custom colors:
+```cpp
+box->color(fl_rgb_color(200, 220, 255));  // RGB color
+```
+
+### Add alignment
+
+```cpp
+box->align(FL_ALIGN_CENTER);   // Center (default)
+box->align(FL_ALIGN_LEFT);     // Left align
+box->align(FL_ALIGN_RIGHT);    // Right align  
+box->align(FL_ALIGN_TOP);      // Top
+box->align(FL_ALIGN_BOTTOM);   // Bottom
+
+// Combine alignments
+box->align(FL_ALIGN_TOP | FL_ALIGN_LEFT);
+```
+
+### Make window resizable
+
+```cpp
+window->resizable(box);  // Box resizes with window
+```
+
+### Add window icon
+
+```cpp
+#include <FL/Fl_RGB_Image.H>
+
+// Create icon from image data
+window->icon(my_icon_image);
+```
+
+## Full customized example
+
+Here's a more elaborate version:
+
+```cpp custom-hello.cxx
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/fl_draw.H>
+
+int main(int argc, char **argv) {
+  // Create double-buffered window
+  Fl_Double_Window *window = new Fl_Double_Window(400, 250, "Custom Hello");
+  window->color(fl_rgb_color(240, 240, 245));  // Light gray background
+  
+  // Title box
+  Fl_Box *title = new Fl_Box(20, 30, 360, 60, "Welcome to FLTK!");
+  title->box(FL_SHADOW_BOX);
+  title->color(fl_rgb_color(70, 130, 180));   // Steel blue
+  title->labelcolor(FL_WHITE);
+  title->labelfont(FL_HELVETICA_BOLD);
+  title->labelsize(32);
+  title->labeltype(FL_SHADOW_LABEL);
+  
+  // Subtitle box
+  Fl_Box *subtitle = new Fl_Box(20, 110, 360, 40, "Fast Light Tool Kit");
+  subtitle->box(FL_FLAT_BOX);
+  subtitle->labelfont(FL_HELVETICA_ITALIC);
+  subtitle->labelsize(18);
+  subtitle->labelcolor(fl_rgb_color(100, 100, 100));
+  
+  // Info box
+  Fl_Box *info = new Fl_Box(20, 160, 360, 60, 
+    "Cross-platform C++ GUI toolkit\nfor Windows, macOS, and Linux");
+  info->box(FL_THIN_DOWN_BOX);
+  info->color(FL_WHITE);
+  info->labelsize(14);
+  info->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+  
+  window->resizable(window);
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## What you've learned
+
+You now understand:
+
+<Steps>
+  <Step title="Program structure">
+    - Including headers
+    - Main function with argc/argv
+    - Creating windows and widgets
+    - Event loop with Fl::run()
+  </Step>
+
+  <Step title="Window management">
+    - Creating windows with size and title
+    - Positioning windows on screen
+    - Showing and hiding windows
+    - Window types (single/double buffered)
+  </Step>
+
+  <Step title="Widget basics">
+    - Creating widgets with position and size
+    - Setting widget properties (colors, fonts, styles)
+    - Parent-child widget hierarchy
+    - The window->end() pattern
+  </Step>
+
+  <Step title="Styling options">
+    - Box types and borders
+    - Fonts and text styling
+    - Colors and color functions
+    - Label types and effects
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Add interactivity" icon="hand-pointer" href="/quickstart#add-interactivity">
+    Learn about callbacks and event handling
+  </Card>
+  <Card title="Explore widgets" icon="grid-2" href="/widgets/overview">
+    Discover all available FLTK widgets
+  </Card>
+  <Card title="Layout management" icon="table-cells" href="/guides/layout">
+    Learn how to organize complex interfaces
+  </Card>
+  <Card title="API reference" icon="book-open" href="/api/fl">
+    Complete API documentation
+  </Card>
+</CardGroup>

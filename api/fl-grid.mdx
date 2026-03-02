@@ -1,0 +1,652 @@
+---
+title: Fl_Grid
+description: API reference for Fl_Grid multi-dimensional grid layout container
+---
+
+## Overview
+
+Fl_Grid is a container (layout) widget with multiple columns and rows. It provides very flexible layouts in grid cells without needing to position each child widget using x/y coordinates.
+
+**Since:** FLTK 1.4.0 (experimental)
+
+**Header:** `<FL/Fl_Grid.H>`
+
+**Inherits:** [Fl_Group](/api/fl-group)
+
+### Key Features
+
+- Multi-row and multi-column grid layout
+- Cell-based widget positioning
+- Row and column spanning (like HTML tables)
+- Individual cell alignment options
+- Configurable margins and gaps
+- Row/column weights for proportional sizing
+- Individual row/column size constraints
+- Debug grid visualization
+
+### Use Cases
+
+- Complex form layouts
+- Dialog boxes with aligned controls
+- Calculator-style button grids
+- Multi-panel interfaces
+- Spreadsheet-like layouts
+- Any UI requiring grid alignment
+
+<Note>
+Fl_Grid is experimental as of FLTK 1.4.x. The API is considered almost stable but may still change.
+</Note>
+
+## Layout Algorithm
+
+Fl_Grid positions widgets in grid cells:
+
+1. Grid is divided into rows and columns
+2. Widgets are assigned to cells by (row, column) position
+3. Widgets can span multiple rows/columns
+4. Margins are applied around the entire grid
+5. Gaps are applied between rows and columns
+6. Cell sizes are calculated based on:
+   - Minimum widget sizes (w(), h())
+   - Row/column weights (for distributing extra space)
+   - Row/column fixed sizes
+7. Widgets are positioned and sized within cells according to alignment
+
+The Fl_Group::resizable() widget is ignored; Fl_Grid uses its own layout algorithm.
+
+## Constructor
+
+```cpp
+Fl_Grid(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates an empty Fl_Grid container. Call `layout()` to define grid dimensions.
+
+<ParamField path="X" type="int">
+X position of the widget
+</ParamField>
+
+<ParamField path="Y" type="int">
+Y position of the widget
+</ParamField>
+
+<ParamField path="W" type="int">
+Width of the widget
+</ParamField>
+
+<ParamField path="H" type="int">
+Height of the widget
+</ParamField>
+
+<ParamField path="L" type="const char*">
+Optional label string (default: NULL)
+</ParamField>
+
+## Grid Layout
+
+### layout() - Define Grid
+
+```cpp
+void layout(int rows, int cols, int margin = -1, int gap = -1)
+```
+
+Defines the grid dimensions and optionally sets margins and gaps.
+
+<ParamField path="rows" type="int">
+Number of rows in the grid
+</ParamField>
+
+<ParamField path="cols" type="int">
+Number of columns in the grid
+</ParamField>
+
+<ParamField path="margin" type="int">
+Margin around grid in pixels (if >= 0); -1 leaves margin unchanged
+</ParamField>
+
+<ParamField path="gap" type="int">
+Gap between rows and columns in pixels (if >= 0); -1 leaves gap unchanged
+</ParamField>
+
+### layout() - Recalculate
+
+```cpp
+void layout()
+```
+
+Recalculates and applies the current layout.
+
+### clear_layout()
+
+```cpp
+void clear_layout()
+```
+
+Clears the current layout definition.
+
+### Grid Dimensions
+
+```cpp
+short rows() const
+short cols() const
+```
+
+Returns the number of rows or columns in the grid.
+
+## Widget Placement
+
+### widget() - Single Cell
+
+```cpp
+Fl_Grid::Cell* widget(Fl_Widget *wi, int row, int col, 
+                       Fl_Grid_Align align = FL_GRID_FILL)
+```
+
+Assigns a widget to a single grid cell.
+
+<ParamField path="wi" type="Fl_Widget*">
+Widget to place in the grid
+</ParamField>
+
+<ParamField path="row" type="int">
+Row index (0-based)
+</ParamField>
+
+<ParamField path="col" type="int">
+Column index (0-based)
+</ParamField>
+
+<ParamField path="align" type="Fl_Grid_Align">
+Alignment within cell (default: FL_GRID_FILL)
+</ParamField>
+
+**Returns:** Pointer to the created Cell object
+
+### widget() - Spanning Cells
+
+```cpp
+Fl_Grid::Cell* widget(Fl_Widget *wi, int row, int col, 
+                       int rowspan, int colspan,
+                       Fl_Grid_Align align = FL_GRID_FILL)
+```
+
+Assigns a widget spanning multiple rows and/or columns.
+
+<ParamField path="rowspan" type="int">
+Number of rows to span (minimum 1)
+</ParamField>
+
+<ParamField path="colspan" type="int">
+Number of columns to span (minimum 1)
+</ParamField>
+
+## Cell Alignment
+
+### Alignment Constants
+
+```cpp
+FL_GRID_CENTER       // Center in cell (default)
+FL_GRID_TOP          // Align to top
+FL_GRID_BOTTOM       // Align to bottom
+FL_GRID_LEFT         // Align to left
+FL_GRID_RIGHT        // Align to right
+FL_GRID_HORIZONTAL   // Stretch horizontally
+FL_GRID_VERTICAL     // Stretch vertically
+FL_GRID_FILL         // Stretch both directions (0x0030)
+FL_GRID_PROPORTIONAL // Stretch proportionally
+
+// Combined alignments:
+FL_GRID_TOP_LEFT     // Top-left corner
+FL_GRID_TOP_RIGHT    // Top-right corner
+FL_GRID_BOTTOM_LEFT  // Bottom-left corner
+FL_GRID_BOTTOM_RIGHT // Bottom-right corner
+```
+
+Alignment flags can be combined using bitwise OR (`|`).
+
+## Cell Access
+
+### cell() - By Position
+
+```cpp
+Fl_Grid::Cell* cell(int row, int col) const
+```
+
+Returns the cell at the specified grid position.
+
+<ParamField path="row" type="int">
+Row index
+</ParamField>
+
+<ParamField path="col" type="int">
+Column index
+</ParamField>
+
+**Returns:** Pointer to Cell, or NULL if no cell at position
+
+### cell() - By Widget
+
+```cpp
+Fl_Grid::Cell* cell(Fl_Widget *widget) const
+```
+
+Returns the cell containing the specified widget.
+
+**Returns:** Pointer to Cell, or NULL if widget not in grid
+
+## Cell Class
+
+### Cell Properties
+
+```cpp
+class Cell {
+public:
+  Fl_Widget *widget() const;
+  
+  short row() const;
+  short col() const;
+  
+  short rowspan() const;
+  void rowspan(short v);
+  
+  short colspan() const;
+  void colspan(short v);
+  
+  Fl_Grid_Align align() const;
+  void align(Fl_Grid_Align align);
+  
+  void minimum_size(int w, int h);
+  void minimum_size(int *w, int *h) const;
+  
+  Cell *next();
+};
+```
+
+## Margins
+
+### margin() - Set
+
+```cpp
+void margin(int left, int top = -1, int right = -1, int bottom = -1)
+```
+
+Sets grid margins. If only `left` is provided, all margins are set to that value.
+
+<ParamField path="left" type="int">
+Left margin, or all margins if other parameters are -1
+</ParamField>
+
+<ParamField path="top" type="int">
+Top margin (-1 to use `left` value)
+</ParamField>
+
+<ParamField path="right" type="int">
+Right margin (-1 to use `left` value)
+</ParamField>
+
+<ParamField path="bottom" type="int">
+Bottom margin (-1 to use `left` value)
+</ParamField>
+
+### margin() - Get
+
+```cpp
+int margin(int *left, int *top, int *right, int *bottom) const
+```
+
+Gets all four margin values.
+
+**Returns:** 1 if all margins are equal, 0 otherwise
+
+## Gap Spacing
+
+### gap() - Set
+
+```cpp
+void gap(int row_gap, int col_gap = -1)
+```
+
+Sets default row and column gaps. If only `row_gap` provided, both are set to that value.
+
+<ParamField path="row_gap" type="int">
+Gap between rows in pixels
+</ParamField>
+
+<ParamField path="col_gap" type="int">
+Gap between columns (-1 to use `row_gap` value)
+</ParamField>
+
+### gap() - Get
+
+```cpp
+void gap(int *row_gap, int *col_gap) const
+```
+
+Gets row and column gap values.
+
+## Column Configuration
+
+### col_width()
+
+```cpp
+void col_width(int col, int value)
+void col_width(const int *value, size_t size)
+int col_width(int col) const
+```
+
+Sets or gets minimum column width.
+
+<ParamField path="col" type="int">
+Column index
+</ParamField>
+
+<ParamField path="value" type="int">
+Minimum width in pixels, or array of widths
+</ParamField>
+
+### col_weight()
+
+```cpp
+void col_weight(int col, int value)
+void col_weight(const int *value, size_t size)
+int col_weight(int col) const
+```
+
+Sets or gets column weight for distributing extra space.
+
+<ParamField path="value" type="int">
+Weight value (higher = more space)
+</ParamField>
+
+### col_gap()
+
+```cpp
+void col_gap(int col, int value)
+void col_gap(const int *value, size_t size)
+int col_gap(int col) const
+```
+
+Sets or gets gap after specific column.
+
+### computed_col_width()
+
+```cpp
+int computed_col_width(int col) const
+```
+
+Returns the computed (actual) width of a column after layout.
+
+## Row Configuration
+
+### row_height()
+
+```cpp
+void row_height(int row, int value)
+void row_height(const int *value, size_t size)
+int row_height(int row) const
+```
+
+Sets or gets minimum row height.
+
+<ParamField path="row" type="int">
+Row index
+</ParamField>
+
+<ParamField path="value" type="int">
+Minimum height in pixels, or array of heights
+</ParamField>
+
+### row_weight()
+
+```cpp
+void row_weight(int row, int value)
+void row_weight(const int *value, size_t size)
+int row_weight(int row) const
+```
+
+Sets or gets row weight for distributing extra space.
+
+### row_gap()
+
+```cpp
+void row_gap(int row, int value)
+void row_gap(const int *value, size_t size)
+int row_gap(int row) const
+```
+
+Sets or gets gap after specific row.
+
+### computed_row_height()
+
+```cpp
+int computed_row_height(int row) const
+```
+
+Returns the computed (actual) height of a row after layout.
+
+## Layout Management
+
+### need_layout()
+
+```cpp
+void need_layout(int set)
+bool need_layout() const
+```
+
+Sets or gets whether layout recalculation is required.
+
+<ParamField path="set" type="int">
+1 to request layout calculation and redraw, 0 to reset
+</ParamField>
+
+### resize()
+
+```cpp
+void resize(int X, int Y, int W, int H) override
+```
+
+Resizes the Fl_Grid and recalculates layout.
+
+## Debug Visualization
+
+### show_grid()
+
+```cpp
+void show_grid(int set)
+void show_grid(int set, Fl_Color col)
+```
+
+Enables/disables drawing of grid helper lines for debugging.
+
+<ParamField path="set" type="int">
+1 to show grid lines, 0 to hide
+</ParamField>
+
+<ParamField path="col" type="Fl_Color">
+Color for grid lines (default: light green)
+</ParamField>
+
+**Environment Variable:** Set `FLTK_GRID_DEBUG=1` to enable for all grids at construction.
+
+### debug()
+
+```cpp
+void debug(int level = 127)
+```
+
+Prints debug information about the grid to stdout.
+
+## Example: Simple 3x3 Button Grid
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Grid.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char **argv) {
+  Fl_Double_Window *win = new Fl_Double_Window(320, 180, 
+                                                "3x3 Fl_Grid with Buttons");
+  
+  // Create grid container
+  Fl_Grid *grid = new Fl_Grid(0, 0, win->w(), win->h());
+  grid->layout(3, 3, 10, 10);  // 3 rows, 3 cols, 10px margin/gap
+  grid->color(FL_WHITE);
+  
+  // Create buttons
+  Fl_Button *b0 = new Fl_Button(0, 0, 0, 0, "New");
+  Fl_Button *b1 = new Fl_Button(0, 0, 0, 0, "Options");
+  Fl_Button *b3 = new Fl_Button(0, 0, 0, 0, "About");
+  Fl_Button *b4 = new Fl_Button(0, 0, 0, 0, "Help");
+  Fl_Button *b6 = new Fl_Button(0, 0, 0, 0, "Quit");
+  
+  // Assign buttons to grid positions (row, col)
+  grid->widget(b0, 0, 0);  // Top-left
+  grid->widget(b1, 0, 2);  // Top-right
+  grid->widget(b3, 1, 1);  // Center
+  grid->widget(b4, 2, 0);  // Bottom-left
+  grid->widget(b6, 2, 2);  // Bottom-right
+  
+  // grid->show_grid(1);  // Uncomment to show grid lines
+  grid->end();
+  
+  win->end();
+  win->resizable(grid);
+  win->size_range(300, 100);
+  win->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Example: Form with Spanning Cells
+
+```cpp
+#include <FL/Fl_Grid.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window win(400, 200, "Form Example");
+  
+  Fl_Grid *grid = new Fl_Grid(0, 0, 400, 200);
+  grid->layout(4, 2, 10, 10);  // 4 rows, 2 columns
+  
+  // Title spanning both columns
+  Fl_Box *title = new Fl_Box(0, 0, 0, 0, "User Information");
+  title->box(FL_FLAT_BOX);
+  title->labelfont(FL_BOLD);
+  grid->widget(title, 0, 0, 1, 2);  // row 0, col 0, span 1 row, 2 cols
+  
+  // Form fields
+  Fl_Input *name = new Fl_Input(0, 0, 0, 0, "Name:");
+  grid->widget(name, 1, 0, 1, 2, FL_GRID_FILL);
+  
+  Fl_Input *email = new Fl_Input(0, 0, 0, 0, "Email:");
+  grid->widget(email, 2, 0, 1, 2, FL_GRID_FILL);
+  
+  // Buttons in separate columns
+  Fl_Button *ok = new Fl_Button(0, 0, 0, 0, "OK");
+  grid->widget(ok, 3, 0, FL_GRID_FILL);
+  
+  Fl_Button *cancel = new Fl_Button(0, 0, 0, 0, "Cancel");
+  grid->widget(cancel, 3, 1, FL_GRID_FILL);
+  
+  grid->end();
+  win.resizable(grid);
+  win.show();
+  return Fl::run();
+}
+```
+
+## Example: Custom Column Widths and Weights
+
+```cpp
+Fl_Grid *grid = new Fl_Grid(0, 0, 400, 300);
+grid->layout(3, 3, 5, 5);
+
+// Set minimum column widths
+grid->col_width(0, 100);  // First column minimum 100px
+grid->col_width(1, 150);  // Second column minimum 150px
+
+// Set column weights (distribute extra space)
+grid->col_weight(0, 1);   // First column gets 1 part
+grid->col_weight(1, 2);   // Second column gets 2 parts
+grid->col_weight(2, 1);   // Third column gets 1 part
+
+// Set row heights
+grid->row_height(0, 30);  // Header row 30px
+grid->row_height(2, 40);  // Footer row 40px
+
+// Add widgets...
+```
+
+## Best Practices
+
+### Design for Minimum Sizes
+
+Design your grid with the smallest possible widget sizes in mind:
+
+```cpp
+// Set minimum window size to prevent layout issues
+win->size_range(min_width, min_height);
+```
+
+### Use Debug Visualization
+
+Enable grid lines during development:
+
+```cpp
+// During development
+grid->show_grid(1);
+
+// Or set environment variable:
+// export FLTK_GRID_DEBUG=1
+```
+
+### Cell Alignment
+
+Choose appropriate alignment for each widget:
+
+```cpp
+// Labels: align left
+grid->widget(label, row, col, FL_GRID_LEFT);
+
+// Buttons: fill cell
+grid->widget(button, row, col, FL_GRID_FILL);
+
+// Icons: center
+grid->widget(icon, row, col, FL_GRID_CENTER);
+```
+
+### Nested Groups
+
+Embed Fl_Group widgets for relative positioning:
+
+```cpp
+// Create a group at position (0,0) with size matching grid cell
+Fl_Group *grp = new Fl_Group(0, 0, 100, 50);
+// Add widgets to group using normal coordinates
+Fl_Button *btn = new Fl_Button(10, 10, 80, 30);
+grp->end();
+
+// Place group in grid - Fl_Grid will reposition it
+grid->widget(grp, 0, 0);
+```
+
+## Notes
+
+- Widget x() and y() positions are ignored; use row/col instead
+- Widget w() and h() are used as minimum sizes
+- Resizing below minimum sizes causes undefined behavior
+- Fl_Group::resizable() is ignored
+- No need to call init_sizes()
+- Experimental API may change in future versions
+
+## See Also
+
+- [Fl_Flex](/api/fl-flex) - Simple row/column layout
+- [Fl_Group](/api/fl-group) - Base container class
+- [Fl_Pack](/api/fl-pack) - Legacy pack container
+- [Fl_Tabs](/api/fl-tabs) - Tabbed interface

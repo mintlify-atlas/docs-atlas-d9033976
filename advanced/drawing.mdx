@@ -1,0 +1,465 @@
+---
+title: Drawing Functions
+description: FLTK's portable drawing API for custom graphics
+---
+
+## Overview
+
+FLTK provides a comprehensive set of portable drawing functions accessed through `<FL/fl_draw.H>`. All drawing operations work within a widget's `draw()` method.
+
+<Warning>
+Drawing functions only work inside `draw()` methods. The graphics context is only valid there.
+</Warning>
+
+## Basic Drawing
+
+### Colors
+
+```cpp
+#include <FL/fl_draw.H>
+
+// Set color by index
+fl_color(FL_RED);
+fl_color(FL_BLACK);
+fl_color(FL_BACKGROUND_COLOR);
+
+// Set color by RGB
+fl_color(255, 128, 0);  // Orange
+fl_color(r, g, b);
+
+// Get current color
+Fl_Color c = fl_color();
+```
+
+### Points and Lines
+
+<CodeGroup>
+```cpp Points
+fl_point(x, y);  // Draw single pixel
+```
+
+```cpp Lines
+// Single line
+fl_line(x1, y1, x2, y2);
+
+// Multiple segments
+fl_line(x1, y1, x2, y2, x3, y3);  // Two connected lines
+```
+
+```cpp Line Style
+fl_line_style(FL_SOLID, 2);  // Solid, 2px width
+fl_line_style(FL_DASH, 1);   // Dashed line
+fl_line_style(FL_DOT, 1);    // Dotted line
+fl_line_style(0);            // Reset to default
+```
+</CodeGroup>
+
+### Rectangles
+
+```cpp
+// Outline rectangle
+fl_rect(x, y, w, h);
+fl_rect(x, y, w, h, FL_RED);  // With color
+
+// Filled rectangle
+fl_rectf(x, y, w, h);
+fl_rectf(x, y, w, h, FL_BLUE);
+
+// RGB filled rectangle
+fl_rectf(x, y, w, h, r, g, b);
+
+// Rounded rectangle
+fl_rounded_rect(x, y, w, h, radius);
+fl_rounded_rectf(x, y, w, h, radius);
+```
+
+## Advanced Shapes
+
+### Circles and Arcs
+
+<CodeGroup>
+```cpp Integer Arc
+// Arc in bounding box
+fl_arc(x, y, w, h, start_angle, end_angle);
+
+// Filled pie slice
+fl_pie(x, y, w, h, start_angle, end_angle);
+
+// Example: semicircle
+fl_arc(10, 10, 100, 100, 0, 180);
+```
+
+```cpp Float Arc
+// Arc from center point
+fl_begin_line();
+  fl_arc(center_x, center_y, radius, start_angle, end_angle);
+fl_end_line();
+
+// Filled circle
+fl_begin_polygon();
+  fl_circle(center_x, center_y, radius);
+fl_end_polygon();
+```
+</CodeGroup>
+
+### Polygons
+
+```cpp
+// Filled triangle
+fl_polygon(x1, y1, x2, y2, x3, y3);
+
+// Filled quad
+fl_polygon(x1, y1, x2, y2, x3, y3, x4, y4);
+
+// Outlined polygons
+fl_loop(x1, y1, x2, y2, x3, y3);  // Triangle outline
+fl_loop(x1, y1, x2, y2, x3, y3, x4, y4);  // Quad outline
+```
+
+### Rectilinear Lines
+
+```cpp
+// Horizontal then vertical
+fl_xyline(x, y, x1);           // Horizontal to x1
+fl_xyline(x, y, x1, y2);       // Horizontal, then vertical
+fl_xyline(x, y, x1, y2, x3);   // H, V, H
+
+// Vertical then horizontal
+fl_yxline(x, y, y1);           // Vertical to y1
+fl_yxline(x, y, y1, x2);       // Vertical, then horizontal
+fl_yxline(x, y, y1, x2, y3);   // V, H, V
+```
+
+## Complex Paths
+
+### Vertex-Based Drawing
+
+```cpp
+// Draw custom polygon
+fl_begin_polygon();
+  fl_vertex(x1, y1);
+  fl_vertex(x2, y2);
+  fl_vertex(x3, y3);
+  // ... more vertices
+fl_end_polygon();
+
+// Draw path outline
+fl_begin_line();
+  fl_vertex(x1, y1);
+  fl_vertex(x2, y2);
+fl_end_line();
+
+// Closed loop
+fl_begin_loop();
+  fl_vertex(x1, y1);
+  fl_vertex(x2, y2);
+  fl_vertex(x3, y3);
+fl_end_loop();
+```
+
+### Curves
+
+```cpp
+// Bezier curve
+fl_begin_line();
+  fl_vertex(x0, y0);  // Start point
+  fl_curve(x0, y0, x1, y1, x2, y2, x3, y3);
+fl_end_line();
+
+// Smooth path with curves
+fl_begin_line();
+  fl_vertex(0, 0);
+  fl_curve(0, 0, 10, 20, 20, 20, 30, 0);
+  fl_curve(30, 0, 40, -20, 50, -20, 60, 0);
+fl_end_line();
+```
+
+### Complex Polygons
+
+```cpp
+// Polygon with holes
+fl_begin_complex_polygon();
+  // Outer boundary
+  fl_vertex(x1, y1);
+  fl_vertex(x2, y2);
+  fl_vertex(x3, y3);
+  
+  fl_gap();  // Start hole
+  
+  // Inner hole (opposite winding)
+  fl_vertex(hx1, hy1);
+  fl_vertex(hx2, hy2);
+  fl_vertex(hx3, hy3);
+fl_end_complex_polygon();
+```
+
+## Transformations
+
+### Basic Transforms
+
+```cpp
+fl_push_matrix();
+  fl_translate(dx, dy);        // Move origin
+  fl_scale(sx, sy);           // Scale x and y
+  fl_rotate(degrees);          // Rotate (degrees!)
+  
+  // Draw transformed graphics
+  fl_circle(0, 0, 50);
+fl_pop_matrix();
+```
+
+### Custom Matrix
+
+```cpp
+// Load identity
+fl_load_identity();
+
+// Set transformation matrix
+fl_load_matrix(a, b, c, d, x, y);
+// Where: X' = aX + cY + x, Y' = bX + dY + y
+
+// Multiply current matrix
+fl_mult_matrix(a, b, c, d, x, y);
+```
+
+## Clipping
+
+### Clip Regions
+
+```cpp
+// Push clip rectangle
+fl_push_clip(x, y, w, h);
+  // Drawing is clipped to this region
+  fl_rectf(0, 0, 1000, 1000);  // Only visible in clip area
+fl_pop_clip();
+
+// No clipping
+fl_push_no_clip();
+  // Can draw anywhere
+fl_pop_clip();
+
+// Test clipping
+if (fl_not_clipped(x, y, w, h)) {
+  // Rectangle is visible, draw it
+}
+
+// Get clipped bounds
+int cx, cy, cw, ch;
+if (fl_clip_box(x, y, w, h, cx, cy, cw, ch)) {
+  // Draw only clipped portion
+}
+```
+
+## Text Drawing
+
+### Basic Text
+
+```cpp
+// Set font
+fl_font(FL_HELVETICA, 14);
+fl_font(FL_COURIER_BOLD, 12);
+
+// Draw text
+fl_draw("Hello World", x, y);  // At baseline
+
+// Draw rotated text
+fl_draw(45, "Rotated", x, y);  // 45 degrees
+
+// Draw substring
+fl_draw("Text", 4, x, y);  // 4 bytes
+```
+
+### Text Metrics
+
+```cpp
+// Get text width
+double w = fl_width("Hello");
+w = fl_width("Text", 4);  // 4 bytes
+
+// Get font height
+int h = fl_height();        // Total height
+int d = fl_descent();       // Below baseline
+
+// Get text extents
+int dx, dy, w, h;
+fl_text_extents("Text", dx, dy, w, h);
+// dx, dy = offset from x,y to first pixel
+// w, h = bounding box size
+```
+
+### Formatted Text
+
+```cpp
+// Draw in box with alignment
+fl_draw("Label", x, y, w, h, FL_ALIGN_CENTER);
+fl_draw("Label", x, y, w, h, FL_ALIGN_LEFT);
+fl_draw("Label", x, y, w, h, FL_ALIGN_TOP | FL_ALIGN_RIGHT);
+
+// With image
+fl_draw("Label", x, y, w, h, FL_ALIGN_CENTER, image);
+
+// Measure formatted text
+int tw = 100, th = 50;
+fl_measure("Multi\nLine", tw, th);  // Returns actual size
+```
+
+## Line Styles
+
+### Style Flags
+
+```cpp
+// Dash patterns
+FL_SOLID          // ————————
+FL_DASH           // — — — —
+FL_DOT            // · · · · 
+FL_DASHDOT        // —·—·—·
+FL_DASHDOTDOT     // —··—··
+
+// Cap styles
+FL_CAP_FLAT       // Flat ends
+FL_CAP_ROUND      // Rounded ends
+FL_CAP_SQUARE     // Square extended ends
+
+// Join styles  
+FL_JOIN_MITER     // Sharp corners
+FL_JOIN_ROUND     // Rounded corners
+FL_JOIN_BEVEL     // Beveled corners
+
+// Example
+fl_line_style(FL_DASH | FL_CAP_ROUND | FL_JOIN_ROUND, 2);
+```
+
+### Custom Dash Patterns
+
+```cpp
+// Define pattern
+char dashes[] = {10, 5, 3, 5, 0};  // 10 on, 5 off, 3 on, 5 off
+fl_line_style(FL_DASH, 1, dashes);
+
+// Reset
+fl_line_style(0);
+```
+
+## Antialiasing
+
+```cpp
+// Enable antialiasing (Windows only)
+fl_antialias(1);
+
+// Disable for performance
+fl_antialias(0);
+
+// Check state
+if (fl_antialias()) {
+  // Antialiasing is on
+}
+```
+
+## Offscreen Rendering
+
+### Image Surfaces
+
+```cpp
+// Create offscreen buffer
+Fl_Offscreen os = fl_create_offscreen(width, height);
+
+fl_begin_offscreen(os);
+  // Draw to offscreen
+  fl_color(FL_WHITE);
+  fl_rectf(0, 0, width, height);
+  fl_color(FL_BLACK);
+  fl_circle(width/2, height/2, 50);
+fl_end_offscreen();
+
+// Copy to screen
+fl_copy_offscreen(x, y, w, h, os, src_x, src_y);
+
+// Cleanup
+fl_delete_offscreen(os);
+```
+
+## Drawing Helpers
+
+### Focus Rectangle
+
+```cpp
+// Dotted focus indicator
+fl_focus_rect(x, y, w, h);
+```
+
+### UI Elements
+
+```cpp
+// Draw check mark
+fl_draw_check(Fl_Rect(x, y, w, h), FL_BLACK);
+
+// Draw arrow
+fl_draw_arrow(Fl_Rect(x, y, w, h), FL_ARROW_SINGLE, 
+              FL_ORIENT_UP, FL_BLACK);
+
+// Draw radio button
+fl_draw_radio(x, y, size, FL_BLACK);
+```
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Widget.H>
+#include <FL/fl_draw.H>
+#include <cmath>
+
+class CustomDrawing : public Fl_Widget {
+public:
+  CustomDrawing(int X, int Y, int W, int H)
+    : Fl_Widget(X, Y, W, H) {}
+  
+  void draw() override {
+    // Background
+    fl_color(FL_WHITE);
+    fl_rectf(x(), y(), w(), h());
+    
+    // Gradient circles
+    fl_push_clip(x(), y(), w(), h());
+    for (int i = 0; i < 5; i++) {
+      int cx = x() + w()/2;
+      int cy = y() + h()/2;
+      int r = 20 + i * 30;
+      
+      uchar gray = 255 - i * 50;
+      fl_color(gray, gray, gray);
+      
+      fl_begin_polygon();
+        fl_circle(cx, cy, r);
+      fl_end_polygon();
+    }
+    fl_pop_clip();
+    
+    // Bezier curve
+    fl_color(FL_RED);
+    fl_line_style(FL_SOLID, 2);
+    fl_begin_line();
+      fl_vertex(x(), y() + h());
+      fl_curve(x(), y() + h(),
+               x() + w()/3, y(),
+               x() + 2*w()/3, y() + h(),
+               x() + w(), y());
+    fl_end_line();
+    fl_line_style(0);
+    
+    // Text
+    fl_color(FL_BLACK);
+    fl_font(FL_HELVETICA_BOLD, 18);
+    fl_draw("Custom Drawing", x() + 10, y() + 20);
+  }
+};
+
+int main() {
+  Fl_Window win(400, 300, "Drawing Demo");
+  CustomDrawing drawing(0, 0, 400, 300);
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```

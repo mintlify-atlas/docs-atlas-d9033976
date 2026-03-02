@@ -1,0 +1,498 @@
+---
+title: Fl_Grid
+description: CSS-like grid layout with rows, columns, and cell spanning for complex interfaces
+---
+
+Fl_Grid is a powerful container widget that arranges children in a two-dimensional grid with rows and columns. Similar to CSS Grid, it provides flexible layouts without manual coordinate calculations.
+
+<Note>
+  Fl_Grid is experimental in FLTK 1.4.x. The API is stable but may have minor changes in future releases.
+</Note>
+
+## Key Features
+
+- Multi-row, multi-column layouts
+- Widgets can span multiple cells
+- Per-cell alignment (top, bottom, left, right, center, fill)
+- Individual row heights and column widths
+- Row/column weights for resize behavior
+- Configurable margins and gaps
+- Grid helper lines for debugging
+
+## Creating Fl_Grid
+
+```cpp
+Fl_Grid(int x, int y, int w, int h, const char *label = 0)
+```
+
+**Example:**
+
+```cpp
+Fl_Grid *grid = new Fl_Grid(0, 0, 400, 300);
+grid->layout(3, 3);  // 3 rows, 3 columns
+grid->end();
+```
+
+## Defining Grid Layout
+
+```cpp
+void layout(int rows, int cols, int margin = -1, int gap = -1)
+```
+
+**Parameters:**
+- `rows` - Number of rows
+- `cols` - Number of columns
+- `margin` - Margin around all cells (default: 0)
+- `gap` - Gap between cells (default: 0)
+
+```cpp
+grid->layout(3, 2, 10, 5);  // 3 rows, 2 cols, 10px margin, 5px gap
+
+// Get grid dimensions
+short rows = grid->rows();
+short cols = grid->cols();
+```
+
+## Adding Widgets to Grid
+
+### Basic Widget Assignment
+
+```cpp
+Fl_Grid::Cell *widget(Fl_Widget *w, int row, int col, 
+                      Fl_Grid_Align align = FL_GRID_FILL)
+```
+
+**Parameters:**
+- `w` - Widget to add (x, y, w, h are ignored)
+- `row` - Row index (0-based)
+- `col` - Column index (0-based)
+- `align` - Alignment within cell
+
+**Returns:** Pointer to the cell object
+
+```cpp
+Fl_Button *btn = new Fl_Button(0, 0, 0, 0, "Click");
+grid->widget(btn, 0, 0);  // Place at row 0, col 0
+```
+
+### Cell Spanning
+
+```cpp
+Fl_Grid::Cell *widget(Fl_Widget *w, int row, int col,
+                      int rowspan, int colspan,
+                      Fl_Grid_Align align = FL_GRID_FILL)
+```
+
+```cpp
+// Widget spans 2 rows and 3 columns
+Fl_Box *header = new Fl_Box(0, 0, 0, 0, "Header");
+grid->widget(header, 0, 0, 2, 3);  // rowspan=2, colspan=3
+```
+
+## Cell Alignment
+
+Control how widgets are positioned and sized within their cells:
+
+```cpp
+const Fl_Grid_Align FL_GRID_CENTER;       // Center (default)
+const Fl_Grid_Align FL_GRID_TOP;          // Top
+const Fl_Grid_Align FL_GRID_BOTTOM;       // Bottom
+const Fl_Grid_Align FL_GRID_LEFT;         // Left
+const Fl_Grid_Align FL_GRID_RIGHT;        // Right
+const Fl_Grid_Align FL_GRID_HORIZONTAL;   // Stretch horizontally
+const Fl_Grid_Align FL_GRID_VERTICAL;     // Stretch vertically
+const Fl_Grid_Align FL_GRID_FILL;         // Fill entire cell
+const Fl_Grid_Align FL_GRID_PROPORTIONAL; // Proportional stretch
+
+// Combined alignments
+const Fl_Grid_Align FL_GRID_TOP_LEFT;
+const Fl_Grid_Align FL_GRID_TOP_RIGHT;
+const Fl_Grid_Align FL_GRID_BOTTOM_LEFT;
+const Fl_Grid_Align FL_GRID_BOTTOM_RIGHT;
+```
+
+**Example:**
+
+```cpp
+// Fill entire cell
+grid->widget(new Fl_Button(0, 0, 0, 0, "Fill"), 0, 0, FL_GRID_FILL);
+
+// Align to top-left
+grid->widget(new Fl_Button(0, 0, 0, 0, "TL"), 0, 1, FL_GRID_TOP_LEFT);
+
+// Center in cell
+grid->widget(new Fl_Button(0, 0, 0, 0, "Center"), 1, 0, FL_GRID_CENTER);
+
+// Stretch horizontally only
+grid->widget(new Fl_Input(0, 0, 0, 0), 1, 1, FL_GRID_HORIZONTAL);
+```
+
+## Margins and Gaps
+
+### Margins (Space Around Grid)
+
+```cpp
+// All sides equal
+void margin(int left, int top = -1, int right = -1, int bottom = -1)
+
+// Get margins
+int margin(int *left, int *top, int *right, int *bottom) const
+```
+
+```cpp
+grid->margin(10);              // 10px on all sides
+grid->margin(5, 10, 5, 10);    // left, top, right, bottom
+```
+
+### Gaps (Space Between Cells)
+
+```cpp
+// Set default row and column gaps
+void gap(int row_gap, int col_gap = -1)
+
+// Get gaps
+void gap(int *row_gap, int *col_gap) const
+```
+
+```cpp
+grid->gap(5);       // 5px row and column gaps
+grid->gap(10, 5);   // 10px row gap, 5px col gap
+```
+
+## Row and Column Configuration
+
+### Column Width
+
+```cpp
+void col_width(int col, int width)       // Set minimum width
+void col_width(const int *widths, size_t size)  // Set multiple
+int col_width(int col) const             // Get width
+int computed_col_width(int col) const    // Get actual width
+```
+
+```cpp
+grid->col_width(0, 100);  // Column 0 minimum 100px
+grid->col_width(1, 200);  // Column 1 minimum 200px
+
+int widths[] = {100, 200, 150};
+grid->col_width(widths, 3);
+```
+
+### Row Height
+
+```cpp
+void row_height(int row, int height)
+void row_height(const int *heights, size_t size)
+int row_height(int row) const
+int computed_row_height(int row) const
+```
+
+```cpp
+grid->row_height(0, 30);  // Row 0 height 30px
+
+int heights[] = {30, 40, 50};
+grid->row_height(heights, 3);
+```
+
+### Column/Row Weights
+
+Control how extra space is distributed when resizing:
+
+```cpp
+void col_weight(int col, int weight)
+void row_weight(int row, int weight)
+```
+
+**Default weight:** 0 (fixed size)  
+**Higher weight:** Gets more space when resizing
+
+```cpp
+grid->col_weight(0, 1);  // Column 0 gets 1 part
+grid->col_weight(1, 2);  // Column 1 gets 2 parts (twice as much)
+grid->col_weight(2, 1);  // Column 2 gets 1 part
+```
+
+### Per-Row/Column Gaps
+
+```cpp
+void col_gap(int col, int gap)
+void row_gap(int row, int gap)
+```
+
+```cpp
+grid->col_gap(1, 20);  // Extra gap after column 1
+grid->row_gap(0, 10);  // Extra gap after row 0
+```
+
+## Working with Cells
+
+### Finding Cells
+
+```cpp
+Fl_Grid::Cell *cell(int row, int col) const
+Fl_Grid::Cell *cell(Fl_Widget *widget) const
+```
+
+```cpp
+Fl_Grid::Cell *c = grid->cell(0, 0);
+if (c) {
+  Fl_Widget *w = c->widget();
+}
+
+Fl_Grid::Cell *c2 = grid->cell(my_button);
+if (c2) {
+  printf("Button at row %d, col %d\n", c2->row(), c2->col());
+}
+```
+
+### Cell Properties
+
+```cpp
+class Fl_Grid::Cell {
+public:
+  Fl_Widget *widget() const;
+  short row() const;
+  short col() const;
+  short rowspan() const;
+  short colspan() const;
+  Fl_Grid_Align align() const;
+  
+  void rowspan(short v);
+  void colspan(short v);
+  void align(Fl_Grid_Align a);
+  void minimum_size(int w, int h);
+};
+```
+
+```cpp
+Fl_Grid::Cell *cell = grid->widget(button, 1, 1);
+cell->colspan(2);  // Span 2 columns
+cell->align(FL_GRID_TOP_LEFT);
+cell->minimum_size(100, 50);
+```
+
+## Grid Helper Lines
+
+Show grid lines during development:
+
+```cpp
+void show_grid(int enable)
+void show_grid(int enable, Fl_Color color)
+```
+
+```cpp
+grid->show_grid(1);              // Show with default green
+grid->show_grid(1, FL_RED);      // Show with red lines
+grid->show_grid(0);              // Hide
+```
+
+<Tip>
+  Set environment variable `FLTK_GRID_DEBUG=1` to enable grid lines for all Fl_Grid widgets without code changes.
+</Tip>
+
+## Complete Example
+
+From `examples/grid-simple.cxx`:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Grid.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char **argv) {
+  Fl_Double_Window *win = new Fl_Double_Window(320, 180, "3x3 Fl_Grid with Buttons");
+  
+  // Create the Fl_Grid container
+  Fl_Grid *grid = new Fl_Grid(0, 0, win->w(), win->h());
+  grid->layout(3, 3, 10, 10);  // 3x3 grid, 10px margin/gap
+  grid->color(FL_WHITE);
+  
+  // Create buttons
+  Fl_Button *b0 = new Fl_Button(0, 0, 0, 0, "New");
+  Fl_Button *b1 = new Fl_Button(0, 0, 0, 0, "Options");
+  Fl_Button *b3 = new Fl_Button(0, 0, 0, 0, "About");
+  Fl_Button *b4 = new Fl_Button(0, 0, 0, 0, "Help");
+  Fl_Button *b6 = new Fl_Button(0, 0, 0, 0, "Quit");
+  
+  // Assign buttons to grid positions (row, col)
+  grid->widget(b0, 0, 0);  // Top-left
+  grid->widget(b1, 0, 2);  // Top-right
+  grid->widget(b3, 1, 1);  // Center
+  grid->widget(b4, 2, 0);  // Bottom-left
+  grid->widget(b6, 2, 2);  // Bottom-right
+  
+  grid->show_grid(0);  // Set to 1 to show grid lines
+  grid->end();
+  
+  win->end();
+  win->resizable(grid);
+  win->size_range(300, 100);
+  win->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Patterns
+
+### Form Layout
+
+```cpp
+Fl_Grid *form = new Fl_Grid(10, 10, 400, 200);
+form->layout(3, 2, 10, 10);  // 3 rows, 2 cols
+
+// Labels in column 0, inputs in column 1
+form->widget(new Fl_Box(0, 0, 0, 0, "Name:"), 0, 0, FL_GRID_RIGHT);
+form->widget(new Fl_Input(0, 0, 0, 0), 0, 1, FL_GRID_FILL);
+
+form->widget(new Fl_Box(0, 0, 0, 0, "Email:"), 1, 0, FL_GRID_RIGHT);
+form->widget(new Fl_Input(0, 0, 0, 0), 1, 1, FL_GRID_FILL);
+
+form->widget(new Fl_Box(0, 0, 0, 0, "Phone:"), 2, 0, FL_GRID_RIGHT);
+form->widget(new Fl_Input(0, 0, 0, 0), 2, 1, FL_GRID_FILL);
+
+// Make input column wider
+form->col_width(0, 80);   // Label column
+form->col_weight(1, 1);   // Input column grows
+
+form->end();
+```
+
+### Calculator Layout
+
+```cpp
+Fl_Grid *calc = new Fl_Grid(0, 0, 200, 250);
+calc->layout(5, 4, 5, 5);  // 5 rows, 4 cols
+
+// Display spans all columns
+Fl_Box *display = new Fl_Box(0, 0, 0, 0, "0");
+display->box(FL_DOWN_BOX);
+display->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+calc->widget(display, 0, 0, 1, 4);  // span 4 columns
+
+// Number buttons
+const char *labels[] = {
+  "7", "8", "9", "/",
+  "4", "5", "6", "*",
+  "1", "2", "3", "-",
+  "0", ".", "=", "+"
+};
+
+for (int i = 0; i < 16; i++) {
+  int row = 1 + i / 4;
+  int col = i % 4;
+  Fl_Button *btn = new Fl_Button(0, 0, 0, 0, labels[i]);
+  calc->widget(btn, row, col, FL_GRID_FILL);
+}
+
+calc->end();
+```
+
+### Dashboard Layout
+
+```cpp
+Fl_Grid *dashboard = new Fl_Grid(0, 0, 800, 600);
+dashboard->layout(2, 3, 10, 10);
+
+// Header spans all columns
+Fl_Box *header = new Fl_Box(0, 0, 0, 0, "Dashboard");
+header->box(FL_UP_BOX);
+header->labelsize(20);
+dashboard->widget(header, 0, 0, 1, 3, FL_GRID_FILL);
+dashboard->row_height(0, 50);
+
+// Three panels in bottom row
+Fl_Box *panel1 = new Fl_Box(0, 0, 0, 0, "Panel 1");
+panel1->box(FL_DOWN_BOX);
+dashboard->widget(panel1, 1, 0, FL_GRID_FILL);
+
+Fl_Box *panel2 = new Fl_Box(0, 0, 0, 0, "Panel 2");
+panel2->box(FL_DOWN_BOX);
+dashboard->widget(panel2, 1, 1, FL_GRID_FILL);
+
+Fl_Box *panel3 = new Fl_Box(0, 0, 0, 0, "Panel 3");
+panel3->box(FL_DOWN_BOX);
+dashboard->widget(panel3, 1, 2, FL_GRID_FILL);
+
+// Equal column weights
+dashboard->col_weight(0, 1);
+dashboard->col_weight(1, 1);
+dashboard->col_weight(2, 1);
+dashboard->row_weight(1, 1);
+
+dashboard->end();
+```
+
+## Resizing Behavior
+
+Fl_Grid ignores the normal Fl_Group::resizable() widget. Instead, use row/column weights:
+
+```cpp
+// Columns 0 and 2 fixed, column 1 grows
+grid->col_weight(1, 1);
+
+// Row 0 fixed, row 1 grows
+grid->row_weight(1, 1);
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Set Minimum Sizes" icon="ruler">
+    Prevent grid from becoming too small:
+    ```cpp
+    window->size_range(400, 300);
+    ```
+  </Card>
+
+  <Card title="Use show_grid()" icon="grid">
+    Debug layout during development:
+    ```cpp
+    grid->show_grid(1);
+    ```
+  </Card>
+
+  <Card title="Set Weights" icon="weight-hanging">
+    Define which rows/columns resize:
+    ```cpp
+    grid->col_weight(1, 1);  // Column 1 grows
+    ```
+  </Card>
+
+  <Card title="Ignore Widget Sizes" icon="xmark">
+    x, y, w, h are ignored:
+    ```cpp
+    new Fl_Button(0, 0, 0, 0, "OK");
+    ```
+  </Card>
+</CardGroup>
+
+## Reference
+
+### Header File
+
+```cpp
+#include <FL/Fl_Grid.H>
+```
+
+### Key Methods
+
+| Method | Description |
+|--------|-------------|
+| `layout(rows, cols, margin, gap)` | Define grid structure |
+| `widget(w, row, col, align)` | Add widget to cell |
+| `widget(w, row, col, rowspan, colspan, align)` | Add with spanning |
+| `margin(...)` | Set margins |
+| `gap(row_gap, col_gap)` | Set gaps |
+| `col_width(col, width)` | Set column width |
+| `row_height(row, height)` | Set row height |
+| `col_weight(col, weight)` | Set column resize weight |
+| `row_weight(row, weight)` | Set row resize weight |
+| `show_grid(enable)` | Show grid helper lines |
+| `cell(row, col)` | Get cell object |
+
+## See Also
+
+- [Fl_Flex](/layout/flex) - Single row/column layout
+- [Fl_Group](/layout/group) - Base container widget
+- [Layout Overview](/layout/overview) - Choosing the right layout

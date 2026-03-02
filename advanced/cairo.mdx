@@ -1,0 +1,320 @@
+---
+title: Cairo Graphics
+description: Vector graphics and antialiasing with Cairo integration
+---
+
+## Overview
+
+FLTK supports the Cairo 2D graphics library for high-quality vector graphics, antialiasing, and advanced rendering features. Cairo support is optional and must be enabled at build time.
+
+<Note>
+Cairo is available on Windows, macOS, and Unix/Linux (X11 + Wayland).
+</Note>
+
+## Checking Availability
+
+```cpp
+#include <FL/Fl.H>
+
+#ifdef FLTK_HAVE_CAIRO
+  // Cairo is available
+#endif
+```
+
+## Cairo Windows
+
+### Basic Cairo Window
+
+```cpp
+#include <FL/Fl_Cairo_Window.H>
+#include <cairo.h>
+
+void my_draw_cb(Fl_Cairo_Window *window, cairo_t *cr) {
+  // Set antialiasing
+  cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
+  
+  // Draw with Cairo
+  cairo_set_line_width(cr, 2.0);
+  cairo_set_source_rgb(cr, 1.0, 0.5, 0.0);  // Orange
+  
+  cairo_move_to(cr, 10, 10);
+  cairo_line_to(cr, 290, 290);
+  cairo_stroke(cr);
+}
+
+int main() {
+  Fl_Cairo_Window window(300, 300, "Cairo Drawing");
+  window.color(FL_BLACK);
+  window.set_draw_cb(my_draw_cb);
+  window.show();
+  return Fl::run();
+}
+```
+
+## Drawing Example
+
+From `examples/cairo-draw-x.cxx`:
+
+```cpp
+static void my_cairo_draw_cb(Fl_Cairo_Window *window, cairo_t *cr) {
+  const double xmax = (window->w() - 1);
+  const double ymax = (window->h() - 1);
+  
+  // Set antialiasing mode
+  cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
+  
+  // Draw orange "X" across window
+  cairo_set_line_width(cr, 1.00);
+  cairo_set_source_rgb(cr, 1.0, 0.5, 0.0);  // Orange color
+  
+  // Draw diagonal "\"
+  cairo_move_to(cr, 0.0, 0.0);
+  cairo_line_to(cr, xmax, ymax);
+  
+  // Draw diagonal "/"
+  cairo_move_to(cr, 0.0, ymax);
+  cairo_line_to(cr, xmax, 0.0);
+  
+  cairo_stroke(cr);
+}
+```
+
+## Cairo State Management
+
+### Fl_Cairo_State Class
+
+```cpp
+class Fl_Cairo_State {
+public:
+  // Get current Cairo context
+  cairo_t *cc() const;
+  
+  // Set Cairo context
+  void cc(cairo_t *c, bool own = true);
+  
+  // Autolink option (cairoext only)
+  bool autolink() const;
+  void autolink(bool b);
+  
+  // Track window/GC associations
+  void window(void *w);
+  void *window() const;
+  void gc(void *c);
+  void *gc() const;
+};
+```
+
+## Common Drawing Operations
+
+### Paths and Shapes
+
+<CodeGroup>
+```cpp Lines
+cairo_move_to(cr, x1, y1);
+cairo_line_to(cr, x2, y2);
+cairo_stroke(cr);
+```
+
+```cpp Rectangles
+cairo_rectangle(cr, x, y, width, height);
+cairo_fill(cr);  // or cairo_stroke(cr);
+```
+
+```cpp Circles
+cairo_arc(cr, xc, yc, radius, 0, 2 * M_PI);
+cairo_fill(cr);
+```
+
+```cpp Bezier Curves
+cairo_move_to(cr, x1, y1);
+cairo_curve_to(cr, x2, y2, x3, y3, x4, y4);
+cairo_stroke(cr);
+```
+</CodeGroup>
+
+### Colors and Patterns
+
+```cpp
+// Solid colors
+cairo_set_source_rgb(cr, r, g, b);         // 0.0 to 1.0
+cairo_set_source_rgba(cr, r, g, b, alpha); // With transparency
+
+// Linear gradient
+cairo_pattern_t *pat = cairo_pattern_create_linear(x0, y0, x1, y1);
+cairo_pattern_add_color_stop_rgba(pat, 0, r1, g1, b1, a1);
+cairo_pattern_add_color_stop_rgba(pat, 1, r2, g2, b2, a2);
+cairo_set_source(cr, pat);
+cairo_pattern_destroy(pat);
+
+// Radial gradient
+pat = cairo_pattern_create_radial(cx0, cy0, radius0, cx1, cy1, radius1);
+cairo_pattern_add_color_stop_rgba(pat, 0, r, g, b, a);
+cairo_set_source(cr, pat);
+cairo_pattern_destroy(pat);
+```
+
+### Text Rendering
+
+```cpp
+cairo_select_font_face(cr, "Sans", 
+                       CAIRO_FONT_SLANT_NORMAL,
+                       CAIRO_FONT_WEIGHT_BOLD);
+cairo_set_font_size(cr, 24.0);
+cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
+cairo_move_to(cr, 10, 50);
+cairo_show_text(cr, "Hello Cairo!");
+```
+
+## Antialiasing Modes
+
+```cpp
+// Available antialiasing modes
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);  // System default
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);     // No antialiasing
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_GRAY);     // Grayscale AA
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_SUBPIXEL); // Subpixel AA
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_FAST);     // Fast
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_GOOD);     // Good quality
+cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);     // Best quality (1.12+)
+```
+
+## Transformations
+
+```cpp
+// Save/restore state
+cairo_save(cr);
+  // Transformations
+  cairo_translate(cr, dx, dy);
+  cairo_rotate(cr, angle);       // Radians
+  cairo_scale(cr, sx, sy);
+  
+  // Drawing operations...
+cairo_restore(cr);
+
+// Matrix transformations
+cairo_matrix_t matrix;
+cairo_matrix_init_rotate(&matrix, angle);
+cairo_transform(cr, &matrix);
+```
+
+## Integration with FLTK
+
+### Using Cairo in Regular Windows
+
+```cpp
+#ifdef FLTK_HAVE_CAIRO
+#include <FL/Fl_Cairo.H>
+
+class MyCairoWidget : public Fl_Box {
+public:
+  void draw() override {
+    // Get Cairo context from FLTK
+    cairo_t *cr = Fl::cairo_cc();
+    if (cr) {
+      cairo_save(cr);
+      // Your Cairo drawing
+      cairo_restore(cr);
+    } else {
+      // Fallback to FLTK drawing
+      Fl_Box::draw();
+    }
+  }
+};
+#endif
+```
+
+## Build Configuration
+
+<Tabs>
+  <Tab title="CMake">
+    ```bash
+    cmake -DFLTK_OPTION_CAIRO_WINDOW=ON ..
+    # or
+    cmake -DFLTK_OPTION_CAIRO_EXT=ON ..
+    ```
+  </Tab>
+  
+  <Tab title="configure">
+    ```bash
+    ./configure --enable-cairo
+    # or
+    ./configure --enable-cairoext
+    ```
+  </Tab>
+</Tabs>
+
+## Cairo Window vs CairoExt
+
+<CardGroup cols={2}>
+  <Card title="CAIRO_WINDOW" icon="window">
+    - Dedicated Cairo windows only
+    - `Fl_Cairo_Window` class
+    - Simpler API
+    - Lower overhead
+  </Card>
+  
+  <Card title="CAIRO_EXT" icon="sparkles">
+    - Cairo in any FLTK window
+    - More flexible
+    - Autolink support
+    - Can mix FLTK/Cairo drawing
+  </Card>
+</CardGroup>
+
+## Performance Tips
+
+<Warning>
+Cairo rendering can be slower than native FLTK drawing. Use it where quality matters.
+</Warning>
+
+1. **Minimize state changes**: Group similar operations
+2. **Use surfaces**: Cache complex drawings to image surfaces
+3. **Clip regions**: Limit drawing to damaged areas
+4. **Avoid transparency**: Opaque operations are faster
+
+```cpp
+// Cache to surface
+cairo_surface_t *cached = cairo_image_surface_create(
+    CAIRO_FORMAT_ARGB32, width, height);
+cairo_t *cache_cr = cairo_create(cached);
+// Draw once to cache_cr
+cairo_destroy(cache_cr);
+
+// Reuse in draw()
+cairo_set_source_surface(cr, cached, x, y);
+cairo_paint(cr);
+```
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Cairo_Window.H>
+#include <cmath>
+
+void draw_gradient_circle(Fl_Cairo_Window *win, cairo_t *cr) {
+  int w = win->w();
+  int h = win->h();
+  
+  // Radial gradient
+  cairo_pattern_t *pat = cairo_pattern_create_radial(
+      w/2, h/2, 10,
+      w/2, h/2, 100);
+  cairo_pattern_add_color_stop_rgba(pat, 0, 1, 1, 0, 1);
+  cairo_pattern_add_color_stop_rgba(pat, 1, 0, 0, 1, 1);
+  
+  cairo_set_source(cr, pat);
+  cairo_arc(cr, w/2, h/2, 100, 0, 2 * M_PI);
+  cairo_fill(cr);
+  
+  cairo_pattern_destroy(pat);
+}
+
+int main() {
+  Fl_Cairo_Window win(300, 300, "Cairo Gradient");
+  win.set_draw_cb(draw_gradient_circle);
+  win.show();
+  return Fl::run();
+}
+```

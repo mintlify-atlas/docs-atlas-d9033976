@@ -1,0 +1,440 @@
+---
+title: Fl_Flex
+description: Modern flexible box layout for single rows or columns with automatic spacing
+---
+
+Fl_Flex is a container widget that arranges children in a single row (horizontal) or column (vertical) with flexible sizing. Introduced in FLTK 1.4.0, it's the recommended replacement for Fl_Pack with more predictable resize behavior.
+
+## Key Features
+
+- Automatic horizontal or vertical positioning
+- Configurable margins around all children
+- Uniform gap spacing between children
+- Fixed-size or flexible widgets
+- Drop-in replacement for Fl_Pack
+
+## Creating Fl_Flex
+
+### Standard Constructor
+
+```cpp
+Fl_Flex(int x, int y, int w, int h, const char *label = 0)
+```
+
+Creates a vertical (column) layout by default:
+
+```cpp
+Fl_Flex *flex = new Fl_Flex(10, 10, 300, 200);
+flex->begin();
+  new Fl_Button(0, 0, 0, 0, "Button 1");  // x,y,w,h ignored
+  new Fl_Button(0, 0, 0, 0, "Button 2");
+  new Fl_Button(0, 0, 0, 0, "Button 3");
+flex->end();
+```
+
+### Direction Constructors
+
+```cpp
+// Horizontal or vertical layout
+Fl_Flex(int w, int h, int direction)
+Fl_Flex(int x, int y, int w, int h, int direction)
+```
+
+**Direction values:**
+- `Fl_Flex::HORIZONTAL` or `Fl_Flex::ROW` - Single row
+- `Fl_Flex::VERTICAL` or `Fl_Flex::COLUMN` - Single column (default)
+
+```cpp
+Fl_Flex *toolbar = new Fl_Flex(0, 0, 800, 30, Fl_Flex::HORIZONTAL);
+```
+
+## Layout Direction
+
+Change layout direction with `type()`:
+
+```cpp
+flex->type(Fl_Flex::HORIZONTAL);  // Switch to row
+flex->type(Fl_Flex::VERTICAL);    // Switch to column
+
+// Check direction
+if (flex->horizontal()) {
+  // Row layout
+}
+```
+
+## Margins and Gaps
+
+### Margins (Space Around Children)
+
+```cpp
+// All sides equal
+void margin(int m)
+void margin(int m, int gap)  // Also set gap
+
+// Individual sides
+void margin(int left, int top, int right, int bottom)
+
+// Get margin
+int margin() const  // Returns left margin
+int margin(int *left, int *top, int *right, int *bottom) const
+```
+
+**Example:**
+
+```cpp
+flex->margin(10);              // 10px on all sides
+flex->margin(10, 5);           // 10px margin, 5px gap
+flex->margin(5, 10, 5, 10);    // left, top, right, bottom
+```
+
+### Gap (Space Between Children)
+
+```cpp
+void gap(int g)
+int gap() const
+
+// Alias for Fl_Pack compatibility
+void spacing(int s)
+int spacing() const
+```
+
+**Example:**
+
+```cpp
+flex->gap(10);  // 10px between widgets
+```
+
+## Fixed vs. Flexible Sizing
+
+### Fixed Size Widgets
+
+Set a widget to have a fixed width (horizontal) or height (vertical):
+
+```cpp
+void fixed(Fl_Widget *w, int size)
+int fixed(Fl_Widget *w) const  // Get fixed size
+```
+
+**Example:**
+
+```cpp
+Fl_Flex *toolbar = new Fl_Flex(0, 0, 600, 30, Fl_Flex::HORIZONTAL);
+
+toolbar->begin();
+Fl_Button *file = new Fl_Button(0, 0, 0, 0, "File");
+Fl_Button *edit = new Fl_Button(0, 0, 0, 0, "Edit");
+Fl_Box *spacer = new Fl_Box(0, 0, 0, 0);      // Invisible spacer
+Fl_Button *exit = new Fl_Button(0, 0, 0, 0, "Exit");
+toolbar->end();
+
+// Fixed width buttons
+toolbar->fixed(file, 80);
+toolbar->fixed(edit, 80);
+toolbar->fixed(exit, 80);
+// spacer takes all remaining width
+```
+
+### Flexible Widgets
+
+Widgets without fixed size share available space equally:
+
+```cpp
+Fl_Flex *row = new Fl_Flex(0, 0, 600, 30, Fl_Flex::HORIZONTAL);
+row->begin();
+  new Fl_Button(0, 0, 0, 0, "Equal");   // Each gets
+  new Fl_Button(0, 0, 0, 0, "Width");   // 1/3 of
+  new Fl_Button(0, 0, 0, 0, "Buttons"); // available space
+row->end();
+```
+
+## Horizontal Layout
+
+Widgets arranged in a single row:
+
+```cpp
+Fl_Flex *flex = new Fl_Flex(x, y, w, h, Fl_Flex::HORIZONTAL);
+```
+
+**Behavior:**
+- Width: Fixed widgets use specified width, flexible widgets share remaining space
+- Height: All widgets stretched to full height (minus margins)
+- Gap: Horizontal space between widgets
+
+## Vertical Layout
+
+Widgets stacked in a single column:
+
+```cpp
+Fl_Flex *flex = new Fl_Flex(x, y, w, h, Fl_Flex::VERTICAL);
+```
+
+**Behavior:**
+- Width: All widgets stretched to full width (minus margins)
+- Height: Fixed widgets use specified height, flexible widgets share remaining space
+- Gap: Vertical space between widgets
+
+## Complete Example
+
+From `examples/howto-flex-simple.cxx`:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Flex.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+
+void exit_cb(Fl_Widget *w, void *) {
+  fl_message("The '%s' button closes the window", w->label());
+  w->window()->hide();
+}
+
+void button_cb(Fl_Widget *w, void *) {
+  fl_message("The '%s' button does nothing.", w->label());
+}
+
+int main(int argc, char **argv) {
+  Fl_Double_Window window(410, 40, "Simple Fl_Flex Demo");
+  
+  // Create horizontal flex container
+  Fl_Flex flex(5, 5, window.w() - 10, window.h() - 10, Fl_Flex::HORIZONTAL);
+  
+  Fl_Button b1(0, 0, 0, 0, "File");
+  Fl_Button b2(0, 0, 0, 0, "New");
+  Fl_Button b3(0, 0, 0, 0, "Save");
+  Fl_Box    bx(0, 0, 0, 0);  // Empty space (flexible)
+  Fl_Button eb(0, 0, 0, 0, "Exit");
+  
+  b1.callback(button_cb);
+  b2.callback(button_cb);
+  b3.callback(button_cb);
+  eb.callback(exit_cb);
+  
+  flex.gap(10);           // 10px between widgets
+  flex.fixed(bx, 30);     // Fixed 30px spacer
+  flex.end();
+  
+  window.end();
+  window.resizable(flex);
+  window.size_range(300, 30);  // Prevent too-small window
+  window.show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Patterns
+
+### Toolbar with Right-Aligned Button
+
+<Steps>
+  <Step title="Create horizontal flex">
+    ```cpp
+    Fl_Flex *toolbar = new Fl_Flex(0, 0, 800, 35, Fl_Flex::HORIZONTAL);
+    ```
+  </Step>
+  
+  <Step title="Add left-aligned buttons">
+    ```cpp
+    toolbar->begin();
+    new Fl_Button(0, 0, 0, 0, "New");
+    new Fl_Button(0, 0, 0, 0, "Open");
+    new Fl_Button(0, 0, 0, 0, "Save");
+    ```
+  </Step>
+  
+  <Step title="Add flexible spacer">
+    ```cpp
+    Fl_Box *spacer = new Fl_Box(0, 0, 0, 0);  // Takes all extra space
+    ```
+  </Step>
+  
+  <Step title="Add right-aligned button">
+    ```cpp
+    new Fl_Button(0, 0, 0, 0, "Exit");
+    toolbar->end();
+    ```
+  </Step>
+</Steps>
+
+### Button Bar with Equal Widths
+
+```cpp
+Fl_Flex *buttons = new Fl_Flex(0, 0, 400, 40, Fl_Flex::HORIZONTAL);
+buttons->gap(5);
+buttons->margin(5);
+
+buttons->begin();
+  new Fl_Button(0, 0, 0, 0, "OK");      // Equal
+  new Fl_Button(0, 0, 0, 0, "Cancel");  // width
+  new Fl_Button(0, 0, 0, 0, "Apply");   // buttons
+buttons->end();
+```
+
+### Vertical Form Layout
+
+```cpp
+Fl_Flex *form = new Fl_Flex(10, 10, 300, 200, Fl_Flex::VERTICAL);
+form->gap(10);
+form->margin(10);
+
+form->begin();
+Fl_Input *name = new Fl_Input(0, 0, 0, 30, "Name:");
+form->fixed(name, 30);  // Fixed height
+
+Fl_Input *email = new Fl_Input(0, 0, 0, 30, "Email:");
+form->fixed(email, 30);
+
+Fl_Text_Display *notes = new Fl_Text_Display(0, 0, 0, 0);
+notes->buffer(new Fl_Text_Buffer());
+// notes is flexible, takes remaining height
+
+Fl_Flex *buttons = new Fl_Flex(0, 0, 0, 35, Fl_Flex::HORIZONTAL);
+buttons->gap(5);
+buttons->begin();
+  new Fl_Box(0, 0, 0, 0);  // Spacer
+  new Fl_Button(0, 0, 80, 0, "OK");
+  new Fl_Button(0, 0, 80, 0, "Cancel");
+buttons->end();
+form->fixed(buttons, 35);
+
+form->end();
+```
+
+### Nested Flex Layouts
+
+```cpp
+// Main vertical layout
+Fl_Flex *main = new Fl_Flex(0, 0, 600, 400, Fl_Flex::VERTICAL);
+main->begin();
+
+  // Top toolbar (horizontal)
+  Fl_Flex *toolbar = new Fl_Flex(0, 0, 0, 35, Fl_Flex::HORIZONTAL);
+  toolbar->gap(5);
+  toolbar->margin(5);
+  toolbar->begin();
+    new Fl_Button(0, 0, 0, 0, "File");
+    new Fl_Button(0, 0, 0, 0, "Edit");
+    new Fl_Box(0, 0, 0, 0);  // Spacer
+  toolbar->end();
+  main->fixed(toolbar, 35);
+  
+  // Content area (flexible)
+  Fl_Box *content = new Fl_Box(0, 0, 0, 0, "Content Area");
+  content->box(FL_DOWN_BOX);
+  // content takes remaining height
+  
+  // Bottom status bar (horizontal)
+  Fl_Flex *status = new Fl_Flex(0, 0, 0, 25, Fl_Flex::HORIZONTAL);
+  status->margin(5, 0, 5, 0);
+  status->begin();
+    new Fl_Box(0, 0, 0, 0, "Ready");
+  status->end();
+  main->fixed(status, 25);
+  
+main->end();
+```
+
+## Forcing Layout Recalculation
+
+```cpp
+void layout()              // Recalculate and redraw
+void need_layout(int set)  // Request recalculation
+bool need_layout() const   // Check if needed
+```
+
+Call after changing widget sizes or adding/removing children:
+
+```cpp
+flex->fixed(button, 100);  // Change size
+flex->layout();            // Apply changes
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Set Window Size Range" icon="window-restore">
+    Prevent layout from becoming too small:
+    ```cpp
+    window->size_range(300, 200);
+    ```
+  </Card>
+
+  <Card title="Use Invisible Spacers" icon="square">
+    Create flexible spacing with Fl_Box:
+    ```cpp
+    Fl_Box *spacer = new Fl_Box(0, 0, 0, 0);
+    flex->fixed(spacer, 20);  // Or leave flexible
+    ```
+  </Card>
+
+  <Card title="Widget Size Ignored" icon="ruler">
+    Initial widget x, y, w, h are ignored:
+    ```cpp
+    // All zeros work fine
+    new Fl_Button(0, 0, 0, 0, "Button");
+    ```
+  </Card>
+
+  <Card title="Prefer Over Fl_Pack" icon="star">
+    Use Fl_Flex for new code:
+    ```cpp
+    // BETTER
+    Fl_Flex *flex = new Fl_Flex(...);
+    
+    // LEGACY
+    Fl_Pack *pack = new Fl_Pack(...);
+    ```
+  </Card>
+</CardGroup>
+
+## Fl_Pack Compatibility
+
+Fl_Flex can be a drop-in replacement:
+
+| Fl_Pack Method | Fl_Flex Equivalent |
+|----------------|--------------------|
+| `spacing(int)` | `gap(int)` or `spacing(int)` |
+| `type(HORIZONTAL/VERTICAL)` | `type(HORIZONTAL/VERTICAL)` |
+| `horizontal()` | `horizontal()` |
+
+**Key differences:**
+- Fl_Flex doesn't resize itself (fixed size)
+- Fl_Flex has margins and more predictable behavior
+- Fl_Flex supports fixed-size widgets
+
+## Reference
+
+### Header File
+
+```cpp
+#include <FL/Fl_Flex.H>
+```
+
+### Key Methods
+
+| Method | Description |
+|--------|-------------|
+| `type(int)` | Set HORIZONTAL or VERTICAL |
+| `margin(int)` | Set margin around children |
+| `gap(int)` | Set space between children |
+| `fixed(Fl_Widget*, int)` | Set fixed size for widget |
+| `layout()` | Recalculate layout |
+| `horizontal()` | Check if horizontal layout |
+
+### Enumerations
+
+```cpp
+enum {
+  VERTICAL = 0,    // Column layout (default)
+  HORIZONTAL = 1,  // Row layout
+  COLUMN = 0,      // Alias for VERTICAL
+  ROW = 1          // Alias for HORIZONTAL
+};
+```
+
+## See Also
+
+- [Fl_Pack](/layout/pack) - Legacy packing widget
+- [Fl_Grid](/layout/grid) - Multi-row/column layout
+- [Fl_Group](/layout/group) - Base container widget

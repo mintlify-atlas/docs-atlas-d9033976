@@ -1,0 +1,463 @@
+---
+title: Enumerations
+description: Core FLTK enumerations for events, keys, colors, fonts, and box types
+---
+
+FLTK uses several enumeration types to define events, keys, colors, fonts, box types, and other constants.
+
+## Events (Fl_Event)
+
+Event types passed to `Fl_Widget::handle()` methods.
+
+### Mouse Events
+
+| Event | Value | Description |
+|-------|-------|-------------|
+| `FL_NO_EVENT` | 0 | No event |
+| `FL_PUSH` | 1 | Mouse button pressed |
+| `FL_RELEASE` | 2 | Mouse button released |
+| `FL_ENTER` | 3 | Mouse entered widget |
+| `FL_LEAVE` | 4 | Mouse left widget |
+| `FL_DRAG` | 5 | Mouse moved with button held |
+| `FL_MOVE` | 11 | Mouse moved without button |
+| `FL_MOUSEWHEEL` | 19 | Mouse wheel scrolled |
+
+**Example:**
+```cpp
+int MyWidget::handle(int event) {
+  if (event == FL_PUSH) {
+    printf("Clicked at %d,%d\n", Fl::event_x(), Fl::event_y());
+    return 1;
+  }
+  return Fl_Widget::handle(event);
+}
+```
+
+### Keyboard Events
+
+| Event | Value | Description |
+|-------|-------|-------------|
+| `FL_KEYDOWN` / `FL_KEYBOARD` | 8 | Key pressed |
+| `FL_KEYUP` | 9 | Key released |
+| `FL_SHORTCUT` | 12 | Keyboard shortcut |
+
+**Example:**
+```cpp
+int MyWidget::handle(int event) {
+  if (event == FL_KEYBOARD) {
+    int key = Fl::event_key();
+    if (key == FL_Enter) {
+      do_callback();
+      return 1;
+    }
+  }
+  return Fl_Widget::handle(event);
+}
+```
+
+### Focus Events
+
+| Event | Value | Description |
+|-------|-------|-------------|
+| `FL_FOCUS` | 6 | Widget received focus |
+| `FL_UNFOCUS` | 7 | Widget lost focus |
+
+### Widget State Events
+
+| Event | Value | Description |
+|-------|-------|-------------|
+| `FL_SHOW` | 16 | Widget became visible |
+| `FL_HIDE` | 15 | Widget became invisible |
+| `FL_ACTIVATE` | 14 | Widget became active |
+| `FL_DEACTIVATE` | 13 | Widget became inactive |
+
+### Other Events
+
+| Event | Value | Description |
+|-------|-------|-------------|
+| `FL_CLOSE` | 10 | Window close requested |
+| `FL_PASTE` | 17 | Clipboard paste event |
+| `FL_SELECTIONCLEAR` | 18 | Selection was cleared |
+| `FL_DND_ENTER` | 20 | Drag-and-drop entered widget |
+| `FL_DND_DRAG` | 21 | Drag-and-drop moved |
+| `FL_DND_LEAVE` | 22 | Drag-and-drop left widget |
+| `FL_DND_RELEASE` | 23 | Drag-and-drop released |
+| `FL_FULLSCREEN` | 25 | Fullscreen state changed |
+
+## Key Codes
+
+Constants for non-ASCII keys and mouse buttons.
+
+### Special Keys
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_BackSpace` | 0xff08 | Backspace key |
+| `FL_Tab` | 0xff09 | Tab key |
+| `FL_Enter` | 0xff0d | Enter/Return key |
+| `FL_Escape` | 0xff1b | Escape key |
+| `FL_Delete` | 0xffff | Delete key |
+
+### Arrow Keys
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_Home` | 0xff50 | Home key |
+| `FL_Left` | 0xff51 | Left arrow |
+| `FL_Up` | 0xff52 | Up arrow |
+| `FL_Right` | 0xff53 | Right arrow |
+| `FL_Down` | 0xff54 | Down arrow |
+| `FL_Page_Up` | 0xff55 | Page Up |
+| `FL_Page_Down` | 0xff56 | Page Down |
+| `FL_End` | 0xff57 | End key |
+
+### Function Keys
+
+| Constant | Description |
+|----------|-------------|
+| `FL_F` | Base value for function keys |
+| `FL_F + n` | Function key n (e.g., FL_F+1 = F1) |
+| `FL_F_Last` | Last function key |
+
+**Example:**
+```cpp
+int key = Fl::event_key();
+if (key >= FL_F && key <= FL_F_Last) {
+  int fn = key - FL_F;
+  printf("Function key F%d pressed\n", fn);
+}
+```
+
+### Modifier Keys
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_Shift_L` | 0xffe1 | Left Shift |
+| `FL_Shift_R` | 0xffe2 | Right Shift |
+| `FL_Control_L` | 0xffe3 | Left Control |
+| `FL_Control_R` | 0xffe4 | Right Control |
+| `FL_Caps_Lock` | 0xffe5 | Caps Lock |
+| `FL_Meta_L` | 0xffe7 | Left Meta/Windows |
+| `FL_Meta_R` | 0xffe8 | Right Meta/Windows |
+| `FL_Alt_L` | 0xffe9 | Left Alt |
+| `FL_Alt_R` | 0xffea | Right Alt |
+
+### Mouse Buttons
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_Button` | 0xfee8 | Base for mouse buttons |
+| `FL_LEFT_MOUSE` | 1 | Left mouse button |
+| `FL_MIDDLE_MOUSE` | 2 | Middle mouse button |
+| `FL_RIGHT_MOUSE` | 3 | Right mouse button |
+| `FL_BACK_MOUSE` | 4 | Back button (side button 1) |
+| `FL_FORWARD_MOUSE` | 5 | Forward button (side button 2) |
+
+## Event State Flags
+
+Bit flags returned by `Fl::event_state()` indicating which modifiers and buttons are pressed.
+
+| Flag | Value | Description |
+|------|-------|-------------|
+| `FL_SHIFT` | 0x00010000 | Any Shift key is down |
+| `FL_CAPS_LOCK` | 0x00020000 | Caps Lock is on |
+| `FL_CTRL` | 0x00040000 | Any Ctrl key is down |
+| `FL_ALT` | 0x00080000 | Any Alt key is down |
+| `FL_NUM_LOCK` | 0x00100000 | Num Lock is on |
+| `FL_META` | 0x00400000 | Any Meta/Windows key is down |
+| `FL_SCROLL_LOCK` | 0x00800000 | Scroll Lock is on |
+| `FL_BUTTON1` | 0x01000000 | Left mouse button is down |
+| `FL_BUTTON2` | 0x02000000 | Middle mouse button is down |
+| `FL_BUTTON3` | 0x04000000 | Right mouse button is down |
+| `FL_BUTTONS` | 0x1f000000 | Any mouse button is down |
+
+**Example:**
+```cpp
+int MyWidget::handle(int event) {
+  if (event == FL_PUSH) {
+    if (Fl::event_state() & FL_CTRL) {
+      printf("Ctrl-Click\n");
+      return 1;
+    }
+  }
+  return Fl_Widget::handle(event);
+}
+```
+
+## Box Types (Fl_Boxtype)
+
+Box types define how widget backgrounds are drawn.
+
+### Basic Box Types
+
+| Constant | Description |
+|----------|-------------|
+| `FL_NO_BOX` | No box (invisible) |
+| `FL_FLAT_BOX` | Flat box |
+| `FL_UP_BOX` | Raised box |
+| `FL_DOWN_BOX` | Sunken box |
+| `FL_UP_FRAME` | Raised frame (edges only) |
+| `FL_DOWN_FRAME` | Sunken frame (edges only) |
+| `FL_THIN_UP_BOX` | Thin raised box |
+| `FL_THIN_DOWN_BOX` | Thin sunken box |
+| `FL_THIN_UP_FRAME` | Thin raised frame |
+| `FL_THIN_DOWN_FRAME` | Thin sunken frame |
+
+### Decorative Box Types
+
+| Constant | Description |
+|----------|-------------|
+| `FL_ENGRAVED_BOX` | Engraved box |
+| `FL_EMBOSSED_BOX` | Embossed box |
+| `FL_ENGRAVED_FRAME` | Engraved frame |
+| `FL_EMBOSSED_FRAME` | Embossed frame |
+| `FL_BORDER_BOX` | Box with border |
+| `FL_SHADOW_BOX` | Box with shadow |
+| `FL_BORDER_FRAME` | Border frame |
+| `FL_SHADOW_FRAME` | Shadow frame |
+
+### Rounded Box Types
+
+| Constant | Description |
+|----------|-------------|
+| `FL_ROUNDED_BOX` | Rounded box |
+| `FL_RSHADOW_BOX` | Rounded box with shadow |
+| `FL_ROUNDED_FRAME` | Rounded frame |
+| `FL_RFLAT_BOX` | Rounded flat box |
+| `FL_ROUND_UP_BOX` | Round raised box |
+| `FL_ROUND_DOWN_BOX` | Round sunken box |
+
+### Special Shapes
+
+| Constant | Description |
+|----------|-------------|
+| `FL_DIAMOND_UP_BOX` | Diamond raised box |
+| `FL_DIAMOND_DOWN_BOX` | Diamond sunken box |
+| `FL_OVAL_BOX` | Oval box |
+| `FL_OSHADOW_BOX` | Oval box with shadow |
+| `FL_OVAL_FRAME` | Oval frame |
+| `FL_OFLAT_BOX` | Oval flat box |
+
+### Scheme-Specific Boxes
+
+Each scheme (plastic, gtk+, gleam, oxy) provides its own variants of standard box types:
+
+- `FL_PLASTIC_*` - Plastic scheme boxes
+- `FL_GTK_*` - GTK+ scheme boxes
+- `FL_GLEAM_*` - Gleam scheme boxes
+- `FL_OXY_*` - Oxy scheme boxes
+
+**Example:**
+```cpp
+button->box(FL_UP_BOX);
+window->box(FL_FLAT_BOX);
+```
+
+## Colors (Fl_Color)
+
+Color values are 32-bit integers. Colors can be:
+- 8-bit color map indices (0-255)
+- 24-bit RGB values (0xRRGGBB00)
+
+### Standard Colors
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_FOREGROUND_COLOR` | 0 | Default foreground (text) color |
+| `FL_BACKGROUND_COLOR` | 49 | Default background color |
+| `FL_BACKGROUND2_COLOR` | 7 | Background for text/list widgets |
+| `FL_INACTIVE_COLOR` | 8 | Inactive foreground color |
+| `FL_SELECTION_COLOR` | 15 | Default selection/highlight color |
+
+### Named Colors
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_BLACK` | 56 | Black |
+| `FL_WHITE` | 255 | White |
+| `FL_RED` | 88 | Red |
+| `FL_GREEN` | 63 | Green |
+| `FL_BLUE` | 216 | Blue |
+| `FL_YELLOW` | 95 | Yellow |
+| `FL_MAGENTA` | 248 | Magenta |
+| `FL_CYAN` | 223 | Cyan |
+
+### Dark Colors
+
+| Constant | Description |
+|----------|-------------|
+| `FL_DARK_RED` | Dark red |
+| `FL_DARK_GREEN` | Dark green |
+| `FL_DARK_BLUE` | Dark blue |
+| `FL_DARK_YELLOW` | Dark yellow |
+| `FL_DARK_MAGENTA` | Dark magenta |
+| `FL_DARK_CYAN` | Dark cyan |
+
+### Gray Scale
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_GRAY0` | 32 | Black end of gray ramp |
+| `FL_GRAY_RAMP` | 32 | Start of 24-color gray ramp |
+| `FL_NUM_GRAY` | 24 | Number of gray levels |
+
+### Color Functions
+
+```cpp
+// Create RGB color
+Fl_Color fl_rgb_color(uchar r, uchar g, uchar b);
+Fl_Color fl_rgb_color(uchar gray);
+
+// Get gray from ramp
+Fl_Color fl_gray_ramp(int i);  // i = 0 to FL_NUM_GRAY-1
+
+// Color manipulation
+Fl_Color fl_lighter(Fl_Color c);
+Fl_Color fl_darker(Fl_Color c);
+Fl_Color fl_color_average(Fl_Color c1, Fl_Color c2, float weight);
+```
+
+**Example:**
+```cpp
+button->color(FL_RED);
+button->color(fl_rgb_color(100, 150, 200));
+button->color(fl_lighter(FL_BLUE));
+```
+
+## Fonts (Fl_Font)
+
+Font indices into the internal font table.
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_HELVETICA` | 0 | Helvetica/Arial normal |
+| `FL_HELVETICA_BOLD` | 1 | Helvetica/Arial bold |
+| `FL_HELVETICA_ITALIC` | 2 | Helvetica/Arial italic |
+| `FL_HELVETICA_BOLD_ITALIC` | 3 | Helvetica/Arial bold italic |
+| `FL_COURIER` | 4 | Courier normal |
+| `FL_COURIER_BOLD` | 5 | Courier bold |
+| `FL_COURIER_ITALIC` | 6 | Courier italic |
+| `FL_COURIER_BOLD_ITALIC` | 7 | Courier bold italic |
+| `FL_TIMES` | 8 | Times Roman |
+| `FL_TIMES_BOLD` | 9 | Times Roman bold |
+| `FL_TIMES_ITALIC` | 10 | Times Roman italic |
+| `FL_TIMES_BOLD_ITALIC` | 11 | Times Roman bold italic |
+| `FL_SYMBOL` | 12 | Symbol font |
+| `FL_SCREEN` | 13 | Screen font (monospace) |
+| `FL_SCREEN_BOLD` | 14 | Screen font bold |
+| `FL_ZAPF_DINGBATS` | 15 | Zapf Dingbats |
+| `FL_FREE_FONT` | 16 | First custom font slot |
+
+### Font Modifiers
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_BOLD` | 1 | Add to base font for bold |
+| `FL_ITALIC` | 2 | Add to base font for italic |
+| `FL_BOLD_ITALIC` | 3 | Add to base font for bold italic |
+
+**Example:**
+```cpp
+widget->labelfont(FL_HELVETICA_BOLD);
+widget->labelfont(FL_COURIER + FL_ITALIC);
+widget->labelsize(16);
+```
+
+## Alignment Flags (Fl_Align)
+
+Flags controlling label alignment and clipping.
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_ALIGN_CENTER` | 0x0000 | Center horizontally and vertically |
+| `FL_ALIGN_TOP` | 0x0001 | Align to top |
+| `FL_ALIGN_BOTTOM` | 0x0002 | Align to bottom |
+| `FL_ALIGN_LEFT` | 0x0004 | Align to left |
+| `FL_ALIGN_RIGHT` | 0x0008 | Align to right |
+| `FL_ALIGN_INSIDE` | 0x0010 | Draw label inside widget |
+| `FL_ALIGN_CLIP` | 0x0040 | Clip label to widget bounds |
+| `FL_ALIGN_WRAP` | 0x0080 | Wrap text |
+
+### Combined Alignments
+
+| Constant | Description |
+|----------|-------------|
+| `FL_ALIGN_TOP_LEFT` | Top left corner |
+| `FL_ALIGN_TOP_RIGHT` | Top right corner |
+| `FL_ALIGN_BOTTOM_LEFT` | Bottom left corner |
+| `FL_ALIGN_BOTTOM_RIGHT` | Bottom right corner |
+| `FL_ALIGN_LEFT_TOP` | Left of widget, top position |
+| `FL_ALIGN_RIGHT_TOP` | Right of widget, top position |
+| `FL_ALIGN_LEFT_BOTTOM` | Left of widget, bottom position |
+| `FL_ALIGN_RIGHT_BOTTOM` | Right of widget, bottom position |
+
+### Image/Text Alignment
+
+| Constant | Description |
+|----------|-------------|
+| `FL_ALIGN_TEXT_OVER_IMAGE` | Draw text over image |
+| `FL_ALIGN_IMAGE_OVER_TEXT` | Draw image over text (default) |
+| `FL_ALIGN_IMAGE_NEXT_TO_TEXT` | Image left of text |
+| `FL_ALIGN_TEXT_NEXT_TO_IMAGE` | Text left of image |
+| `FL_ALIGN_IMAGE_BACKDROP` | Image as background |
+
+**Example:**
+```cpp
+button->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+button->align(FL_ALIGN_TOP_LEFT);
+button->align(FL_ALIGN_IMAGE_NEXT_TO_TEXT);
+```
+
+## Callback When Flags (Fl_When)
+
+Determines when callbacks are invoked.
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `FL_WHEN_NEVER` | 0 | Never call callback |
+| `FL_WHEN_CHANGED` | 1 | On value change |
+| `FL_WHEN_NOT_CHANGED` | 2 | On any interaction |
+| `FL_WHEN_RELEASE` | 4 | When released and changed |
+| `FL_WHEN_RELEASE_ALWAYS` | 6 | When released, even if unchanged |
+| `FL_WHEN_ENTER_KEY` | 8 | When Enter pressed and changed |
+| `FL_WHEN_ENTER_KEY_ALWAYS` | 10 | When Enter pressed |
+| `FL_WHEN_CLOSED` | 16 | When widget is closed |
+
+**Example:**
+```cpp
+input->when(FL_WHEN_CHANGED);  // Live updates
+input->when(FL_WHEN_ENTER_KEY);  // On Enter key
+```
+
+## Cursor Types (Fl_Cursor)
+
+Standard cursor shapes.
+
+| Constant | Description |
+|----------|-------------|
+| `FL_CURSOR_DEFAULT` | Default arrow cursor |
+| `FL_CURSOR_ARROW` | Arrow pointer |
+| `FL_CURSOR_CROSS` | Crosshair |
+| `FL_CURSOR_WAIT` | Busy indicator (hourglass) |
+| `FL_CURSOR_INSERT` | I-beam text cursor |
+| `FL_CURSOR_HAND` | Pointing hand |
+| `FL_CURSOR_HELP` | Question mark |
+| `FL_CURSOR_MOVE` | 4-pointed arrow |
+| `FL_CURSOR_NS` | Up/down resize |
+| `FL_CURSOR_WE` | Left/right resize |
+| `FL_CURSOR_NWSE` | Diagonal resize |
+| `FL_CURSOR_NESW` | Diagonal resize |
+| `FL_CURSOR_NONE` | Invisible cursor |
+
+**Example:**
+```cpp
+window->cursor(FL_CURSOR_WAIT);
+// Do long operation
+window->cursor(FL_CURSOR_DEFAULT);
+```
+
+## Related
+
+- [Fl (Global Namespace)](/api/fl) - Global functions
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Window](/api/fl-window) - Window class

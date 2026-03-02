@@ -1,0 +1,384 @@
+---
+title: Fl_Terminal
+description: Terminal widget with ANSI/xterm escape code support and Unicode
+---
+
+## Overview
+
+The `Fl_Terminal` widget is an output-only text widget supporting ASCII and UTF-8/Unicode with VT100/xterm style escape sequences, text colors and attributes, scrollback history, and mouse selection.
+
+<Warning>
+Fl_Terminal does not handle stdio redirection, pseudo ttys, or keyboard input processing. It is output-only. For advanced features, subclass the widget.
+</Warning>
+
+## Constructor
+
+<ParamField path="Fl_Terminal" type="constructor">
+  Creates a new terminal widget.
+  
+  <ParamField body="X" type="int" required>
+    X position of the widget
+  </ParamField>
+  
+  <ParamField body="Y" type="int" required>
+    Y position of the widget
+  </ParamField>
+  
+  <ParamField body="W" type="int" required>
+    Width of the widget
+  </ParamField>
+  
+  <ParamField body="H" type="int" required>
+    Height of the widget
+  </ParamField>
+  
+  <ParamField body="L" type="const char*" default="0">
+    Optional label for the widget
+  </ParamField>
+</ParamField>
+
+## Text Output
+
+<ParamField path="append" type="void">
+  Appends text to the terminal.
+  
+  <ParamField body="s" type="const char*" required>
+    Text to append (supports ANSI escape codes)
+  </ParamField>
+  
+  <ParamField body="len" type="int" default="-1">
+    Length of text (-1 for null-terminated string)
+  </ParamField>
+</ParamField>
+
+<ParamField path="printf" type="void">
+  Appends formatted text to the terminal.
+  
+  <ParamField body="fmt" type="const char*" required>
+    Printf-style format string
+  </ParamField>
+  
+  <ParamField body="..." type="..." required>
+    Variable arguments
+  </ParamField>
+  
+  <Note>Limited to 1024 characters. For longer strings, use append().</Note>
+</ParamField>
+
+<ParamField path="print_char" type="void">
+  Prints a single character at the cursor position.
+  
+  <ParamField body="c" type="char" required>
+    Character to print
+  </ParamField>
+</ParamField>
+
+<ParamField path="plot_char" type="void">
+  Plots a character at a specific row/column position.
+  
+  <ParamField body="c" type="char" required>
+    Character to plot
+  </ParamField>
+  
+  <ParamField body="drow" type="int" required>
+    Display row (0-based)
+  </ParamField>
+  
+  <ParamField body="dcol" type="int" required>
+    Display column (0-based)
+  </ParamField>
+</ParamField>
+
+## Screen Control
+
+<ParamField path="clear" type="void">
+  Clears the entire display and history.
+</ParamField>
+
+<ParamField path="clear_screen" type="void">
+  Clears the screen (ESC [ 2 J).
+  
+  <ParamField body="scroll_to_hist" type="bool" default="true">
+    Whether to scroll current screen to history
+  </ParamField>
+</ParamField>
+
+<ParamField path="clear_screen_home" type="void">
+  Clears screen and homes cursor (ESC [ H ESC [ 2 J).
+  
+  <ParamField body="scroll_to_hist" type="bool" default="true">
+    Whether to scroll current screen to history
+  </ParamField>
+</ParamField>
+
+<ParamField path="clear_history" type="void">
+  Clears the scrollback history (ESC [ 3 J).
+</ParamField>
+
+<ParamField path="reset_terminal" type="void">
+  Resets the terminal to initial state (ESC c).
+</ParamField>
+
+<ParamField path="cursor_home" type="void">
+  Homes the cursor to position 0,0 (ESC [ H).
+</ParamField>
+
+## Cursor Control
+
+<ParamField path="cursor_row" type="int">
+  Returns the current cursor row (0-based).
+</ParamField>
+
+<ParamField path="cursor_col" type="int">
+  Returns the current cursor column (0-based).
+</ParamField>
+
+<ParamField path="cursorfgcolor" type="void">
+  Sets the cursor foreground color.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value
+  </ParamField>
+</ParamField>
+
+<ParamField path="cursorbgcolor" type="void">
+  Sets the cursor background color.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value
+  </ParamField>
+</ParamField>
+
+## Colors
+
+<ParamField path="textfgcolor" type="void">
+  Sets the default text foreground color.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value (0xRRGGBB00 format)
+  </ParamField>
+</ParamField>
+
+<ParamField path="textbgcolor" type="void">
+  Sets the default text background color.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value (0xffffffff for transparent)
+  </ParamField>
+</ParamField>
+
+<ParamField path="textfgcolor_default" type="void">
+  Sets the default foreground color used by ESC[0m reset.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value
+  </ParamField>
+</ParamField>
+
+<ParamField path="textbgcolor_default" type="void">
+  Sets the default background color used by ESC[0m reset.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Color value
+  </ParamField>
+</ParamField>
+
+## Display Settings
+
+<ParamField path="display_columns" type="void">
+  Sets the display width in columns.
+  
+  <ParamField body="val" type="int" required>
+    Number of columns
+  </ParamField>
+</ParamField>
+
+<ParamField path="display_rows" type="void">
+  Sets the display height in rows.
+  
+  <ParamField body="val" type="int" required>
+    Number of rows
+  </ParamField>
+</ParamField>
+
+<ParamField path="history_lines" type="void">
+  Sets the number of scrollback history lines.
+  
+  <ParamField body="val" type="int" required>
+    Number of history lines
+  </ParamField>
+</ParamField>
+
+<ParamField path="ansi" type="void">
+  Enables or disables ANSI escape sequence parsing.
+  
+  <ParamField body="val" type="bool" required>
+    true to enable, false to disable
+  </ParamField>
+</ParamField>
+
+## Margins
+
+<ParamField path="margin_left" type="void">
+  Sets the left margin in pixels.
+  
+  <ParamField body="val" type="int" required>
+    Margin size
+  </ParamField>
+</ParamField>
+
+<ParamField path="margin_right" type="void">
+  Sets the right margin in pixels.
+  
+  <ParamField body="val" type="int" required>
+    Margin size
+  </ParamField>
+</ParamField>
+
+<ParamField path="margin_top" type="void">
+  Sets the top margin in pixels.
+  
+  <ParamField body="val" type="int" required>
+    Margin size
+  </ParamField>
+</ParamField>
+
+<ParamField path="margin_bottom" type="void">
+  Sets the bottom margin in pixels.
+  
+  <ParamField body="val" type="int" required>
+    Margin size
+  </ParamField>
+</ParamField>
+
+## Redraw Control
+
+<ParamField path="redraw_style" type="void">
+  Sets when the terminal redraws.
+  
+  <ParamField body="val" type="RedrawStyle" required>
+    - NO_REDRAW - App must call redraw()
+    - RATE_LIMITED - Timer controlled (default)
+    - PER_WRITE - After every append()/printf()
+  </ParamField>
+</ParamField>
+
+<ParamField path="redraw_rate" type="void">
+  Sets the maximum redraw rate in seconds.
+  
+  <ParamField body="val" type="float" required>
+    Redraw rate (default 0.10)
+  </ParamField>
+</ParamField>
+
+## Selection
+
+<ParamField path="selection_text" type="const char*">
+  Returns the currently selected text.
+  
+  Returns pointer to selected text, or NULL if no selection.
+</ParamField>
+
+<ParamField path="selection_text_len" type="int">
+  Returns the length of the selected text.
+</ParamField>
+
+## Text Attributes
+
+The following text attributes can be set via ANSI escape codes:
+
+- **Bold** - `\033[1m` - Brighter/thicker text
+- **Dim** - `\033[2m` - Lower brightness
+- **Italic** - `\033[3m` - Italicized text
+- **Underline** - `\033[4m` - Underlined text
+- **Inverse** - `\033[7m` - Swap foreground/background
+- **Strikeout** - `\033[9m` - Line through text
+- **Normal** - `\033[0m` - Reset to normal
+
+## Color Codes
+
+### 3-bit Colors (8 colors)
+
+```cpp
+// Foreground colors
+tty->append("\033[30m Black \033[0m\n");     // 30-37
+tty->append("\033[31m Red \033[0m\n");
+tty->append("\033[32m Green \033[0m\n");
+tty->append("\033[33m Yellow \033[0m\n");
+tty->append("\033[34m Blue \033[0m\n");
+tty->append("\033[35m Magenta \033[0m\n");
+tty->append("\033[36m Cyan \033[0m\n");
+tty->append("\033[37m White \033[0m\n");
+
+// Background colors (40-47)
+tty->append("\033[41m Red Background \033[0m\n");
+```
+
+### 24-bit RGB Colors
+
+```cpp
+// Foreground: ESC[38;2;R;G;Bm
+tty->append("\033[38;2;255;0;0m Red Text \033[0m\n");
+
+// Background: ESC[48;2;R;G;Bm  
+tty->append("\033[48;2;0;0;255m Blue Background \033[0m\n");
+```
+
+## Example
+
+```cpp
+#include <FL/Fl_Terminal.H>
+#include <FL/Fl_Window.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(640, 480, "Terminal");
+  Fl_Terminal *tty = new Fl_Terminal(10, 10, 620, 460);
+  
+  tty->history_lines(1000);
+  tty->ansi(true);
+  
+  // Simple output
+  tty->append("Hello world!\n");
+  
+  // Colored output
+  tty->append("\033[31mRed text\033[0m\n");
+  tty->append("\033[1;32mBold green\033[0m\n");
+  
+  // RGB colors
+  tty->append("\033[38;2;255;128;0mOrange text\033[0m\n");
+  
+  // Printf formatting
+  tty->printf("Value: %.2f\n", 3.14159);
+  
+  // Clear screen
+  tty->clear_screen_home();
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Advanced Example with Timer
+
+```cpp
+void update_timer(void *data) {
+  Fl_Terminal *tty = (Fl_Terminal*)data;
+  time_t t = time(NULL);
+  tty->printf("Time: %s", ctime(&t));
+  Fl::repeat_timeout(1.0, update_timer, data);
+}
+
+int main() {
+  // ... create window and terminal ...
+  
+  Fl::add_timeout(1.0, update_timer, tty);
+  
+  // ... show and run ...
+}
+```
+
+## See Also
+
+- [Fl_Text_Display](/api/fl-text-display) - Multi-line text display widget
+- [Fl_Text_Editor](/api/fl-text-editor) - Text editor with input support

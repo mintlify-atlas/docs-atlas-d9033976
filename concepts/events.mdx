@@ -1,0 +1,554 @@
+---
+title: Events
+description: Understanding FLTK's event system for handling user interaction
+---
+
+FLTK's event system handles all user interactions including mouse clicks, keyboard input, window changes, and drag-and-drop operations. Events are delivered to widgets through the `handle()` method and can be queried using the `Fl::event_*()` functions.
+
+## Event Types
+
+All events are defined in `FL/Enumerations.H:116-350`. Here are the most common ones:
+
+### Mouse Events
+
+| Event | Description |
+|-------|-------------|
+| `FL_PUSH` | Mouse button pressed |
+| `FL_RELEASE` | Mouse button released |
+| `FL_DRAG` | Mouse moved with button down |
+| `FL_MOVE` | Mouse moved without button |
+| `FL_ENTER` | Mouse entered widget |
+| `FL_LEAVE` | Mouse left widget |
+| `FL_MOUSEWHEEL` | Mouse wheel scrolled |
+
+### Keyboard Events
+
+| Event | Description |
+|-------|-------------|
+| `FL_KEYDOWN` (or `FL_KEYBOARD`) | Key pressed |
+| `FL_KEYUP` | Key released |
+| `FL_SHORTCUT` | Keyboard shortcut |
+
+### Focus Events
+
+| Event | Description |
+|-------|-------------|
+| `FL_FOCUS` | Widget gained focus |
+| `FL_UNFOCUS` | Widget lost focus |
+
+### Widget State Events
+
+| Event | Description |
+|-------|-------------|
+| `FL_SHOW` | Widget became visible |
+| `FL_HIDE` | Widget became hidden |
+| `FL_ACTIVATE` | Widget became active |
+| `FL_DEACTIVATE` | Widget became inactive |
+
+## Handling Events
+
+Events are handled by implementing the `handle()` method (`FL/Fl_Widget.H:289`):
+
+```cpp
+class My_Button : public Fl_Button {
+public:
+  My_Button(int X, int Y, int W, int H, const char *L = 0)
+    : Fl_Button(X, Y, W, H, L) {}
+  
+  int handle(int event) override {
+    switch(event) {
+      case FL_PUSH:
+        printf("Button pushed at %d,%d\n", 
+               Fl::event_x(), Fl::event_y());
+        return 1;  // Event handled
+      
+      case FL_RELEASE:
+        printf("Button released\n");
+        return 1;
+      
+      case FL_ENTER:
+        printf("Mouse entered\n");
+        return 1;
+      
+      case FL_LEAVE:
+        printf("Mouse left\n");
+        return 1;
+      
+      default:
+        // Pass unhandled events to base class
+        return Fl_Button::handle(event);
+    }
+  }
+};
+```
+
+<Note>
+  Return `1` if you handled the event, `0` if you didn't. If you return `0`, FLTK may send the event to other widgets.
+</Note>
+
+## Mouse Event Information
+
+From `FL/core/events.H:99-212`, FLTK provides functions to query mouse event details:
+
+<Tabs>
+  <Tab title="Position">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_PUSH) {
+        // Position relative to window
+        int x = Fl::event_x();
+        int y = Fl::event_y();
+        
+        // Absolute screen position
+        int screen_x = Fl::event_x_root();
+        int screen_y = Fl::event_y_root();
+        
+        printf("Click at (%d,%d)\n", x, y);
+      }
+      return 0;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Buttons">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_PUSH) {
+        // Which button was pressed
+        int btn = Fl::event_button();
+        
+        if (btn == FL_LEFT_MOUSE) {
+          printf("Left click\n");
+        }
+        else if (btn == FL_RIGHT_MOUSE) {
+          printf("Right click\n");
+        }
+        else if (btn == FL_MIDDLE_MOUSE) {
+          printf("Middle click\n");
+        }
+      }
+      return 0;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Clicks">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_PUSH) {
+        // Number of clicks (0=single, 1=double, etc.)
+        int clicks = Fl::event_clicks();
+        
+        if (clicks > 0) {
+          printf("Double-click detected\n");
+        }
+        
+        // Check if still within click distance
+        if (Fl::event_is_click()) {
+          printf("Mouse hasn't moved far\n");
+        }
+      }
+      return 0;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Wheel">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_MOUSEWHEEL) {
+        // Vertical scroll (positive = down)
+        int dy = Fl::event_dy();
+        
+        // Horizontal scroll (positive = right)
+        int dx = Fl::event_dx();
+        
+        printf("Scroll: dx=%d, dy=%d\n", dx, dy);
+        return 1;
+      }
+      return 0;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Keyboard Event Information
+
+From `FL/core/events.H:271-340`, query keyboard events:
+
+<CodeGroup>
+```cpp Key Codes
+int handle(int event) {
+  if (event == FL_KEYDOWN) {
+    int key = Fl::event_key();
+    
+    // Check specific keys
+    if (key == FL_Enter) {
+      printf("Enter pressed\n");
+    }
+    else if (key == FL_Escape) {
+      printf("Escape pressed\n");
+    }
+    else if (key == 'a') {
+      printf("'a' key pressed\n");
+    }
+    
+    // Function keys
+    if (key >= FL_F && key <= FL_F_Last) {
+      int fn = key - FL_F + 1;
+      printf("F%d pressed\n", fn);
+    }
+    
+    return 1;
+  }
+  return 0;
+}
+```
+
+```cpp Text Input
+int handle(int event) {
+  if (event == FL_KEYDOWN) {
+    // Get text representation
+    const char *text = Fl::event_text();
+    int length = Fl::event_length();
+    
+    printf("Text: '%.*s' (%d bytes)\n", 
+           length, text, length);
+    
+    return 1;
+  }
+  return 0;
+}
+```
+
+```cpp Modifiers
+int handle(int event) {
+  if (event == FL_PUSH || event == FL_KEYDOWN) {
+    // Check modifier keys
+    if (Fl::event_shift()) {
+      printf("Shift is down\n");
+    }
+    if (Fl::event_ctrl()) {
+      printf("Ctrl is down\n");
+    }
+    if (Fl::event_alt()) {
+      printf("Alt is down\n");
+    }
+    if (Fl::event_command()) {
+      printf("Cmd/Ctrl is down\n");
+    }
+  }
+  return 0;
+}
+```
+</CodeGroup>
+
+### Common Key Constants
+
+From `FL/Enumerations.H:403-456`:
+
+```cpp
+FL_Enter          // Enter key
+FL_Escape         // Escape key
+FL_BackSpace      // Backspace
+FL_Tab            // Tab key
+FL_Delete         // Delete key
+FL_Home           // Home key
+FL_End            // End key
+FL_Left           // Left arrow
+FL_Up             // Up arrow
+FL_Right          // Right arrow
+FL_Down           // Down arrow
+FL_Page_Up        // Page Up
+FL_Page_Down      // Page Down
+FL_Insert         // Insert
+FL_F + n          // Function key (FL_F + 1 = F1)
+FL_KP + 'n'       // Keypad number
+FL_Shift_L/R      // Left/Right Shift
+FL_Control_L/R    // Left/Right Control
+FL_Alt_L/R        // Left/Right Alt
+FL_Meta_L/R       // Left/Right Meta/Windows
+```
+
+## Event State
+
+The event state from `FL/core/events.H:217-266` contains modifier and button information:
+
+```cpp
+int state = Fl::event_state();
+
+// Check individual bits
+if (state & FL_SHIFT)       printf("Shift\n");
+if (state & FL_CAPS_LOCK)   printf("Caps Lock\n");
+if (state & FL_CTRL)        printf("Ctrl\n");
+if (state & FL_ALT)         printf("Alt\n");
+if (state & FL_NUM_LOCK)    printf("Num Lock\n");
+if (state & FL_META)        printf("Meta/Windows\n");
+if (state & FL_SCROLL_LOCK) printf("Scroll Lock\n");
+if (state & FL_BUTTON1)     printf("Left button\n");
+if (state & FL_BUTTON2)     printf("Middle button\n");
+if (state & FL_BUTTON3)     printf("Right button\n");
+
+// Check multiple modifiers
+if (Fl::event_state(FL_CTRL | FL_SHIFT)) {
+  printf("Ctrl+Shift pressed\n");
+}
+```
+
+## Focus Management
+
+From `FL/core/events.H:404-432`:
+
+```cpp
+// Get widget with focus
+Fl_Widget *focused = Fl::focus();
+
+// Set focus to a widget
+Fl::focus(my_widget);
+
+// Widget requests focus
+if (my_widget->take_focus()) {
+  printf("Widget got focus\n");
+}
+
+// Enable/disable visible focus indicator
+my_widget->set_visible_focus();
+my_widget->clear_visible_focus();
+
+if (my_widget->visible_focus()) {
+  // Widget shows focus rectangle
+}
+```
+
+## Mouse Tracking
+
+From `FL/core/events.H:409-421`:
+
+```cpp
+// Get widget under mouse
+Fl_Widget *under = Fl::belowmouse();
+
+// Set which widget tracks mouse
+Fl::belowmouse(my_widget);
+
+// Get widget being dragged
+Fl_Widget *dragged = Fl::pushed();
+
+// Set widget that receives drag events
+Fl::pushed(my_widget);
+```
+
+## Drag and Drop
+
+<Steps>
+  <Step title="Accept DND Events">
+    ```cpp
+    int handle(int event) {
+      switch(event) {
+        case FL_DND_ENTER:
+          // Mouse dragging into widget
+          return 1;  // Accept drag
+        
+        case FL_DND_DRAG:
+          // Mouse moving while dragging
+          return 1;
+        
+        case FL_DND_LEAVE:
+          // Mouse left widget while dragging
+          return 1;
+        
+        case FL_DND_RELEASE:
+          // User released mouse button
+          return 1;  // Accept drop
+        
+        default:
+          return Fl_Widget::handle(event);
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Receive Dropped Data">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_PASTE) {
+        // Get type of data
+        const char *type = Fl::event_clipboard_type();
+        
+        if (type == Fl::clipboard_plain_text) {
+          // Text data
+          const char *text = Fl::event_text();
+          int len = Fl::event_length();
+          printf("Dropped text: %.*s\n", len, text);
+        }
+        else if (type == Fl::clipboard_image) {
+          // Image data
+          Fl_RGB_Image *img = 
+            (Fl_RGB_Image*)Fl::event_clipboard();
+          printf("Dropped image: %dx%d\n", 
+                 img->w(), img->h());
+        }
+        return 1;
+      }
+      return 0;
+    }
+    ```
+  </Step>
+</Steps>
+
+## Event Handlers
+
+Global event handlers from `FL/core/events.H:423-431` intercept events before widgets:
+
+```cpp
+int my_handler(int event) {
+  if (event == FL_SHORTCUT) {
+    // Handle global keyboard shortcuts
+    if (Fl::event_key() == 'q' && Fl::event_ctrl()) {
+      printf("Ctrl+Q pressed anywhere\n");
+      return 1;  // Event handled
+    }
+  }
+  return 0;  // Let FLTK handle it
+}
+
+// Add handler
+Fl::add_handler(my_handler);
+
+// Remove handler
+Fl::remove_handler(my_handler);
+```
+
+## Shortcuts
+
+Test for keyboard shortcuts:
+
+```cpp
+// Check if event matches shortcut
+if (Fl::test_shortcut(FL_CTRL + 's')) {
+  printf("Ctrl+S pressed\n");
+}
+
+if (Fl::test_shortcut(FL_ALT + FL_F + 4)) {
+  printf("Alt+F4 pressed\n");
+}
+
+// Get text description of shortcut
+const char *label = fl_shortcut_label(FL_CTRL + 's');
+printf("Shortcut: %s\n", label);  // "Ctrl+S"
+```
+
+## Event Examples
+
+<AccordionGroup>
+  <Accordion title="Detect Double-Click">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_PUSH) {
+        if (Fl::event_clicks() > 0) {
+          printf("Double-click!\n");
+          Fl::event_clicks(0);  // Reset click count
+        }
+        return 1;
+      }
+      return Fl_Widget::handle(event);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Right-Click Context Menu">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_PUSH) {
+        if (Fl::event_button() == FL_RIGHT_MOUSE) {
+          // Show context menu
+          show_menu(Fl::event_x_root(), 
+                   Fl::event_y_root());
+          return 1;
+        }
+      }
+      return Fl_Widget::handle(event);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Keyboard Navigation">
+    ```cpp
+    int handle(int event) {
+      if (event == FL_KEYDOWN) {
+        switch(Fl::event_key()) {
+          case FL_Left:
+            move_left();
+            return 1;
+          case FL_Right:
+            move_right();
+            return 1;
+          case FL_Up:
+            move_up();
+            return 1;
+          case FL_Down:
+            move_down();
+            return 1;
+        }
+      }
+      return Fl_Widget::handle(event);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Hover Effects">
+    ```cpp
+    int handle(int event) {
+      switch(event) {
+        case FL_ENTER:
+          color(FL_LIGHT_BLUE);
+          redraw();
+          return 1;
+        
+        case FL_LEAVE:
+          color(FL_WHITE);
+          redraw();
+          return 1;
+      }
+      return Fl_Widget::handle(event);
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always Return Properly" icon="check">
+    Return `1` if you handle an event, `0` otherwise. This ensures proper event propagation.
+  </Card>
+  
+  <Card title="Call Base Class" icon="arrow-up">
+    For unhandled events, call the base class `handle()` method to maintain default behavior.
+  </Card>
+  
+  <Card title="Check Event State" icon="eye">
+    Always verify the widget is active and visible before handling events.
+  </Card>
+  
+  <Card title="Use Modifiers" icon="keyboard">
+    Check modifier keys to provide keyboard shortcuts and advanced interactions.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Callbacks" icon="bell" href="/concepts/callbacks">
+    Respond to events with callback functions
+  </Card>
+  <Card title="Widgets" icon="cube" href="/concepts/widgets">
+    Learn about widget properties and methods
+  </Card>
+  <Card title="Drawing" icon="paintbrush" href="/concepts/drawing">
+    Custom drawing in event handlers
+  </Card>
+  <Card title="Layout" icon="table-cells" href="/concepts/layout">
+    Widget positioning and sizing
+  </Card>
+</CardGroup>

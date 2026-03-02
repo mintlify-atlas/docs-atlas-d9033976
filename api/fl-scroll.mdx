@@ -1,0 +1,477 @@
+---
+title: Fl_Scroll
+description: API reference for Fl_Scroll scrollable container widget
+---
+
+## Overview
+
+Fl_Scroll is a container widget that allows you to view and navigate content larger than the visible area using scrollbars. It automatically displays horizontal and/or vertical scrollbars when child widgets extend beyond the container bounds.
+
+**Header:** `<FL/Fl_Scroll.H>`
+
+**Inherits:** [Fl_Group](/api/fl-group)
+
+### Key Features
+
+- Automatic scrollbar management
+- Configurable scrollbar visibility modes
+- Supports scrolling large widget collections
+- Can pan around a single canvas widget
+- Customizable scrollbar positioning
+- Optional always-visible scrollbars
+
+### Use Cases
+
+- Long lists of widgets
+- Large canvas/drawing areas
+- Content viewers
+- Scrollable forms
+- Image viewers
+- Text editors with custom rendering
+- Container for Fl_Pack or Fl_Flex
+
+## Layout Algorithm
+
+Fl_Scroll calculates its scrollable area based on:
+
+1. Computes bounding box of all child widgets using their positions (x, y) and sizes (w, h)
+2. Outside labels are **not** included in bounding box calculation
+3. Displays scrollbars if content exceeds visible area
+4. Adjusts visible area when scrollbars appear/disappear
+5. Scrolls content by changing the x() and y() of child widgets
+
+### Bounding Box Calculation
+
+To include space outside the natural bounding box (e.g., for outside labels), add invisible Fl_Box widgets at the corners:
+
+```cpp
+Fl_Scroll scroll(100, 100, 200, 200);
+Fl_Box(100, 100, 1, 1);  // Top-left corner marker
+// ... add widgets with outside labels ...
+scroll.end();
+```
+
+## Constructor
+
+```cpp
+Fl_Scroll(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates an Fl_Scroll container with both scrollbars enabled.
+
+<ParamField path="X" type="int">
+X position of the scroll container
+</ParamField>
+
+<ParamField path="Y" type="int">
+Y position of the scroll container
+</ParamField>
+
+<ParamField path="W" type="int">
+Width of the visible area
+</ParamField>
+
+<ParamField path="H" type="int">
+Height of the visible area
+</ParamField>
+
+<ParamField path="L" type="const char*">
+Optional label (default: NULL)
+</ParamField>
+
+## Scrollbar Visibility
+
+### Type Constants
+
+```cpp
+enum {
+  HORIZONTAL        = 1,  // Only horizontal scrollbar
+  VERTICAL          = 2,  // Only vertical scrollbar
+  BOTH              = 3,  // Both scrollbars (default)
+  ALWAYS_ON         = 4,  // Flag: always show scrollbars
+  HORIZONTAL_ALWAYS = 5,  // Horizontal always, vertical never
+  VERTICAL_ALWAYS   = 6,  // Vertical always, horizontal never
+  BOTH_ALWAYS       = 7   // Both scrollbars always visible
+}
+```
+
+Set using `type()`:
+
+```cpp
+scroll->type(Fl_Scroll::VERTICAL);         // Only vertical
+scroll->type(Fl_Scroll::BOTH_ALWAYS);      // Both always visible
+scroll->type(0);                            // No scrollbars
+```
+
+### Default Behavior
+
+- Type: `Fl_Scroll::BOTH`
+- Scrollbars appear automatically when content exceeds visible area
+- Scrollbars disappear when content fits
+
+## Scrollbar Access
+
+### Public Scrollbar Members
+
+```cpp
+Fl_Scrollbar scrollbar;   // Vertical scrollbar
+Fl_Scrollbar hscrollbar;  // Horizontal scrollbar
+```
+
+These are public members that can be directly accessed:
+
+```cpp
+// Change scrollbar colors
+scroll->scrollbar.color(FL_GRAY);
+scroll->hscrollbar.color(FL_GRAY);
+
+// Access scrollbar values
+int pos = scroll->scrollbar.value();
+```
+
+### Scrollbar Positioning
+
+Use `scrollbar.align()` to change scrollbar positions:
+
+```cpp
+// Left vertical scrollbar, top horizontal scrollbar
+scroll->scrollbar.align(FL_ALIGN_LEFT | FL_ALIGN_TOP);
+
+// Default: right and bottom
+scroll->scrollbar.align(FL_ALIGN_RIGHT | FL_ALIGN_BOTTOM);
+```
+
+<Note>
+Only the alignment flags in `scrollbar` are used. Flags in `hscrollbar` are ignored.
+</Note>
+
+## Scroll Position
+
+### xposition() / yposition()
+
+```cpp
+int xposition() const
+int yposition() const
+```
+
+Gets the current horizontal or vertical scrolling position.
+
+**Returns:** Current scroll position in pixels
+
+### scroll_to()
+
+```cpp
+void scroll_to(int x, int y)
+```
+
+Scrolls to the specified position.
+
+<ParamField path="x" type="int">
+Horizontal scroll position in pixels
+</ParamField>
+
+<ParamField path="y" type="int">
+Vertical scroll position in pixels
+</ParamField>
+
+## Scrollbar Size
+
+### scrollbar_size()
+
+```cpp
+int scrollbar_size() const
+void scrollbar_size(int newSize)
+```
+
+Gets or sets the pixel size of scrollbar troughs.
+
+<ParamField path="newSize" type="int">
+Scrollbar width in pixels, or 0 to use global `Fl::scrollbar_size()`
+</ParamField>
+
+**Default:** 0 (uses global setting)
+
+<Note>
+Normally you should use `Fl::scrollbar_size(int)` to set scrollbar size globally for UI consistency. Only use this method if you need a widget-specific override.
+</Note>
+
+## Child Management
+
+### resize()
+
+```cpp
+void resize(int X, int Y, int W, int H) override
+```
+
+Resizes the Fl_Scroll container and recalculates scrollbars.
+
+### clear()
+
+```cpp
+void clear()
+```
+
+Removes and deletes all child widgets.
+
+### delete_child()
+
+```cpp
+int delete_child(int n) override
+```
+
+Deletes child widget by index.
+
+<ParamField path="n" type="int">
+Index of child to delete (0-based)
+</ParamField>
+
+## Box Type Recommendations
+
+### For Packed Widgets
+
+If child widgets are packed together in a solid rectangle:
+
+```cpp
+scroll->box(FL_NO_BOX);
+// or
+scroll->box(FL_DOWN_FRAME);
+scroll->box(FL_UP_FRAME);
+```
+
+This produces the best output with minimal redrawing.
+
+### For Sparse Layouts
+
+If child widgets are sparsely arranged:
+
+```cpp
+scroll->box(FL_DOWN_BOX);
+// or other _BOX types
+```
+
+May cause blinking during redraw. Use `Fl_Double_Window` to eliminate blinking:
+
+```cpp
+Fl_Double_Window *win = new Fl_Double_Window(...);
+Fl_Scroll *scroll = new Fl_Scroll(...);
+scroll->box(FL_DOWN_BOX);
+```
+
+## Example: Simple Scrollable List
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char** argv) {
+  Fl_Double_Window window(300, 400, "Scrollable Button List");
+  
+  // Create scroll container
+  Fl_Scroll scroll(10, 10, 280, 380);
+  scroll.type(Fl_Scroll::VERTICAL);  // Only vertical scrollbar
+  
+  // Add many buttons (extends beyond visible area)
+  for (int i = 0; i < 50; i++) {
+    char label[20];
+    sprintf(label, "Button %d", i);
+    Fl_Button *btn = new Fl_Button(10, 10 + i * 30, 260, 25, label);
+  }
+  
+  scroll.end();
+  window.end();
+  window.show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Example: Canvas Widget
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Box.H>
+#include <FL/fl_draw.H>
+
+// Custom canvas widget
+class Canvas : public Fl_Box {
+public:
+  Canvas(int X, int Y, int W, int H) : Fl_Box(X, Y, W, H) {
+    box(FL_FLAT_BOX);
+    color(FL_WHITE);
+  }
+  
+  void draw() override {
+    Fl_Box::draw();
+    
+    // Use x() and y() for positioning
+    // Test clipping to optimize drawing
+    if (fl_not_clipped(x() + 50, y() + 50, 100, 100)) {
+      fl_color(FL_BLACK);
+      fl_rect(x() + 50, y() + 50, 100, 100);
+    }
+    
+    // Draw more content...
+  }
+};
+
+int main() {
+  Fl_Window win(400, 300, "Canvas Scroll");
+  
+  Fl_Scroll scroll(0, 0, 400, 300);
+  
+  // Large canvas (larger than window)
+  Canvas *canvas = new Canvas(0, 0, 800, 600);
+  
+  scroll.end();
+  win.resizable(scroll);
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```
+
+## Example: Scroll with Fl_Pack
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Pack.H>
+#include <FL/Fl_Tabs.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+
+int main() {
+  Fl_Window win(350, 400, "Scrollable Panels");
+  
+  Fl_Scroll scroll(10, 10, 330, 380);
+  
+  // Pack that contains collapsible Fl_Tabs panels
+  Fl_Pack pack(10, 10, 310, 0);
+  pack.spacing(5);
+  
+  for (int i = 0; i < 10; i++) {
+    char label[20];
+    sprintf(label, "Panel %d", i + 1);
+    
+    Fl_Tabs *tabs = new Fl_Tabs(0, 0, 310, 80);
+    Fl_Group *grp = new Fl_Group(0, 25, 310, 55, label);
+    
+    // Add content to group
+    Fl_Button *btn = new Fl_Button(10, 30, 100, 25, "Action");
+    
+    grp->end();
+    tabs->end();
+  }
+  
+  pack.end();
+  scroll.end();
+  
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```
+
+## Example: Always-On Scrollbars
+
+```cpp
+Fl_Scroll scroll(0, 0, 400, 300);
+scroll.type(Fl_Scroll::BOTH_ALWAYS);  // Scrollbars always visible
+
+// Scrollbars remain visible even if content fits
+```
+
+## Example: Programmatic Scrolling
+
+```cpp
+// Scroll to specific position
+scroll->scroll_to(100, 200);
+
+// Scroll to bottom
+int max_y = /* calculate based on content height */;
+scroll->scroll_to(scroll->xposition(), max_y);
+
+// Get current position
+int current_x = scroll->xposition();
+int current_y = scroll->yposition();
+```
+
+## Best Practices
+
+### Canvas Widgets
+
+When using a single child canvas:
+
+```cpp
+class MyCanvas : public Fl_Widget {
+  void draw() override {
+    // Use x() and y() for positioning
+    int draw_x = x() + offset_x;
+    int draw_y = y() + offset_y;
+    
+    // Test clipping to optimize
+    if (fl_not_clipped(draw_x, draw_y, item_w, item_h)) {
+      // Draw item
+    }
+  }
+};
+```
+
+### Box Type Selection
+
+```cpp
+// Packed children (best performance)
+scroll->box(FL_NO_BOX);  // or FL_DOWN_FRAME
+
+// Sparse children (use double buffering)
+Fl_Double_Window *win = new Fl_Double_Window(...);
+Fl_Scroll *scroll = new Fl_Scroll(...);
+scroll->box(FL_DOWN_BOX);
+```
+
+### Outside Labels
+
+Add corner markers for widgets with outside labels:
+
+```cpp
+Fl_Scroll scroll(100, 100, 200, 200);
+Fl_Box(100, 100, 1, 1);  // Top-left
+Fl_Input *inp = new Fl_Input(150, 120, 60, 30, "Name:");
+inp->align(FL_ALIGN_LEFT);  // Outside label
+scroll.end();
+```
+
+### FLUID Limitations
+
+When designing in FLUID:
+- Can only lay out objects that fit without scrolling
+- FLUID won't show scrollbars
+- Leave space for scrollbars in your design
+
+## Restrictions
+
+<Warning>
+You cannot use Fl_Window as a child of Fl_Scroll. Clipping is not conveyed to child windows, causing them to draw over scrollbars and neighboring objects.
+</Warning>
+
+## Notes
+
+- Default type: `Fl_Scroll::BOTH`
+- Scrollbars appear/disappear automatically (unless ALWAYS_ON)
+- Outside labels are not included in bounding box
+- Scrolling changes child widget positions (x, y)
+- Use `fl_not_clipped()` in canvas widgets to optimize drawing
+- Scrollbar alignment controls all scrollbar positions
+- Default scrollbar size: global `Fl::scrollbar_size()`
+
+## See Also
+
+- [Fl_Scrollbar](/api/fl-scrollbar) - Scrollbar widget
+- [Fl_Pack](/api/fl-pack) - Works well inside Fl_Scroll
+- [Fl_Flex](/api/fl-flex) - Works well inside Fl_Scroll
+- [Fl_Group](/api/fl-group) - Base container class
+- [Fl_Tabs](/api/fl-tabs) - Tabbed panels (can contain Fl_Scroll)

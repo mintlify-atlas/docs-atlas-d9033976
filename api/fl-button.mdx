@@ -1,0 +1,285 @@
+---
+title: Fl_Button
+description: API reference for the Fl_Button class in FLTK
+---
+
+# Fl_Button
+
+The `Fl_Button` widget generates callbacks when clicked by the user. It supports various button types including normal, toggle, and radio buttons, and can respond to keyboard shortcuts.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Button.H>
+```
+
+## Class Overview
+
+`Fl_Button` is a clickable widget that triggers callbacks in response to user interaction. Buttons can:
+
+- Generate callbacks on mouse clicks
+- Respond to keyboard shortcuts (explicit or from label)
+- Toggle between states (normal, toggle, radio button modes)
+- Display custom down states with different box types and colors
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Button
+```
+
+Inherits from: `Fl_Widget`
+
+## Button Types
+
+The `type()` method controls button behavior:
+
+- `FL_NORMAL_BUTTON` (0) - Standard push button, `value()` is 1 during press, 0 when released
+- `FL_TOGGLE_BUTTON` (1) - Toggle button, `value()` toggles between 0 and 1 on each click
+- `FL_RADIO_BUTTON` - Radio button, sets this button to 1 and others in the group to 0
+- `FL_HIDDEN_BUTTON` (3) - For Forms compatibility
+
+## Constructor
+
+```cpp
+Fl_Button(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a new button widget.
+
+<ParamField path="X" type="int">
+  The X coordinate of the button relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the button relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the button in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the button in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*" default="nullptr">
+  Label text for the button. Use '&' before a character to create a keyboard shortcut
+</ParamField>
+
+## Public Methods
+
+### value()
+
+```cpp
+char value() const
+int value(int v)
+```
+
+Gets or sets the current state of the button (0 or 1).
+
+<ParamField path="v" type="int">
+  New value to set (0 or 1)
+</ParamField>
+
+**Returns:** For getter, returns current button state. For setter, returns the value that was set.
+
+### set()
+
+```cpp
+int set()
+```
+
+Same as `value(1)`. Sets the button to the "on" state.
+
+**Returns:** `int` - Always returns 1
+
+### clear()
+
+```cpp
+int clear()
+```
+
+Same as `value(0)`. Sets the button to the "off" state.
+
+**Returns:** `int` - Always returns 0
+
+### setonly()
+
+```cpp
+void setonly()
+```
+
+Sets this button to 1 and all other radio buttons in the same group to 0. Should only be called on `FL_RADIO_BUTTON` types.
+
+### shortcut()
+
+```cpp
+int shortcut() const
+void shortcut(int s)
+void shortcut(const char *s)
+```
+
+Gets or sets the keyboard shortcut for the button.
+
+<ParamField path="s" type="int">
+  Bitwise OR of a key and shift flags (e.g., `FL_ALT | 'a'`, `FL_CTRL | 'x'`, or just `'a'`)
+</ParamField>
+
+**Returns:** For getter, returns current shortcut key value
+
+<Note>
+Setting a shortcut overrides the use of '&' in the label. Use lowercase letters unless you require the shift key to be held down.
+</Note>
+
+### down_box()
+
+```cpp
+Fl_Boxtype down_box() const
+void down_box(Fl_Boxtype b)
+```
+
+Gets or sets the box type drawn when `value()` is non-zero.
+
+<ParamField path="b" type="Fl_Boxtype">
+  The box type to use for the "down" state. A value of 0 (default) causes FLTK to figure out the correct matching down version of `box()`
+</ParamField>
+
+**Returns:** For getter, returns current down box type
+
+### down_color()
+
+```cpp
+Fl_Color down_color() const
+void down_color(unsigned c)
+```
+
+Gets or sets the color when the button is pressed. This is an alias for `selection_color()` (provided for backwards compatibility).
+
+<ParamField path="c" type="unsigned">
+  Color value for the down state
+</ParamField>
+
+**Returns:** For getter, returns current down color
+
+### compact()
+
+```cpp
+uchar compact()
+void compact(uchar v)
+```
+
+Gets or sets compact rendering mode for buttons.
+
+<ParamField path="v" type="uchar">
+  0 to disable compact mode, 1 to enable it
+</ParamField>
+
+**Returns:** For getter, returns 0 if compact mode is off, 1 if on
+
+### handle()
+
+```cpp
+int handle(int event) override
+```
+
+Handles events for the button including mouse clicks and keyboard shortcuts.
+
+<ParamField path="event" type="int">
+  The FLTK event type
+</ParamField>
+
+**Returns:** `int` - 1 if handled, 0 otherwise
+
+## Protected Methods
+
+### draw()
+
+```cpp
+void draw() override
+```
+
+Draws the button in its current state. Called automatically by FLTK.
+
+## Callback Behavior
+
+The `when()` method controls when callbacks are triggered:
+
+- `0` - Callback not done, only `changed()` flag is set
+- `FL_WHEN_RELEASE` (default) - Callback when button is released or shortcut typed
+- `FL_WHEN_CHANGED` - Callback each time `value()` changes
+- `FL_WHEN_NOT_CHANGED` - Callback when released but value didn't change
+
+## Usage Example
+
+From `test/button.cxx`:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+#include <stdlib.h>
+
+void beepcb(Fl_Widget *, void *) {
+  fl_beep();
+}
+
+void exitcb(Fl_Widget *, void *) {
+  exit(0);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(320, 65);
+  
+  // Button with callback and keyboard shortcut (Alt+B)
+  Fl_Button *b1 = new Fl_Button(20, 20, 80, 25, "&Beep");
+  b1->callback(beepcb, 0);
+  
+  // Button with no callback
+  Fl_Button *b2 = new Fl_Button(120, 20, 80, 25, "&no op");
+  
+  // Exit button with Alt+X shortcut
+  Fl_Button *b3 = new Fl_Button(220, 20, 80, 25, "E&xit");
+  b3->callback(exitcb, 0);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Toggle Button Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <stdio.h>
+
+void toggle_cb(Fl_Widget *w, void *) {
+  Fl_Button *btn = (Fl_Button*)w;
+  printf("Button is now: %s\n", btn->value() ? "ON" : "OFF");
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(200, 100);
+  
+  Fl_Button *toggle = new Fl_Button(50, 30, 100, 30, "Toggle Me");
+  toggle->type(FL_TOGGLE_BUTTON);
+  toggle->callback(toggle_cb);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## See Also
+
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Return_Button](/api/fl-return-button) - Button with default return key binding
+- [Fl_Light_Button](/api/fl-light-button) - Button with indicator light
+- [Fl_Check_Button](/api/fl-check-button) - Checkbox button
+- [Fl_Radio_Button](/api/fl-radio-button) - Radio button with circle indicator

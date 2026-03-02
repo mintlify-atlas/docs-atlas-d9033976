@@ -1,0 +1,273 @@
+---
+title: Fl_Input
+description: API reference for the Fl_Input class in FLTK
+---
+
+# Fl_Input
+
+The `Fl_Input` widget displays a single line of text and allows the user to edit it. It provides comprehensive text editing capabilities with support for UTF-8, clipboard operations, and keyboard navigation.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Input.H>
+```
+
+## Class Overview
+
+`Fl_Input` is the standard single-line text input widget in FLTK. It features:
+
+- Single-line text editing with full UTF-8 support
+- Mouse and keyboard-based text selection
+- Clipboard integration (cut, copy, paste)
+- Undo/redo functionality
+- Customizable appearance and behavior
+- Support for input validation and filtering
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Input_
+        └── Fl_Input
+```
+
+Inherits from: `Fl_Input_` (which inherits from `Fl_Widget`)
+
+## Constructor
+
+```cpp
+Fl_Input(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a new single-line input field.
+
+<ParamField path="X" type="int">
+  The X coordinate of the input field relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the input field relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the input field in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the input field in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*" default="nullptr">
+  Label text displayed next to the input field
+</ParamField>
+
+## Public Methods
+
+### handle()
+
+```cpp
+int handle(int event) override
+```
+
+Handles events for the input field including keyboard input, mouse clicks, and clipboard operations.
+
+<ParamField path="event" type="int">
+  The FLTK event type (e.g., `FL_KEYBOARD`, `FL_PUSH`, `FL_PASTE`)
+</ParamField>
+
+**Returns:** `int` - 1 if handled, 0 otherwise
+
+## Protected Methods
+
+### draw()
+
+```cpp
+void draw() override
+```
+
+Draws the input field with its current text and cursor. Called automatically by FLTK.
+
+## Inherited Methods from Fl_Input_
+
+The `Fl_Input` class inherits extensive functionality from `Fl_Input_`:
+
+### Text Management
+
+- `value()` / `value(const char*)` - Get or set the text content
+- `size()` - Get the length of text in bytes
+- `maximum_size()` / `maximum_size(int)` - Get or set maximum text length
+- `insert(const char*)` - Insert text at cursor position
+- `replace(int, int, const char*)` - Replace text in a range
+- `cut()` - Cut selected text to clipboard
+- `copy()` - Copy selected text to clipboard
+- `undo()` - Undo last edit operation
+
+### Selection and Cursor
+
+- `position()` / `position(int)` - Get or set cursor position
+- `mark()` / `mark(int)` - Get or set selection mark
+- `position(int, int)` - Set cursor position and selection mark
+- `insert_position()` - Get current cursor position
+
+### Appearance
+
+- `textcolor()` / `textcolor(Fl_Color)` - Get or set text color
+- `textfont()` / `textfont(Fl_Font)` - Get or set text font
+- `textsize()` / `textsize(Fl_Fontsize)` - Get or set text size
+- `cursor_color()` / `cursor_color(Fl_Color)` - Get or set cursor color
+
+### Behavior
+
+- `readonly()` / `readonly(int)` - Get or set read-only mode
+- `wrap()` / `wrap(int)` - Get or set text wrapping (multiline variants)
+- `tab_nav()` / `tab_nav(int)` - Control tab key navigation
+
+## Mouse and Keyboard Bindings
+
+### Mouse Operations
+
+| Mouse Action | Behavior |
+|-------------|----------|
+| **Button 1 Click** | Moves cursor to click point |
+| **Button 1 Drag** | Selects characters |
+| **Double Click** | Selects word |
+| **Triple Click** | Selects all text |
+| **Shift+Click** | Extends selection |
+| **Button 2** | Pastes selection buffer at click point |
+| **Button 3** | Acts like button 1 |
+
+### Keyboard Shortcuts
+
+#### Windows/Linux → Mac → Function
+
+| Windows/Linux | Mac | Function |
+|--------------|-----|----------|
+| **Ctrl+A** | Cmd+A | Select all text |
+| **Ctrl+C** | Cmd+C | Copy to clipboard |
+| **Ctrl+V** | Cmd+V | Paste from clipboard |
+| **Ctrl+X** | Cmd+X | Cut to clipboard |
+| **Ctrl+Z** | Cmd+Z | Undo |
+| **Shift+Ctrl+Z** | Shift+Cmd+Z | Redo |
+| **Backspace** | Backspace | Delete character left |
+| **Delete** | Delete | Delete character right |
+| **Shift+Delete** | Shift+Delete | Cut to clipboard |
+| **Shift+Insert** | - | Paste from clipboard |
+| **Arrow Keys** | Arrow Keys | Cursor movement (combine with Shift to select) |
+| **Home** | Cmd+Left | Move to start of line |
+| **End** | Cmd+Right | Move to end of line |
+| **Ctrl+Left** | Alt+Left | Move word left |
+| **Ctrl+Right** | Alt+Right | Move word right |
+| **Ctrl+Backspace** | Alt+Backspace | Delete word left |
+| **Ctrl+Delete** | Alt+Delete | Delete word right |
+
+## Usage Example
+
+From `test/input.cxx`:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Float_Input.H>
+#include <FL/Fl_Int_Input.H>
+#include <FL/Fl_Secret_Input.H>
+#include <FL/Fl_Button.H>
+#include <stdio.h>
+
+void input_cb(Fl_Widget *ob) {
+  printf("Callback for %s: '%s'\n", 
+         ob->label(), 
+         ((Fl_Input*)ob)->value());
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 300);
+  
+  int y = 10;
+  
+  // Normal text input
+  Fl_Input *normal = new Fl_Input(70, y, 300, 30, "Normal:");
+  normal->tooltip("Normal input field");
+  normal->callback(input_cb);
+  normal->when(FL_WHEN_CHANGED);
+  y += 35;
+  
+  // Float input (validates floating-point numbers)
+  Fl_Float_Input *floatinput = new Fl_Float_Input(70, y, 300, 30, "Float:");
+  floatinput->tooltip("Floating-point number input (F1)");
+  floatinput->shortcut(FL_F+1);
+  y += 35;
+  
+  // Integer input (validates integers)
+  Fl_Int_Input *intinput = new Fl_Int_Input(70, y, 300, 30, "Int:");
+  intinput->tooltip("Integer number input (F2)");
+  intinput->shortcut(FL_F+2);
+  y += 35;
+  
+  // Secret input (password field)
+  Fl_Secret_Input *secret = new Fl_Secret_Input(70, y, 300, 30, "&Secret:");
+  secret->tooltip("Password input field (Alt-S)");
+  y += 35;
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Advanced Example: Input Validation
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <ctype.h>
+
+void validate_cb(Fl_Widget *w, void *) {
+  Fl_Input *input = (Fl_Input*)w;
+  const char *text = input->value();
+  
+  // Example: only allow alphanumeric characters
+  for (int i = 0; text[i]; i++) {
+    if (!isalnum(text[i]) && text[i] != ' ') {
+      input->color(FL_RED);
+      input->redraw();
+      return;
+    }
+  }
+  
+  input->color(FL_WHITE);
+  input->redraw();
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(350, 100);
+  
+  Fl_Input *input = new Fl_Input(10, 30, 330, 30, "Alphanumeric only:");
+  input->align(FL_ALIGN_TOP_LEFT);
+  input->callback(validate_cb);
+  input->when(FL_WHEN_CHANGED);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Input Variants
+
+FLTK provides several specialized input classes:
+
+- **Fl_Float_Input** - Validates floating-point numbers
+- **Fl_Int_Input** - Validates integer numbers
+- **Fl_Secret_Input** - Password field (displays bullets)
+- **Fl_Multiline_Input** - Multi-line text input
+- **Fl_File_Input** - File path input with browse button
+
+## See Also
+
+- [Fl_Output](/api/fl-output) - Read-only text display
+- [Fl_Text_Editor](/api/fl-text-editor) - Advanced multi-line text editor
+- [Fl_Text_Display](/api/fl-text-display) - Multi-line text display
+- [Fl_Input_](/api/fl-input-underscore) - Base class for input widgets

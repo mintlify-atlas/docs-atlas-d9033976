@@ -1,0 +1,410 @@
+---
+title: Wayland Support
+description: Using FLTK with the Wayland display protocol on Linux and FreeBSD
+---
+
+## Introduction
+
+FLTK 1.4 and later support the Wayland display protocol as an alternative to X11. Wayland provides a modern display server architecture with improved security and performance.
+
+### Supported Platforms
+
+- **Linux** - Debian, Ubuntu, Fedora, and other distributions
+- **FreeBSD** - Version 13.1 and later
+
+### Tested Compositors
+
+- **Mutter** - GNOME's Wayland compositor
+- **Weston** - Reference Wayland compositor  
+- **KWin** - KDE Plasma's compositor
+- **Sway** - i3-compatible Wayland compositor
+
+CJK text-input methods, dead keys, and compose keys are fully supported.
+
+## Runtime Backend Selection
+
+FLTK automatically selects the best available display backend at runtime:
+
+1. **Wayland** if a compositor is available
+2. **X11** as fallback if Wayland is unavailable
+
+### Environment Variable Control
+
+Use `FLTK_BACKEND` to control backend selection:
+
+```bash
+# Use Wayland if available, otherwise X11 (default behavior)
+unset FLTK_BACKEND
+
+# Force Wayland (error if unavailable)
+export FLTK_BACKEND=wayland
+./myapp
+
+# Force X11 even if Wayland is available
+export FLTK_BACKEND=x11
+./myapp
+```
+
+<Warning>
+If `FLTK_BACKEND` is set to an invalid value, the application will exit with an error.
+</Warning>
+
+## Build Configuration
+
+### Default Build
+
+By default, CMake builds a **hybrid Wayland/X11 library** when all required packages are available:
+
+```bash
+cmake -B build
+cmake --build build
+```
+
+The resulting library supports both backends and selects automatically at runtime.
+
+### Wayland-Only Build
+
+To build without X11 support (useful for pure Wayland systems):
+
+```bash
+cmake -B build -D FLTK_BACKEND_X11=OFF
+cmake --build build
+```
+
+<Info>
+This is useful when cross-compiling for systems without X11 headers and libraries.
+</Info>
+
+### X11-Only Build
+
+To disable Wayland support and build for X11 only:
+
+```bash
+cmake -B build -D FLTK_BACKEND_WAYLAND=OFF
+cmake --build build
+```
+
+## Disabling Wayland in Your Application
+
+For applications using X11-specific APIs, disable Wayland at compile time:
+
+```cpp
+#include <FL/Enumerations.H>
+
+FL_EXPORT bool fl_disable_wayland = true;
+
+int main(int argc, char **argv) {
+    // Your X11-specific code
+}
+```
+
+<Warning>
+This requires exporting symbols from executables. Add linker flags:
+</Warning>
+
+<Tabs>
+  <Tab title="GCC/Clang">
+    ```bash
+    g++ -rdynamic myapp.cxx `fltk-config --ldflags`
+    ```
+  </Tab>
+
+  <Tab title="CMake">
+    Set the `ENABLE_EXPORTS` property:
+
+    ```cmake
+    add_executable(myapp main.cxx)
+    set_target_properties(myapp PROPERTIES ENABLE_EXPORTS TRUE)
+    ```
+
+    Or use CMake variables:
+
+    ```cmake
+    # CMake 3.4+
+    set(CMAKE_ENABLE_EXPORTS TRUE)
+
+    # CMake 3.27+
+    set(CMAKE_EXECUTABLE_ENABLE_EXPORTS TRUE)
+    ```
+  </Tab>
+</Tabs>
+
+## Platform-Specific Setup
+
+### Debian/Ubuntu/Mint/Raspberry Pi OS
+
+<Info>
+Requires Debian 11 (Bullseye) or Ubuntu 20.04 (Focal Fossa) or later.
+</Info>
+
+Install required packages:
+
+```bash
+# Core Wayland packages
+sudo apt-get install libpango1.0-dev
+sudo apt-get install libwayland-dev
+sudo apt-get install wayland-protocols
+sudo apt-get install libxkbcommon-dev
+
+# X11 support (unless building with FLTK_BACKEND_X11=OFF)
+sudo apt-get install libxinerama-dev
+
+# Recommended packages
+sudo apt-get install libdbus-1-dev      # Cursor theme support
+sudo apt-get install libglew-dev        # OpenGL 3.0+ support
+sudo apt-get install libdecor-0-dev     # Window decorations (if version ≥ 0.2.0)
+sudo apt-get install libgtk-3-dev       # Recommended if libdecor unavailable
+```
+
+#### GNOME-Wayland Desktop
+
+```bash
+sudo apt-get install gnome-core
+sudo apt-get install libdecor-0-plugin-1-gtk  # If libdecor-0-dev installed
+```
+
+#### KDE Plasma-Wayland Desktop
+
+```bash
+sudo apt-get install kde-plasma-desktop
+```
+
+### Fedora
+
+<Info>
+Wayland support requires Fedora 35 or later.
+</Info>
+
+Install required packages:
+
+```bash
+# Core Wayland packages
+sudo yum install wayland-devel
+sudo yum install wayland-protocols-devel
+sudo yum install cairo-devel
+sudo yum install libxkbcommon-devel
+sudo yum install pango-devel
+sudo yum install mesa-libGLU-devel
+
+# Recommended packages
+sudo yum install dbus-devel      # Cursor theme support
+sudo yum install libdecor-devel  # Window decorations
+sudo yum install gtk3-devel      # Recommended if libdecor unavailable
+sudo yum install glew-devel      # OpenGL 3.0+ support
+```
+
+### FreeBSD
+
+<Info>
+Tested on FreeBSD 13.1 with the Sway compositor.
+</Info>
+
+Install required packages:
+
+```bash
+sudo pkg install git autoconf pkgconf xorg urwfonts gnome glew \
+                 seatd sway dmenu-wayland dmenu evdev-proto
+```
+
+## Window Decorations (libdecor)
+
+FLTK uses **libdecor** to handle window decorations (titlebars, borders).
+
+### Using System libdecor
+
+Recent distributions provide libdecor packages:
+
+```bash
+# Debian/Ubuntu (if version ≥ 0.2.0)
+sudo apt-get install libdecor-0-dev libdecor-0-plugin-1-gtk
+
+# Fedora
+sudo yum install libdecor-devel
+```
+
+<Info>
+FLTK requires libdecor version 0.2.0 or later.
+</Info>
+
+### Bundled libdecor
+
+If system libdecor is unavailable or too old, FLTK uses a bundled version automatically.
+
+### Decoration Modes
+
+libdecor supports two decoration modes:
+
+- **CSD (Client-Side Decorations)** - Application draws its own titlebar
+  - Used by: Mutter (GNOME), Weston
+- **SSD (Server-Side Decorations)** - Compositor draws the titlebar
+  - Used by: KWin (KDE), Sway
+
+Force CSD mode:
+
+```bash
+export LIBDECOR_FORCE_CSD=1
+./myapp
+```
+
+## Graphics and Text Rendering
+
+When using Wayland, FLTK renders with:
+
+- **Cairo** - Vector graphics and 2D drawing
+- **Pango** - Text rendering and layout
+- **EGL** - OpenGL integration
+
+When falling back to X11:
+- **Cairo** - Vector graphics (same as Wayland)
+- **Pango** - Text rendering (same as Wayland)
+- **Xlib** - Window management
+
+## Known Limitations
+
+### Window Positioning
+
+Wayland prevents applications from knowing or controlling their exact screen position.
+
+<Warning>
+`Fl_Window::position()` has no effect on top-level windows under Wayland.
+</Warning>
+
+Popup windows (menus, tooltips) can be positioned relative to other windows and work correctly.
+
+### Window State
+
+- Cannot detect if a window is minimized
+- Cannot programmatically unminimize a window
+- `Fl_Window::show()` has no effect on minimized windows
+
+### Clipboard
+
+The clipboard API works, but:
+
+- `Fl::add_clipboard_notify()` has no effect (cannot detect clipboard changes)
+- Copy operations work best when the application has focus
+- Copy operations after losing focus only work if the data type (text/image) matches the last type copied while focused
+
+### Titlebar Width
+
+Narrow windows are forced to be wide enough for the titlebar to display buttons and title text.
+
+### OpenGL on Raspberry Pi
+
+OpenGL inside Wayland windows may not work on Raspberry Pi hardware, though it works with X11 on the same hardware.
+
+### Drag-and-Drop on KDE
+
+Drag-and-drop from subwindows doesn't work under KDE/Plasma (likely a KWin bug). See [FLTK issue #997](https://github.com/fltk/fltk/issues/997) for a workaround.
+
+## Testing Your Setup
+
+Verify Wayland is working:
+
+```bash
+# Build FLTK with Wayland support
+cmake -B build
+cmake --build build
+
+# Force Wayland backend
+export FLTK_BACKEND=wayland
+
+# Run demo
+build/bin/test/demo
+```
+
+Check which backend is active:
+
+```cpp
+#include <FL/platform.H>
+
+if (fl_wl_display()) {
+    printf("Running on Wayland\n");
+} else if (fl_display) {
+    printf("Running on X11\n");
+}
+```
+
+## Debugging
+
+Enable Wayland debugging:
+
+```bash
+export WAYLAND_DEBUG=1
+./myapp
+```
+
+Check compositor logs:
+
+```bash
+# GNOME (Mutter)
+journalctl -f /usr/bin/gnome-shell
+
+# KDE (KWin)
+journalctl -f /usr/bin/kwin_wayland
+
+# Sway
+sway --debug
+```
+
+## Migration from X11
+
+Most FLTK code works unchanged with Wayland. Exceptions:
+
+### Platform-Specific Code
+
+<Tabs>
+  <Tab title="Before (X11-only)">
+    ```cpp
+    #include <FL/x.H>
+
+    Display *display = fl_display;
+    Window window = fl_xid(myWindow);
+    // X11-specific operations
+    ```
+  </Tab>
+
+  <Tab title="After (Wayland/X11)">
+    ```cpp
+    #include <FL/platform.H>
+
+    if (fl_wl_display()) {
+        // Wayland-specific code
+        struct wl_display *display = fl_wl_display();
+    } else if (fl_display) {
+        // X11-specific code  
+        Display *display = fl_display;
+        Window window = fl_xid(myWindow);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Window Positioning
+
+Replace absolute positioning with relative positioning:
+
+<Tabs>
+  <Tab title="Before">
+    ```cpp
+    window->position(100, 100);  // Won't work on Wayland
+    ```
+  </Tab>
+
+  <Tab title="After">
+    ```cpp
+    // Use default positioning
+    window->show();
+
+    // Or position relative to another window (for popups)
+    popup->position(parent->x() + 50, parent->y() + 50);
+    ```
+  </Tab>
+</Tabs>
+
+## Additional Resources
+
+- [Wayland Protocol Documentation](https://wayland.freedesktop.org/)
+- [libdecor Documentation](https://gitlab.freedesktop.org/libdecor/libdecor)
+- [FLTK Wayland Issue Tracker](https://github.com/fltk/fltk/labels/Wayland)
+- [Wayland Book](https://wayland-book.com/)

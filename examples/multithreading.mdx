@@ -1,0 +1,584 @@
+---
+title: Multithreading Example
+description: Using threads safely with FLTK for background processing
+---
+
+## What This Example Demonstrates
+
+This example shows proper multithreading with FLTK:
+- Creating and managing threads
+- Thread-safe communication with GUI (Fl::lock/unlock)
+- Using Fl::awake() to update GUI from worker threads
+- Background processing without blocking the UI
+- Displaying results in real-time
+- Thread synchronization patterns
+
+FLTK's threading support allows background work while keeping the UI responsive.
+
+## Complete Source Code
+
+Source file: `test/threads.cxx` (simplified prime number calculator)
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Terminal.H>
+#include <FL/Fl_Output.H>
+#include <stdio.h>
+#include <math.h>
+#include <vector>
+#include "threads.h"  // Platform-specific: pthread.h or Windows threads
+
+#define DELTA 0.25  // Min seconds before updating GUI
+
+// Data structure for passing results to GUI thread
+struct prime {
+  int idx;
+  int done;
+  Fl_Terminal *terminal;
+  unsigned long max_prime;
+  Fl_Output *value;
+  std::vector<unsigned long> primes;
+};
+
+Fl_Terminal *tty1, *tty2;
+Fl_Output *value1, *value2;
+int start2 = 3;
+
+void magic_number_cb(void *p) {
+  Fl_Output *w = (Fl_Output*)p;
+  w->labelcolor(FL_RED);
+  w->parent()->redraw();
+}
+
+// Called in GUI thread via Fl::awake()
+void update_handler(void *v) {
+  char max_buf[32];
+  struct prime *pr = (struct prime *)v;
+  
+  // Display all collected primes
+  for (auto n : pr->primes) {
+    pr->terminal->printf("prime: %10lu\n", n);
+    if (n > pr->max_prime)
+      pr->max_prime = n;
+  }
+  
+  snprintf(max_buf, sizeof(max_buf), "%9lu", pr->max_prime);
+  pr->value->value(max_buf);
+  pr->done = 1;
+}
+
+// Worker thread function
+extern "C" void* prime_func(void* p) {
+  Fl_Terminal* terminal = (Fl_Terminal*)p;
+  Fl_Output *value;
+  unsigned long n;
+  unsigned long max_value = 0;
+  int step;
+
+  // Initialize thread variables
+  if (terminal == tty2) {       // Multiple threads
+    Fl::lock();                 // Lock to prevent race condition
+    n = start2;
+    start2 += 2;
+    Fl::unlock();
+    step = 12;
+    value = value2;
+  } else {                      // Single thread
+    n = 3;
+    step = 2;
+    value = value1;
+  }
+
+  // Initialize alternate buffers
+  struct prime pr[2];
+  pr[0].idx = pr[1].idx = ((int)n/2 - 1);
+  pr[0].done = 0;
+  pr[1].done = 1;
+  pr[0].terminal = pr[1].terminal = terminal;
+  pr[0].max_prime = pr[1].max_prime = 0;
+  pr[0].value = pr[1].value = value;
+  pr[0].primes.clear();
+  pr[1].primes.clear();
+  int pi = 0;   // Buffer index
+
+  Fl_Timestamp last = Fl::now();
+
+  // Calculate prime numbers
+  for (;;) {
+    int pp;
+    int hn = (int)sqrt((double)n);
+
+    // Test if n is prime
+    for (pp = 3; pp <= hn; pp += 2) {
+      if (n % pp == 0)
+        break;
+    }
+
+    if (pp > hn) {  // n is prime
+      pr[pi].primes.push_back(n);
+
+      double ssl = Fl::seconds_since(last);
+
+      // Send update to GUI thread periodically
+      if (ssl > DELTA && pr[1-pi].done) {
+        last = Fl::now();
+        Fl::awake(update_handler, (void *)(&pr[pi]));
+        pi = 1 - pi;              // Switch to alternate buffer
+        pr[pi].primes.clear();
+      }
+
+      if (n > max_value) {
+        pr[pi].max_prime = n;
+      }
+
+      n += step;
+
+      if (n > 5 * 1000 * 1000) {
+        Fl::awake(magic_number_cb, value);
+      }
+    } else {
+      // Thread safety for shared variables
+      Fl::lock();
+      n += step;
+      Fl::unlock();
+    }
+  }
+  return 0L;
+}
+
+// Close callback
+void close_cb(Fl_Widget *w, void *v) {
+  Fl::hide_all_windows();
+  printf("Max prime with 1 thread : %s\n", value1->value());
+  printf("Max prime with 6 threads: %s\n", value2->value());
+}
+
+int main(int argc, char **argv) {
+  // First window: single thread
+  Fl_Double_Window* w1 = new Fl_Double_Window(200, 200, "Single Thread");
+  tty1 = new Fl_Terminal(0, 0, 200, 175);
+  tty1->color(FL_BACKGROUND2_COLOR);
+  w1->resizable(tty1);
+  value1 = new Fl_Output(100, 175, 98, 23, "Max Prime:");
+  value1->textfont(FL_COURIER);
+  w1->callback(close_cb);
+  w1->end();
+  w1->show(argc, argv);
+
+  // Second window: multiple threads
+  Fl_Double_Window* w2 = new Fl_Double_Window(200, 200, "Six Threads");
+  tty2 = new Fl_Terminal(0, 0, 200, 175);
+  tty2->color(FL_BACKGROUND2_COLOR);
+  w2->resizable(tty2);
+  value2 = new Fl_Output(100, 175, 98, 23, "Max Prime:");
+  value2->textfont(FL_COURIER);
+  w2->callback(close_cb);
+  w2->end();
+  w2->show();
+
+  tty1->printf("Prime numbers:\n");
+  tty2->printf("Prime numbers:\n");
+
+  // Enable multi-thread support
+  Fl::lock();
+
+  // Start threads
+  Fl_Thread prime_thread;
+  
+  // One thread for window 1
+  fl_create_thread(prime_thread, prime_func, tty1);
+
+  // Six threads for window 2
+  fl_create_thread(prime_thread, prime_func, tty2);
+  fl_create_thread(prime_thread, prime_func, tty2);
+  fl_create_thread(prime_thread, prime_func, tty2);
+  fl_create_thread(prime_thread, prime_func, tty2);
+  fl_create_thread(prime_thread, prime_func, tty2);
+  fl_create_thread(prime_thread, prime_func, tty2);
+
+  Fl::run();
+  return 0;
+}
+```
+
+## Compilation Command
+
+```bash
+# Linux/Unix
+fltk-config --compile threads.cxx -lpthread
+
+# Windows
+fltk-config --compile threads.cxx
+
+# Or with CMake
+cmake . && make threads
+```
+
+## Expected Behavior
+
+- Two windows appear side by side
+- Left window: single thread calculating primes
+- Right window: six threads calculating primes in parallel
+- Prime numbers scroll in terminal widgets
+- "Max Prime" output shows highest prime found
+- Right window finds primes ~6x faster
+- Label turns red when reaching 5 million
+
+## Key Concepts
+
+### Enable Threading
+
+```cpp
+// MUST call before creating threads
+Fl::lock();
+
+// Then start your event loop
+Fl::run();
+// Fl::run() automatically calls Fl::unlock() and Fl::lock() as needed
+```
+
+### Thread Safety Rules
+
+**CRITICAL RULES:**
+1. **Never call FLTK GUI functions directly from worker threads**
+2. **Use Fl::awake() to communicate with the GUI thread**
+3. **Call Fl::lock() before accessing shared data**
+4. **Call Fl::unlock() after accessing shared data**
+
+### Creating Threads
+
+```cpp
+#include "threads.h"  // FLTK's cross-platform thread header
+
+// Declare thread handle
+Fl_Thread my_thread;
+
+// Thread function signature
+extern "C" void* my_thread_func(void* data) {
+  // Thread code here
+  return NULL;
+}
+
+// Create and start thread
+fl_create_thread(my_thread, my_thread_func, user_data);
+```
+
+### Communicating from Thread to GUI
+
+```cpp
+// In worker thread:
+void* worker_thread(void* data) {
+  // Do background work
+  int result = compute_something();
+  
+  // Send result to GUI thread
+  Fl::awake(gui_update_callback, &result);
+  
+  return NULL;
+}
+
+// In GUI thread (called by FLTK event loop):
+void gui_update_callback(void* data) {
+  int* result = (int*)data;
+  widget->value(*result);
+  widget->redraw();
+}
+```
+
+### Protecting Shared Data
+
+```cpp
+int shared_counter = 0;  // Shared between threads
+
+void* thread_func(void* data) {
+  for (int i = 0; i < 1000; i++) {
+    Fl::lock();           // Lock before accessing
+    shared_counter++;     // Modify shared data
+    Fl::unlock();         // Unlock after
+  }
+  return NULL;
+}
+```
+
+## Simple Threading Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Box.H>
+#include "threads.h"
+#include <unistd.h>  // for sleep()
+
+Fl_Progress *progress;
+Fl_Box *status;
+volatile bool thread_running = false;
+
+// GUI update function (called in main thread)
+void update_progress(void* data) {
+  int* value = (int*)data;
+  progress->value(*value);
+  
+  char buf[32];
+  snprintf(buf, sizeof(buf), "Progress: %d%%", *value);
+  status->copy_label(buf);
+}
+
+// Worker thread
+extern "C" void* worker_thread(void* data) {
+  for (int i = 0; i <= 100; i += 10) {
+    // Simulate work
+    sleep(1);
+    
+    // Update GUI via awake
+    static int progress_val;
+    progress_val = i;
+    Fl::awake(update_progress, &progress_val);
+  }
+  
+  thread_running = false;
+  return NULL;
+}
+
+void start_cb(Fl_Widget* w, void*) {
+  if (!thread_running) {
+    thread_running = true;
+    Fl_Thread thread;
+    fl_create_thread(thread, worker_thread, NULL);
+    ((Fl_Button*)w)->deactivate();
+  }
+}
+
+int main(int argc, char** argv) {
+  Fl_Window win(300, 150, "Thread Progress");
+  
+  status = new Fl_Box(10, 10, 280, 30, "Click Start");
+  
+  progress = new Fl_Progress(10, 50, 280, 30);
+  progress->minimum(0);
+  progress->maximum(100);
+  progress->value(0);
+  
+  Fl_Button *btn = new Fl_Button(100, 100, 100, 30, "Start");
+  btn->callback(start_cb);
+  
+  win.end();
+  win.show(argc, argv);
+  
+  Fl::lock();  // Enable threading
+  return Fl::run();
+}
+```
+
+## Advanced Patterns
+
+### Thread Pool
+
+```cpp
+class WorkQueue {
+  std::vector<Fl_Thread> threads;
+  std::queue<Task*> tasks;
+  bool shutdown;
+  
+public:
+  void start(int num_threads) {
+    shutdown = false;
+    for (int i = 0; i < num_threads; i++) {
+      Fl_Thread t;
+      fl_create_thread(t, worker_thread, this);
+      threads.push_back(t);
+    }
+  }
+  
+  void add_task(Task* task) {
+    Fl::lock();
+    tasks.push(task);
+    Fl::unlock();
+  }
+  
+  static void* worker_thread(void* data) {
+    WorkQueue* queue = (WorkQueue*)data;
+    while (!queue->shutdown) {
+      Task* task = NULL;
+      
+      Fl::lock();
+      if (!queue->tasks.empty()) {
+        task = queue->tasks.front();
+        queue->tasks.pop();
+      }
+      Fl::unlock();
+      
+      if (task) {
+        task->execute();
+        delete task;
+      } else {
+        usleep(10000);  // Sleep 10ms if no work
+      }
+    }
+    return NULL;
+  }
+};
+```
+
+### Cancellable Thread
+
+```cpp
+volatile bool cancel_requested = false;
+
+void* cancellable_thread(void* data) {
+  for (int i = 0; i < 1000000 && !cancel_requested; i++) {
+    // Do work
+    compute(i);
+    
+    // Check cancellation periodically
+    if (i % 1000 == 0 && cancel_requested) {
+      break;
+    }
+  }
+  
+  Fl::awake(thread_finished_cb, NULL);
+  return NULL;
+}
+
+void cancel_button_cb(Fl_Widget*, void*) {
+  cancel_requested = true;
+}
+```
+
+### Progress Reporting
+
+```cpp
+struct ProgressData {
+  int current;
+  int total;
+  char message[256];
+};
+
+void progress_callback(void* data) {
+  ProgressData* p = (ProgressData*)data;
+  progress_bar->value(100.0 * p->current / p->total);
+  status_label->copy_label(p->message);
+  delete p;  // Clean up
+}
+
+void* processing_thread(void* data) {
+  int total = 1000;
+  for (int i = 0; i < total; i++) {
+    process_item(i);
+    
+    if (i % 10 == 0) {
+      ProgressData* p = new ProgressData;
+      p->current = i;
+      p->total = total;
+      snprintf(p->message, sizeof(p->message), 
+               "Processing item %d of %d", i, total);
+      Fl::awake(progress_callback, p);
+    }
+  }
+  return NULL;
+}
+```
+
+## Common Pitfalls
+
+### DON'T: Call GUI functions from threads
+
+```cpp
+// WRONG - will crash!
+void* bad_thread(void* data) {
+  Fl_Box* box = (Fl_Box*)data;
+  box->label("Updated");  // DON'T DO THIS
+  box->redraw();          // DON'T DO THIS
+  return NULL;
+}
+```
+
+### DO: Use Fl::awake()
+
+```cpp
+// CORRECT
+void update_label(void* data) {
+  Fl_Box* box = (Fl_Box*)data;
+  box->label("Updated");
+  box->redraw();
+}
+
+void* good_thread(void* data) {
+  // Do background work...
+  
+  // Update GUI safely
+  Fl::awake(update_label, data);
+  return NULL;
+}
+```
+
+### Memory Management
+
+```cpp
+// Allocate data that awake callback will free
+void* worker(void* data) {
+  int* result = new int(42);  // Allocate
+  Fl::awake(callback, result);
+  return NULL;
+}
+
+void callback(void* data) {
+  int* result = (int*)data;
+  printf("Result: %d\n", *result);
+  delete result;  // Free
+}
+```
+
+## Platform Differences
+
+```cpp
+// FLTK provides cross-platform threading:
+#ifdef _WIN32
+  // Uses Windows threads
+#else
+  // Uses POSIX threads (pthread)
+#endif
+
+// Thread handle type
+Fl_Thread thread;
+
+// Create thread (cross-platform)
+fl_create_thread(thread, function, data);
+```
+
+## Best Practices
+
+1. **Always call Fl::lock()** before starting threads
+2. **Use Fl::awake()** for all GUI updates from threads
+3. **Minimize lock duration** - lock, modify, unlock quickly
+4. **Check for platform support** - threading requires pthread or Windows
+5. **Use volatile** for flags checked by multiple threads
+6. **Clean up threads** before exit (use join or detach)
+7. **Test thoroughly** - threading bugs are hard to reproduce
+8. **Use debugging tools** - Valgrind, thread sanitizers
+
+## Debugging Tips
+
+```cpp
+// Add thread ID to debug output
+#include <pthread.h>
+printf("Thread %ld: doing work\n", (long)pthread_self());
+
+// Detect deadlocks
+if (!Fl::lock()) {
+  fprintf(stderr, "Lock failed!\n");
+}
+
+// Verify you're in GUI thread
+if (Fl::thread_id() == fl_thread_id()) {
+  printf("In GUI thread\n");
+}
+```
+
+## Next Steps
+
+- Learn about [custom widgets](/examples/custom-widgets)
+- Explore [callbacks](/examples/callbacks)
+- See [OpenGL integration](/examples/opengl-demo)

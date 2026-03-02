@@ -1,0 +1,387 @@
+---
+title: Image Handling
+description: Loading, displaying, and manipulating images in FLTK
+---
+
+## Overview
+
+FLTK provides a comprehensive image system supporting multiple formats including PNG, JPEG, BMP, GIF, XPM, and more. The base `Fl_Image` class handles caching, scaling, and drawing.
+
+## Image Classes
+
+<CardGroup cols={2}>
+  <Card title="Fl_RGB_Image" icon="image">
+    Full-color images with 1-4 channels (RGB/RGBA)
+  </Card>
+  
+  <Card title="Fl_PNG_Image" icon="file-image">
+    PNG format with transparency support
+  </Card>
+  
+  <Card title="Fl_JPEG_Image" icon="camera">
+    JPEG photographs and compressed images
+  </Card>
+  
+  <Card title="Fl_Pixmap" icon="palette">
+    XPM colormap images with transparency
+  </Card>
+</CardGroup>
+
+## Loading Images
+
+### From Files
+
+```cpp
+#include <FL/Fl_PNG_Image.H>
+#include <FL/Fl_JPEG_Image.H>
+
+// PNG with alpha channel
+Fl_PNG_Image *png = new Fl_PNG_Image("icon.png");
+if (png->fail()) {
+  delete png;
+  // Handle error
+}
+
+// JPEG photograph
+Fl_JPEG_Image *jpg = new Fl_JPEG_Image("photo.jpg");
+```
+
+### From Memory
+
+```cpp
+// PNG from memory buffer
+const unsigned char *buffer = /* ... */;
+int size = /* ... */;
+Fl_PNG_Image *img = new Fl_PNG_Image("image", buffer, size);
+
+// Raw RGB data
+const uchar *pixels = /* ... */;
+int width = 200, height = 100;
+Fl_RGB_Image *rgb = new Fl_RGB_Image(pixels, width, height, 3);
+```
+
+### XPM Pixmaps
+
+```cpp
+// XPM data
+static const char *icon_xpm[] = {
+  "16 16 3 1",
+  ". c None",
+  "# c #000000",
+  "* c #FF0000",
+  "................",
+  "...####....####.",
+  "..######..######",
+  "...****....****.",
+  // ... more rows
+};
+
+Fl_Pixmap *pixmap = new Fl_Pixmap(icon_xpm);
+```
+
+## Displaying Images
+
+### On Widgets
+
+```cpp
+Fl_Box *box = new Fl_Box(10, 10, 200, 200);
+Fl_PNG_Image *img = new Fl_PNG_Image("logo.png");
+box->image(img);  // Display image
+
+// Inactive state image
+Fl_PNG_Image *gray = new Fl_PNG_Image("logo_gray.png");
+box->deimage(gray);
+```
+
+### Direct Drawing
+
+```cpp
+class ImageWidget : public Fl_Widget {
+  Fl_PNG_Image *img;
+  
+public:
+  void draw() override {
+    // Draw image at widget position
+    img->draw(x(), y());
+    
+    // Draw with clipping
+    img->draw(x(), y(), w(), h(), cx, cy);
+  }
+};
+```
+
+## Image Properties
+
+```cpp
+Fl_PNG_Image *img = new Fl_PNG_Image("photo.png");
+
+// Dimensions
+int width = img->w();         // Display width
+int height = img->h();        // Display height
+int data_w = img->data_w();   // Original data width
+int data_h = img->data_h();   // Original data height
+
+// Color information
+int depth = img->d();         // Bytes per pixel (3=RGB, 4=RGBA)
+int line_data = img->ld();    // Line data size (0 = w*d)
+
+// Data access
+const char * const *data = img->data();
+int count = img->count();     // Number of data pointers
+```
+
+## Scaling Images
+
+### Simple Scaling
+
+```cpp
+Fl_PNG_Image *original = new Fl_PNG_Image("image.png");
+
+// Scale to specific size
+original->scale(400, 300);
+
+// Scale proportionally
+original->scale(400, 300, 1);  // Keep aspect ratio
+
+// Scale proportionally, allow enlargement
+original->scale(400, 300, 1, 1);
+```
+
+### Scaling Algorithms
+
+```cpp
+// Set global scaling algorithm
+Fl_Image::scaling_algorithm(FL_RGB_SCALING_BILINEAR);  // Better quality
+// or
+Fl_Image::scaling_algorithm(FL_RGB_SCALING_NEAREST);   // Faster
+```
+
+### Copy and Scale
+
+```cpp
+// Create scaled copy (preserves original)
+Fl_Image *thumbnail = original->copy(100, 100);
+
+// Use for different sizes
+Fl_Image *large = original->copy(800, 600);
+Fl_Image *small = original->copy(64, 64);
+```
+
+## Image Manipulation
+
+### Color Effects
+
+<CodeGroup>
+```cpp Grayscale
+Fl_RGB_Image *img = new Fl_PNG_Image("color.png");
+img->desaturate();  // Convert to grayscale
+```
+
+```cpp Inactive/Grayed
+img->inactive();  // Gray out for disabled state
+// Equivalent to:
+img->color_average(FL_GRAY, 0.33f);
+```
+
+```cpp Tinting
+// Blend with color
+img->color_average(FL_BLUE, 0.5f);  // 50% blue tint
+```
+</CodeGroup>
+
+### Creating Modified Copies
+
+```cpp
+Fl_PNG_Image *original = new Fl_PNG_Image("icon.png");
+
+// Create desaturated copy
+Fl_Image *gray = original->copy();
+gray->desaturate();
+
+// Create tinted copy
+Fl_Image *tinted = original->copy();
+tinted->color_average(FL_RED, 0.3f);
+```
+
+## Memory Management
+
+### Release Pattern
+
+```cpp
+Fl_PNG_Image *img = new Fl_PNG_Image("file.png");
+
+// Use image...
+
+// Clean up
+img->release();  // Virtual method, handles shared images
+// DON'T use 'delete img' directly for Fl_Shared_Image!
+```
+
+### Caching Control
+
+```cpp
+// Free cached platform-specific data
+img->uncache();
+
+// Check cache size
+int cache_w = ((Fl_RGB_Image*)img)->cache_w();
+int cache_h = ((Fl_RGB_Image*)img)->cache_h();
+```
+
+## Advanced Features
+
+### Line Data Padding
+
+```cpp
+// Image with padding after each row
+const uchar *pixels = /* ... */;
+int w = 100, h = 100, d = 3;
+int line_data = 320;  // Must be >= w * d
+
+Fl_RGB_Image *img = new Fl_RGB_Image(pixels, w, h, d, line_data);
+```
+
+### Image Size Limits
+
+```cpp
+// Set maximum image size (in bytes)
+Fl_RGB_Image::max_size(100 * 1024 * 1024);  // 100 MB limit
+
+// Check current limit
+size_t limit = Fl_RGB_Image::max_size();
+```
+
+### Shared Images
+
+```cpp
+#include <FL/Fl_Shared_Image.H>
+
+// Initialize image format handlers
+fl_register_images();
+
+// Load with automatic format detection
+Fl_Shared_Image *img = Fl_Shared_Image::get("photo.jpg");
+if (!img) {
+  // Failed to load
+}
+
+// Shared images are reference counted
+Fl_Shared_Image *img2 = Fl_Shared_Image::get("photo.jpg");  // Same instance
+
+// Release when done
+img->release();  // Decrements reference count
+img2->release();
+```
+
+## Drawing Raw Images
+
+### fl_draw_image()
+
+```cpp
+// Draw RGB image from memory
+const uchar *pixels = /* RGBRGBRGB... */;
+int x = 10, y = 10, w = 200, h = 100;
+
+fl_draw_image(pixels, x, y, w, h, 3);  // D=3 for RGB
+fl_draw_image(pixels, x, y, w, h, 4);  // D=4 for RGBA
+```
+
+### Callback-Based Drawing
+
+```cpp
+void generate_line(void *data, int x, int y, int w, uchar *buf) {
+  // Generate RGB data for scan line y
+  for (int i = 0; i < w; i++) {
+    buf[i*3 + 0] = /* R */;
+    buf[i*3 + 1] = /* G */;
+    buf[i*3 + 2] = /* B */;
+  }
+}
+
+// Draw using callback
+fl_draw_image(generate_line, nullptr, 0, 0, 300, 200, 3);
+```
+
+## Screen Capture
+
+```cpp
+// Capture window contents
+Fl_RGB_Image *capture = fl_capture_window(window, x, y, w, h);
+
+// Capture entire window
+Fl_RGB_Image *full = fl_capture_window(window, 0, 0, 
+                                        window->w(), window->h());
+
+// Use captured image
+box->image(capture);
+```
+
+## Writing Images
+
+### Save to PNG
+
+```cpp
+#include <FL/Fl_PNG_Image.H>
+
+Fl_RGB_Image *img = /* ... */;
+
+// Save image
+if (fl_write_png("output.png", img) != 0) {
+  // Error writing file
+}
+
+// Save raw pixels
+const uchar *pixels = /* ... */;
+fl_write_png("output.png", pixels, width, height, 3);  // RGB
+fl_write_png("output.png", pixels, width, height, 4);  // RGBA
+```
+
+## Supported Formats
+
+<Tabs>
+  <Tab title="Built-in">
+    - **BMP**: Windows Bitmap
+    - **XPM**: X11 Pixmap (with transparency)
+    - **XBM**: X11 Bitmap (monochrome)
+  </Tab>
+  
+  <Tab title="With fltk_images">
+    - **PNG**: Portable Network Graphics
+    - **JPEG**: Joint Photographic Experts Group
+    - **GIF**: Graphics Interchange Format (non-animated)
+    - **SVG**: Scalable Vector Graphics (via nanosvg)
+  </Tab>
+</Tabs>
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_PNG_Image.H>
+#include <FL/Fl_Shared_Image.H>
+
+int main() {
+  fl_register_images();  // Enable all formats
+  
+  Fl_Window win(400, 400, "Image Display");
+  
+  // Load and display image
+  Fl_Box *box = new Fl_Box(0, 0, 400, 400);
+  Fl_Shared_Image *img = Fl_Shared_Image::get("photo.jpg");
+  
+  if (img) {
+    // Scale to fit
+    img->scale(400, 400, 1, 0);
+    box->image(img);
+  }
+  
+  win.end();
+  win.show();
+  
+  int ret = Fl::run();
+  if (img) img->release();
+  return ret;
+}
+```

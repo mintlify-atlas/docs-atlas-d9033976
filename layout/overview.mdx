@@ -1,0 +1,231 @@
+---
+title: Layout Strategies
+description: Overview of FLTK's layout and container widgets for organizing GUI components
+---
+
+FLTK provides several layout widgets (containers) for organizing child widgets without manual coordinate calculations. Each layout widget serves different use cases and has unique resize behaviors.
+
+## Layout Widget Types
+
+### Fl_Group - Base Container
+
+The foundation for all layout widgets. Maintains an ordered list of child widgets with customizable resize behavior through the resizable widget.
+
+**When to use:**
+- Need precise control over widget positions
+- Building custom resize behavior
+- Creating simple fixed layouts
+
+[Learn more about Fl_Group →](/layout/group)
+
+### Fl_Flex - Flexible Box Layout
+
+Modern flexible layout system for single rows or columns. Provides automatic positioning with configurable margins, gaps, and fixed/flexible sizing.
+
+**When to use:**
+- Toolbars and button rows
+- Form layouts with consistent spacing
+- Responsive single-direction layouts
+- As a drop-in replacement for Fl_Pack (recommended since FLTK 1.4.0)
+
+[Learn more about Fl_Flex →](/layout/flex)
+
+### Fl_Grid - Grid Layout
+
+CSS-like grid system with rows and columns. Widgets can span multiple cells and be aligned within their assigned grid positions.
+
+**When to use:**
+- Complex multi-row, multi-column layouts
+- Dialog boxes and forms
+- Dashboard-style interfaces
+- Calculator or calendar layouts
+
+[Learn more about Fl_Grid →](/layout/grid)
+
+### Fl_Pack - Automatic Packing
+
+Legacy packing widget that automatically arranges children horizontally or vertically and resizes itself to fit.
+
+**When to use:**
+- Simple widget lists
+- Legacy code compatibility
+- Self-sizing containers
+
+**Note:** For new code, use Fl_Flex instead for more predictable resize behavior.
+
+[Learn more about Fl_Pack →](/layout/pack)
+
+### Fl_Scroll - Scrollable Areas
+
+Container that adds scrollbars when content exceeds visible area. Can contain any widget arrangement.
+
+**When to use:**
+- Large content areas
+- Image viewers
+- Long forms or lists
+- Canvas widgets for panning
+
+[Learn more about Fl_Scroll →](/layout/scroll)
+
+### Fl_Tabs - Tabbed Interface
+
+Tabbed container where each child group becomes a selectable tab. Only one tab's content is visible at a time.
+
+**When to use:**
+- Multi-page dialogs
+- Settings panels
+- Organizing related controls
+- Space-constrained interfaces
+
+[Learn more about Fl_Tabs →](/layout/tabs)
+
+## Choosing the Right Layout
+
+<AccordionGroup>
+  <Accordion title="Single row/column of widgets">
+    Use **Fl_Flex** for predictable resize behavior with margins and gaps, or **Fl_Pack** for legacy compatibility.
+  </Accordion>
+
+  <Accordion title="Grid-based layout">
+    Use **Fl_Grid** for structured multi-row/column arrangements with cell spanning.
+  </Accordion>
+
+  <Accordion title="Content larger than viewport">
+    Use **Fl_Scroll** to add scrollbars to any layout widget.
+  </Accordion>
+
+  <Accordion title="Multiple pages in same space">
+    Use **Fl_Tabs** to organize content into selectable tabs.
+  </Accordion>
+
+  <Accordion title="Custom positioning">
+    Use **Fl_Group** with manual widget coordinates and custom resizable behavior.
+  </Accordion>
+</AccordionGroup>
+
+## Nesting Layouts
+
+Layout widgets can be nested to create complex interfaces:
+
+```cpp
+// Grid with flex rows
+Fl_Grid *grid = new Fl_Grid(0, 0, 400, 300);
+grid->layout(3, 1);  // 3 rows, 1 column
+
+// Row 1: Flex toolbar
+Fl_Flex *toolbar = new Fl_Flex(0, 0, 400, 30, Fl_Flex::HORIZONTAL);
+toolbar->gap(5);
+new Fl_Button(0, 0, 0, 0, "New");
+new Fl_Button(0, 0, 0, 0, "Save");
+toolbar->end();
+grid->widget(toolbar, 0, 0);
+
+// Row 2: Scrollable content
+Fl_Scroll *scroll = new Fl_Scroll(0, 0, 400, 240);
+// ... add content ...
+scroll->end();
+grid->widget(scroll, 1, 0);
+
+// Row 3: Status bar
+Fl_Box *status = new Fl_Box(0, 0, 400, 30, "Ready");
+grid->widget(status, 2, 0);
+
+grid->end();
+```
+
+## Resize Behavior
+
+Each layout widget handles resizing differently:
+
+- **Fl_Group**: Uses resizable widget to control which children expand/move
+- **Fl_Flex**: Distributes extra space among non-fixed children
+- **Fl_Grid**: Uses row/column weights to distribute space
+- **Fl_Pack**: Resizes itself to wrap children (not recommended for resizable layouts)
+- **Fl_Scroll**: Shows/hides scrollbars based on content size
+- **Fl_Tabs**: Tabs stay constant height (if resizable set correctly)
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Set Size Ranges" icon="arrows-minimize">
+    Always set `window->size_range()` to prevent layouts from becoming too small:
+    ```cpp
+    window->size_range(300, 200);
+    ```
+  </Card>
+
+  <Card title="End Groups" icon="code-bracket">
+    Always call `end()` after adding all children:
+    ```cpp
+    flex->end();
+    window->end();
+    ```
+  </Card>
+
+  <Card title="Set Resizable" icon="expand">
+    Make the main layout resizable:
+    ```cpp
+    window->resizable(grid);
+    ```
+  </Card>
+
+  <Card title="Use Margins" icon="border-all">
+    Add visual breathing room:
+    ```cpp
+    flex->margin(10, 5);  // 10px margin, 5px gap
+    grid->margin(10);     // 10px on all sides
+    ```
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Toolbar with Spacer
+
+```cpp
+Fl_Flex *toolbar = new Fl_Flex(0, 0, 800, 30, Fl_Flex::HORIZONTAL);
+new Fl_Button(0, 0, 0, 0, "File");
+new Fl_Button(0, 0, 0, 0, "Edit");
+Fl_Box *spacer = new Fl_Box(0, 0, 0, 0);  // Invisible spacer
+new Fl_Button(0, 0, 0, 0, "Exit");
+toolbar->end();
+// Spacer takes all extra space
+```
+
+### Form Layout
+
+```cpp
+Fl_Grid *form = new Fl_Grid(0, 0, 400, 300);
+form->layout(3, 2, 10, 10);  // 3 rows, 2 cols, 10px margin/gap
+
+// Labels in left column, inputs in right
+form->widget(new Fl_Box(0, 0, 0, 0, "Name:"), 0, 0, FL_GRID_RIGHT);
+form->widget(new Fl_Input(0, 0, 0, 0), 0, 1, FL_GRID_FILL);
+
+form->widget(new Fl_Box(0, 0, 0, 0, "Email:"), 1, 0, FL_GRID_RIGHT);
+form->widget(new Fl_Input(0, 0, 0, 0), 1, 1, FL_GRID_FILL);
+
+form->end();
+```
+
+### Scrollable List
+
+```cpp
+Fl_Scroll *scroll = new Fl_Scroll(10, 10, 380, 280);
+Fl_Pack *pack = new Fl_Pack(10, 10, 360, 0);  // Height auto-calculated
+pack->type(Fl_Pack::VERTICAL);
+pack->spacing(5);
+
+for (int i = 0; i < 50; i++) {
+  new Fl_Button(0, 0, 360, 25, "Item");
+}
+
+pack->end();
+scroll->end();
+```
+
+## See Also
+
+- [Resize Behavior](/concepts/resize) - Understanding FLTK's resize system
+- [Widget Hierarchy](/concepts/hierarchy) - Parent-child relationships
+- [Drawing](/concepts/drawing) - How layout affects rendering

@@ -1,0 +1,363 @@
+---
+title: Getting Started with FLUID
+description: Create your first FLTK user interface with FLUID
+---
+
+This guide walks you through creating your first FLUID project, from launching the application to compiling the generated code.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- FLTK installed on your system
+- A C++ compiler (GCC, Clang, Visual Studio, or Xcode)
+- Basic familiarity with C++ programming
+- (Optional) `fltk-config` utility for easy compilation
+
+## Launching FLUID
+
+### Interactive Mode
+
+Start FLUID from the command line:
+
+```bash
+fluid
+```
+
+Or launch it from your application menu or desktop environment.
+
+### Command-line Mode
+
+Generate code from an existing `.fl` file:
+
+```bash
+fluid -c myproject.fl
+```
+
+This creates `myproject.h` and `myproject.cxx` without opening the GUI.
+
+## Creating Your First Project
+
+### Step 1: Create a New Project
+
+1. Launch FLUID in interactive mode
+2. Go to **File > New** (or press `Ctrl+N`)
+3. Save immediately with **File > Save As** (or `Ctrl+Shift+S`)
+4. Choose a filename like `hello.fl`
+
+<Tip>
+Save your project early and often. FLUID shows an asterisk (*) in the title bar when you have unsaved changes.
+</Tip>
+
+### Step 2: Create a Function
+
+Every UI needs a function to create the interface:
+
+1. Go to **New > Code > Function**
+2. Enter the function signature: `make_window()`
+3. Press OK
+
+The function appears in the widget browser. This function will create and return your window.
+
+### Step 3: Add a Window
+
+Now add a window to your function:
+
+1. Select the `make_window()` function in the browser
+2. Go to **New > Group > Window** (or right-click and select from menu)
+3. A new window appears on screen (default size 480×320)
+4. You can resize this window by dragging its edges
+
+The window appears in the widget browser under your function.
+
+### Step 4: Add Widgets
+
+Let's add a button to your window:
+
+1. Select the window in the widget browser
+2. Go to **New > Buttons > Button**
+3. A button appears in your window
+4. Drag it to position it
+5. Resize it by dragging the red selection handles
+
+<Note>
+You can also use the **Widget Bin** (Edit > Show Widget Bin or `Alt+B`) to add widgets by clicking or dragging.
+</Note>
+
+### Step 5: Set Widget Properties
+
+Double-click the button to open the Widget Properties panel:
+
+#### GUI Tab
+- **Label**: Enter "Click Me!" to set the button text
+- **Tooltip**: Enter "This is my first button" for hover help
+
+#### Style Tab  
+- **Label Size**: Adjust font size (default is usually 14)
+- **Label Color**: Change text color
+- **Box**: Change button appearance (try `FL_UP_BOX`)
+
+#### C++ Tab
+- **Name**: Enter `my_button` to create a variable
+- **Callback**: Enter a callback function (see below)
+
+### Step 6: Add a Callback
+
+Buttons need callbacks to respond to clicks. In the button's C++ tab:
+
+**Callback field**:
+```cpp
+fl_message("Hello, FLUID!");
+```
+
+This creates an inline callback that shows a message when clicked.
+
+<Tip>
+For more complex callbacks, create a separate callback function before your window and reference it by name.
+</Tip>
+
+### Step 7: Add Required Includes
+
+For `fl_message()` to work, add includes:
+
+1. Go to **New > Code > Declaration**
+2. Enter: `#include <FL/fl_ask.h>`
+3. In the declaration properties, select **public** and **global**
+4. Select **In Source File** (or both header and source)
+
+### Complete Example Structure
+
+Your widget browser should now show:
+
+```
+├── decl: #include <FL/fl_ask.h>
+└── Function: make_window()
+    └── Fl_Window "My Window"
+        └── Fl_Button "Click Me!"
+```
+
+## Generating C++ Code
+
+Now generate the actual source files:
+
+1. **Save your project**: **File > Save** (`Ctrl+S`)
+2. **Write code**: **File > Write Code** (`Ctrl+Shift+C`)
+3. FLUID creates `hello.h` and `hello.cxx` in the same directory
+
+The title bar will show `.cxx` without an asterisk when code is up to date.
+
+### Understanding Generated Code
+
+**hello.h** contains:
+```cpp
+#ifndef hello_h
+#define hello_h
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+
+extern Fl_Window* make_window();
+#endif
+```
+
+**hello.cxx** contains:
+```cpp
+#include "hello.h"
+#include <FL/fl_ask.h>
+
+static void cb_my_button(Fl_Button*, void*) {
+  fl_message("Hello, FLUID!");
+}
+
+Fl_Window* make_window() {
+  Fl_Window* w = new Fl_Window(480, 320, "My Window");
+  Fl_Button* o = new Fl_Button(10, 10, 100, 30, "Click Me!");
+  o->callback((Fl_Callback*)cb_my_button);
+  w->end();
+  return w;
+}
+```
+
+## Compiling the Result
+
+### Create a Main File
+
+Create `main.cxx`:
+
+```cpp
+#include "hello.h"
+#include <FL/Fl.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = make_window();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+### Compile with fltk-config
+
+The easiest way to compile FLTK applications:
+
+```bash
+fltk-config --compile main.cxx
+```
+
+This automatically:
+- Compiles `main.cxx` and `hello.cxx`
+- Links with FLTK libraries
+- Creates executable `main` (or `main.exe` on Windows)
+
+### Manual Compilation
+
+**On Linux/macOS**:
+```bash
+g++ -o hello main.cxx hello.cxx `fltk-config --cxxflags --ldflags`
+```
+
+**On Windows with Visual Studio**:
+```bash
+cl /EHsc main.cxx hello.cxx /I"C:\path\to\fltk" /link fltk.lib
+```
+
+### Run Your Application
+
+```bash
+./hello      # Linux/macOS
+hello.exe    # Windows
+```
+
+Click the button to see your message!
+
+## Next Steps
+
+### Add More Widgets
+
+Try adding:
+- **Input field**: New > Valuators > Input
+- **Menu bar**: New > Menu > Menu Bar  
+- **Tabs**: New > Group > Tabs (then add groups inside)
+- **Scroll area**: New > Group > Scroll
+
+### Organize with Groups
+
+1. Select multiple widgets (`Shift+Click` or drag to select)
+2. Press `F7` to group them
+3. Groups help with layout and can have visual frames
+
+### Use Alignment Tools
+
+- **Layout > Align**: Align selected widgets
+- **Layout > Space Evenly**: Distribute widgets evenly
+- **Layout > Make Same Size**: Uniform sizing
+- **Layout > Grid Settings**: Configure snap grid (`Ctrl+G`)
+
+### Enable Visual Guides
+
+1. **Edit > Settings** (`Alt+P`)
+2. Go to **Layout** tab
+3. Choose a layout preset (FLTK or Grid)
+4. Enable guides with **Edit > Show/Hide Guides** (`Ctrl+Shift+G`)
+
+### Preview Generated Code
+
+- **Edit > Show Code View** (`Alt+C`)
+- Watch code update in real-time as you make changes
+- Switch between Source and Header tabs
+- Useful for understanding what FLUID generates
+
+## Common Workflow Tips
+
+<AccordionGroup>
+  <Accordion title="How do I name widgets for code access?">
+    In the widget's C++ tab, enter a name in the **Name** field. This creates a public member variable or global variable you can access from other code.
+  </Accordion>
+
+  <Accordion title="What's the difference between label and name?">
+    - **Label**: Text displayed on the widget (visible to users)
+    - **Name**: C++ variable name (used in code)
+  </Accordion>
+
+  <Accordion title="How do I make resizable windows?">
+    Select the widget that should resize, then check **Resizable** in its properties. Usually you make the main content area resizable, not buttons or controls.
+  </Accordion>
+
+  <Accordion title="Why doesn't my callback work?">
+    Make sure:
+    - You've included necessary headers (like `<FL/fl_ask.h>`)
+    - Callback code is valid C++ syntax
+    - You've written code files after making changes
+    - You've recompiled the application
+  </Accordion>
+
+  <Accordion title="How do I delete a widget?">
+    Select it and press **Delete**, or use **Edit > Delete**. To delete multiple widgets, select them all first.
+  </Accordion>
+</AccordionGroup>
+
+## Learning More
+
+### Study Examples
+
+FLTK includes many example `.fl` files:
+
+```bash
+# In FLTK source directory
+cd test
+fluid radio.fl           # Button examples
+fluid tabs.fl            # Tabbed interface
+fluid tree.fl            # Tree widget
+
+cd ../examples  
+fluid fluid-callback.fl  # Callback patterns
+```
+
+Open these in FLUID to see how they're constructed.
+
+### Keyboard Shortcuts
+
+Speed up your workflow:
+
+- `F1`: Open widget properties
+- `F2` / `F3`: Move widget earlier/later in order
+- `F7` / `F8`: Group/ungroup widgets
+- `Ctrl+S`: Save project
+- `Ctrl+Shift+C`: Write code files
+- `Ctrl+Z` / `Ctrl+Shift+Z`: Undo/redo
+
+### Build Integration
+
+For real projects, integrate FLUID into your build system:
+
+**CMakeLists.txt example**:
+```cmake
+fltk_wrap_ui(myapp ui/mainwindow.fl ui/dialog.fl)
+add_executable(myapp main.cpp ${myapp_FLTK_UI_SRCS})
+```
+
+CMake will automatically run FLUID during builds.
+
+## Troubleshooting
+
+**"Cannot open .fl file"**
+- Check file permissions
+- Ensure file path has no special characters
+- Try absolute path instead of relative
+
+**"Undefined reference to Fl_Widget"**  
+- Not linking FLTK libraries
+- Use `fltk-config --ldflags` to get correct link flags
+
+**"Callback not found"**
+- Declare callback function before it's used
+- Or use inline callback code
+- Make sure callback signature matches: `void callback(Fl_Widget*, void*)`
+
+**Changes not appearing**
+- Did you write code files? (`Ctrl+Shift+C`)
+- Did you recompile?
+- Did you save the project first?
+
+<Card title="Interface Guide" icon="compass" href="/fluid/interface">
+  Master the FLUID interface and all its features
+</Card>

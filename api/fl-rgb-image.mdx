@@ -1,0 +1,345 @@
+---
+title: Fl_RGB_Image
+description: RGB color image class with support for 1-4 channels
+---
+
+## Overview
+
+The Fl_RGB_Image class supports caching and drawing of full-color images with 1 to 4 channels of color information. Images with an even number of channels are assumed to contain alpha information, which is used to blend the image with the contents of the screen.
+
+**Header:** `<FL/Fl_RGB_Image.H>` or `<FL/Fl_Image.H>`
+
+**Base Class:** [Fl_Image](/api/fl-image)
+
+## Constructors
+
+<ParamField path="Fl_RGB_Image" type="constructor">
+  Creates an RGB image from raw pixel data.
+  
+  <ParamField path="bits" type="const uchar*">
+    Pointer to the image data array containing R, G, B [, A] values
+  </ParamField>
+  
+  <ParamField path="W" type="int">
+    Image width in pixels
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Image height in pixels
+  </ParamField>
+  
+  <ParamField path="D" type="int" default="3">
+    Image depth (number of bytes per pixel):
+    - 1 = Grayscale
+    - 2 = Grayscale + Alpha
+    - 3 = RGB
+    - 4 = RGBA
+  </ParamField>
+  
+  <ParamField path="LD" type="int" default="0">
+    Line data size in bytes. If 0, assumed to be `W * D`. If non-zero, must be >= `W * D` to account for padding.
+  </ParamField>
+</ParamField>
+
+```cpp
+Fl_RGB_Image(const uchar *bits, int W, int H, int D = 3, int LD = 0);
+```
+
+<ParamField path="Fl_RGB_Image" type="constructor">
+  Creates an RGB image with explicit data length validation.
+  
+  <ParamField path="bits" type="const uchar*">
+    Pointer to the image data array
+  </ParamField>
+  
+  <ParamField path="bits_length" type="int">
+    Length of the bits array in bytes (for validation)
+  </ParamField>
+  
+  <ParamField path="W" type="int">
+    Image width in pixels
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Image height in pixels
+  </ParamField>
+  
+  <ParamField path="D" type="int">
+    Image depth (bytes per pixel)
+  </ParamField>
+  
+  <ParamField path="LD" type="int">
+    Line data size in bytes
+  </ParamField>
+</ParamField>
+
+```cpp
+Fl_RGB_Image(const uchar *bits, int bits_length, int W, int H, int D, int LD);
+```
+
+<ParamField path="Fl_RGB_Image" type="constructor">
+  Creates an RGB image from a pixmap.
+  
+  <ParamField path="pxm" type="const Fl_Pixmap*">
+    Pointer to the source pixmap
+  </ParamField>
+  
+  <ParamField path="bg" type="Fl_Color" default="FL_GRAY">
+    Background color for transparent areas
+  </ParamField>
+</ParamField>
+
+```cpp
+Fl_RGB_Image(const Fl_Pixmap *pxm, Fl_Color bg = FL_GRAY);
+```
+
+## Public Members
+
+<ParamField path="array" type="const uchar*">
+  Points to the start of the object's data array containing pixel values.
+  
+  <Note>For Fl_SVG_Image subclass, this member variable initialization may be delayed.</Note>
+</ParamField>
+
+<ParamField path="alloc_array" type="int">
+  If non-zero, the object's data array is delete[]'d when deleting the object. Set to 0 if the data is managed externally.
+</ParamField>
+
+## Image Operations
+
+<ParamField path="copy" type="Fl_Image* copy(int W, int H) const">
+  Creates a copy of the image scaled to the specified dimensions.
+  
+  <ParamField path="W" type="int">
+    Width of the copy
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Height of the copy
+  </ParamField>
+  
+  Returns a new Fl_RGB_Image that should be released when done.
+</ParamField>
+
+<ParamField path="color_average" type="void color_average(Fl_Color c, float i)">
+  Averages the image with the specified color.
+  
+  <ParamField path="c" type="Fl_Color">
+    Color to average with
+  </ParamField>
+  
+  <ParamField path="i" type="float">
+    Intensity/blend factor (0.0 to 1.0)
+  </ParamField>
+</ParamField>
+
+<ParamField path="desaturate" type="void desaturate()">
+  Converts the RGB image to grayscale.
+</ParamField>
+
+## Drawing Methods
+
+<ParamField path="draw" type="void draw(int X, int Y, int W, int H, int cx = 0, int cy = 0)">
+  Draws the image to the current drawing surface with a bounding box.
+  
+  <ParamField path="X" type="int">
+    X coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="Y" type="int">
+    Y coordinate of bounding box
+  </ParamField>
+  
+  <ParamField path="W" type="int">
+    Width of bounding box
+  </ParamField>
+  
+  <ParamField path="H" type="int">
+    Height of bounding box
+  </ParamField>
+  
+  <ParamField path="cx" type="int" default="0">
+    X offset of image origin
+  </ParamField>
+  
+  <ParamField path="cy" type="int" default="0">
+    Y offset of image origin
+  </ParamField>
+</ParamField>
+
+<ParamField path="draw" type="void draw(int X, int Y)">
+  Draws the image at the specified position.
+  
+  <ParamField path="X" type="int">
+    X coordinate for upper-left corner
+  </ParamField>
+  
+  <ParamField path="Y" type="int">
+    Y coordinate for upper-left corner
+  </ParamField>
+</ParamField>
+
+## Cache Management
+
+<ParamField path="uncache" type="void uncache()">
+  Releases cached platform-specific image data, freeing memory while keeping the image object.
+</ParamField>
+
+<ParamField path="cache_w" type="int cache_w()">
+  Returns the width of the cached image data.
+</ParamField>
+
+<ParamField path="cache_h" type="int cache_h()">
+  Returns the height of the cached image data.
+</ParamField>
+
+## Size Limits
+
+<ParamField path="max_size" type="static void max_size(size_t size)">
+  Sets the maximum allowed image size in bytes when creating an Fl_RGB_Image object.
+  
+  <ParamField path="size" type="size_t">
+    Maximum size in bytes (calculated as `w() * h() * d()`)
+  </ParamField>
+  
+  The default max_size() value is essentially infinite. This does not apply to direct RGB image creation via the constructor.
+</ParamField>
+
+<ParamField path="max_size" type="static size_t max_size()">
+  Returns the maximum allowed image size in bytes.
+</ParamField>
+
+## Type Detection
+
+<ParamField path="as_svg_image" type="Fl_SVG_Image* as_svg_image()">
+  Returns a pointer to Fl_SVG_Image if this object is an instance of Fl_SVG_Image, or NULL otherwise.
+</ParamField>
+
+<ParamField path="normalize" type="void normalize()">
+  Makes sure the object is fully initialized. In particular, ensures the `array` member variable is non-null.
+</ParamField>
+
+## Widget Integration
+
+<ParamField path="label" type="void label(Fl_Widget* w)">
+  Sets this image as the label for a widget.
+</ParamField>
+
+<ParamField path="label" type="void label(Fl_Menu_Item* m)">
+  Sets this image as the label for a menu item.
+</ParamField>
+
+## Example Usage
+
+### Creating RGB Image from Raw Data
+
+```cpp
+// Create a 100x100 red square
+int width = 100, height = 100;
+uchar *data = new uchar[width * height * 3];
+
+// Fill with red color (RGB = 255, 0, 0)
+for (int i = 0; i < width * height * 3; i += 3) {
+    data[i]   = 255;  // R
+    data[i+1] = 0;    // G
+    data[i+2] = 0;    // B
+}
+
+Fl_RGB_Image *img = new Fl_RGB_Image(data, width, height, 3);
+img->alloc_array = 1; // Image will delete[] data when destroyed
+
+// Display in a box
+Fl_Box *box = new Fl_Box(10, 10, width, height);
+img->label(box);
+```
+
+### Creating RGBA Image with Alpha Channel
+
+```cpp
+// Create a 50x50 semi-transparent blue square
+int w = 50, h = 50;
+uchar *rgba = new uchar[w * h * 4];
+
+for (int i = 0; i < w * h * 4; i += 4) {
+    rgba[i]   = 0;    // R
+    rgba[i+1] = 0;    // G
+    rgba[i+2] = 255;  // B
+    rgba[i+3] = 128;  // A (50% transparent)
+}
+
+Fl_RGB_Image *img = new Fl_RGB_Image(rgba, w, h, 4);
+img->alloc_array = 1;
+img->draw(100, 100);
+```
+
+### Converting Pixmap to RGB Image
+
+```cpp
+// Load XPM data
+const char *xpm_data[] = {
+    "16 16 2 1",
+    ". c #000000",
+    "  c #FFFFFF",
+    "................",
+    // ... more lines
+    NULL
+};
+
+Fl_Pixmap *pixmap = new Fl_Pixmap(xpm_data);
+Fl_RGB_Image *rgb = new Fl_RGB_Image(pixmap, FL_WHITE);
+
+// Now use rgb image
+rgb->draw(10, 10);
+
+delete pixmap;
+delete rgb;
+```
+
+### Image Manipulation
+
+```cpp
+Fl_RGB_Image *img = new Fl_RGB_Image(data, 200, 200, 3);
+
+// Create grayed-out version
+Fl_RGB_Image *gray = (Fl_RGB_Image*)img->copy();
+gray->desaturate();
+
+// Create tinted version
+Fl_RGB_Image *tinted = (Fl_RGB_Image*)img->copy();
+tinted->color_average(FL_BLUE, 0.3);
+
+// Scale image
+img->scale(100, 100, 1); // Scale to 100x100, maintain aspect ratio
+```
+
+## Memory Layout
+
+The `array` data is organized as follows:
+
+**For D=3 (RGB):**
+```
+[R][G][B][R][G][B][R][G][B]...
+```
+
+**For D=4 (RGBA):**
+```
+[R][G][B][A][R][G][B][A][R][G][B][A]...
+```
+
+**For D=1 (Grayscale):**
+```
+[Gray][Gray][Gray]...
+```
+
+**With Line Data (LD):**
+
+If LD is specified and non-zero, each scanline has `LD` bytes instead of `W * D` bytes, with extra padding:
+```
+[Row 0: W*D bytes][Padding]...[Row 1: W*D bytes][Padding]...
+```
+
+## See Also
+
+- [Fl_Image](/api/fl-image) - Base image class
+- [Fl_Pixmap](/api/fl-pixmap) - XPM pixmap images
+- [Drawing Functions](/api/drawing-functions) - Drawing API

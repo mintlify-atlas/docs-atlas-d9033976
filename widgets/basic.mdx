@@ -1,0 +1,228 @@
+---
+title: Basic Widgets
+description: Fl_Box and simple display widgets for labels and decorations
+---
+
+## Fl_Box
+
+**Header:** `FL/Fl_Box.H`
+
+The `Fl_Box` widget is the simplest FLTK widget - it displays a box and optionally a label. While it cannot receive events or user interaction, it's extremely useful for:
+
+- Displaying static text labels
+- Creating decorative frames around other widgets
+- Acting as a spacer or resizable placeholder
+- Drawing background panels
+
+### Constructor
+
+```cpp
+Fl_Box(int x, int y, int w, int h, const char *label = 0);
+Fl_Box(Fl_Boxtype box, int x, int y, int w, int h, const char *label);
+```
+
+**Parameters:**
+- `x, y` - Position relative to parent window
+- `w, h` - Width and height in pixels
+- `label` - Optional text to display (default: no label)
+- `box` - Box type (border/background style)
+
+### Key Properties
+
+<AccordionGroup>
+  <Accordion title="box() - Box Type">
+    Controls the visual appearance of the box border and background.
+    
+    **Default:** `FL_NO_BOX` (invisible)
+    
+    **Common box types:**
+    - `FL_NO_BOX` - No border or background (invisible)
+    - `FL_FLAT_BOX` - Flat colored rectangle
+    - `FL_UP_BOX` - Raised 3D border
+    - `FL_DOWN_BOX` - Depressed 3D border
+    - `FL_BORDER_BOX` - Simple thin border
+    - `FL_THIN_UP_BOX` - Thin raised border
+    - `FL_THIN_DOWN_BOX` - Thin depressed border
+    
+    ```cpp
+    Fl_Box *box = new Fl_Box(10, 10, 100, 50, "Label");
+    box->box(FL_UP_BOX);  // Make it visible with raised border
+    ```
+  </Accordion>
+
+  <Accordion title="label() - Display Text">
+    The text displayed inside or near the box.
+    
+    ```cpp
+    box->label("Status: Ready");
+    box->labelsize(16);
+    box->labelcolor(FL_BLUE);
+    box->labelfont(FL_HELVETICA_BOLD);
+    ```
+  </Accordion>
+
+  <Accordion title="color() - Background Color">
+    Sets the background color of the box.
+    
+    ```cpp
+    box->color(FL_RED);
+    box->color(fl_rgb_color(200, 220, 240));  // Custom RGB
+    ```
+  </Accordion>
+
+  <Accordion title="align() - Label Alignment">
+    Controls how the label is positioned relative to the box.
+    
+    ```cpp
+    box->align(FL_ALIGN_CENTER);     // Center (default)
+    box->align(FL_ALIGN_LEFT);       // Left-aligned
+    box->align(FL_ALIGN_TOP);        // Above box
+    box->align(FL_ALIGN_INSIDE);     // Force inside
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Examples
+
+<CodeGroup>
+```cpp Simple Label Box
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(300, 200, "Box Example");
+  
+  // Simple text label with frame
+  Fl_Box *label = new Fl_Box(50, 50, 200, 30, "Welcome to FLTK!");
+  label->box(FL_UP_BOX);
+  label->labelsize(16);
+  label->labelfont(FL_HELVETICA_BOLD);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+```cpp Decorative Frame
+// Create a frame around other widgets
+Fl_Box *frame = new Fl_Box(10, 10, 280, 180);
+frame->box(FL_DOWN_BOX);
+frame->color(FL_LIGHT2);
+
+// Add widgets inside the frame
+Fl_Button *btn1 = new Fl_Button(30, 30, 80, 30, "Button 1");
+Fl_Button *btn2 = new Fl_Button(30, 70, 80, 30, "Button 2");
+```
+
+```cpp Status Display
+// Dynamic status box
+Fl_Box *status = new Fl_Box(0, 370, 400, 30);
+status->box(FL_FLAT_BOX);
+status->color(FL_BACKGROUND2_COLOR);
+status->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+status->label(" Ready");
+
+// Update status text
+void update_status(const char *msg) {
+  status->label(msg);
+  status->redraw();
+}
+```
+
+```cpp Spacer for Layout
+// Invisible spacer for Fl_Group resizing
+Fl_Box *spacer = new Fl_Box(100, 100, 200, 100);
+spacer->box(FL_NO_BOX);  // Invisible
+
+// Use as resizable element
+Fl_Group *group = new Fl_Group(0, 0, 400, 300);
+group->resizable(spacer);  // Group resizes around spacer
+group->end();
+```
+</CodeGroup>
+
+### Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Title Displays" icon="heading">
+    Use Fl_Box for section headers and titles in your UI.
+    
+    ```cpp
+    Fl_Box *title = new Fl_Box(0, 0, 400, 40, "Settings Panel");
+    title->box(FL_FLAT_BOX);
+    title->color(FL_DARK_BLUE);
+    title->labelcolor(FL_WHITE);
+    title->labelsize(18);
+    title->labelfont(FL_HELVETICA_BOLD);
+    ```
+  </Card>
+
+  <Card title="Status Bars" icon="chart-line">
+    Display application status or information at window bottom.
+    
+    ```cpp
+    Fl_Box *statusbar = new Fl_Box(0, 370, 600, 30);
+    statusbar->box(FL_THIN_DOWN_BOX);
+    statusbar->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+    statusbar->label(" Line 1, Col 1");
+    ```
+  </Card>
+
+  <Card title="Decorative Panels" icon="palette">
+    Create visual separators and grouped sections.
+    
+    ```cpp
+    Fl_Box *panel = new Fl_Box(10, 50, 280, 200);
+    panel->box(FL_ENGRAVED_BOX);
+    panel->color(FL_BACKGROUND2_COLOR);
+    ```
+  </Card>
+
+  <Card title="Image Display" icon="image">
+    Show images using Fl_Box with image() method.
+    
+    ```cpp
+    Fl_PNG_Image *img = new Fl_PNG_Image("logo.png");
+    Fl_Box *imgbox = new Fl_Box(50, 50, 200, 150);
+    imgbox->image(img);
+    ```
+  </Card>
+</CardGroup>
+
+### Visual Description
+
+An Fl_Box appears as a rectangular region that can have various border styles:
+
+- **FL_NO_BOX**: Completely invisible, only label may show
+- **FL_FLAT_BOX**: Solid colored rectangle with no border
+- **FL_UP_BOX**: Appears raised with 3D shading effect
+- **FL_DOWN_BOX**: Appears recessed/pressed into the window
+- **FL_BORDER_BOX**: Simple thin black outline
+- **FL_ENGRAVED_BOX**: Looks carved into surface
+- **FL_EMBOSSED_BOX**: Looks raised from surface
+
+### Important Notes
+
+<Warning>
+  Fl_Box widgets **do not respond to events** - they cannot be clicked, focused, or receive keyboard input. Use Fl_Button or other interactive widgets if you need user interaction.
+</Warning>
+
+<Info>
+  The default constructor creates an **invisible** box with `FL_NO_BOX`. You must call `box()` to make it visible, or use the alternate constructor that accepts a box type.
+</Info>
+
+<Tip>
+  Fl_Box is commonly used as the `resizable()` widget for Fl_Group and Fl_Window to control resize behavior without visible widgets.
+</Tip>
+
+### Related Widgets
+
+- **Fl_Button** - Interactive clickable version
+- **Fl_Output** - Display-only text field with input styling
+- **Fl_Group** - Container widget (can also display boxes)
+
+### Reference
+
+See source file: `FL/Fl_Box.H`

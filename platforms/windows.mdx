@@ -1,0 +1,369 @@
+---
+title: Windows Build Guide
+description: Build and install FLTK on Windows using Visual Studio or MinGW
+---
+
+## Introduction
+
+FLTK officially supports Windows 10 and later. The library can be built using:
+
+- **Microsoft Visual Studio** (2019 or later recommended)
+- **MinGW/MSYS2** (GNU toolchain for native Windows)
+- **Cygwin** (POSIX compatibility layer - not actively tested)
+
+<Warning>
+Libraries built with different toolchains cannot be mixed. Choose one environment and use it consistently.
+</Warning>
+
+## Visual Studio Build
+
+### Prerequisites
+
+Install the required tools:
+
+1. **Visual Studio** - Download from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/free-developer-offers/)
+   - Visual Studio 2019 Community or later (free)
+   - Visual Studio 2017 or later with CMake support
+   - Earlier versions: Visual Studio 2008 with service packs (minimum)
+
+2. **CMake** - Download from [cmake.org](https://cmake.org/download/)
+   - Visual Studio 2017+ has built-in CMake support
+   - Standalone CMake GUI recommended for older versions
+
+<Info>
+Visual Studio Community Edition is free and fully functional for FLTK development.
+</Info>
+
+### Downloading FLTK
+
+<Tabs>
+  <Tab title="Stable Release">
+    Download from [fltk.org/software.php](https://www.fltk.org/software.php)
+
+    Extract the archive to a convenient location, such as:
+    ```
+    C:\Users\YourName\dev\fltk-1.x.y
+    ```
+  </Tab>
+
+  <Tab title="Git Development">
+    Clone the repository:
+
+    ```bash
+    git clone https://github.com/fltk/fltk.git
+    cd fltk
+    ```
+
+    Update to the latest version:
+
+    ```bash
+    git pull
+    ```
+  </Tab>
+</Tabs>
+
+### Configuring with CMake
+
+<Tabs>
+  <Tab title="CMake GUI">
+    1. Launch CMake GUI
+    2. Set **Where is the source code** to your FLTK directory
+    3. Set **Where to build the binaries** to `C:\path\to\fltk\build`
+    4. Click **Configure**
+    5. Select your Visual Studio version as the generator
+    6. Choose platform (Win32 or x64)
+    7. Click **Done**
+    8. Review options and click **Generate**
+    9. Click **Open Project** to launch Visual Studio
+  </Tab>
+
+  <Tab title="Command Line">
+    Open a command prompt and run:
+
+    ```bash
+    cd C:\path\to\fltk
+    cmake -B build -G "Visual Studio 17 2022" -A x64
+    ```
+
+    For Visual Studio 2019:
+    ```bash
+    cmake -B build -G "Visual Studio 16 2019" -A x64
+    ```
+
+    Common options:
+    - `-A Win32` - 32-bit build
+    - `-A x64` - 64-bit build
+    - `-D CMAKE_BUILD_TYPE=Release` - Release build
+  </Tab>
+
+  <Tab title="Visual Studio 2017+">
+    Visual Studio 2017 and later have integrated CMake support:
+
+    1. Open Visual Studio
+    2. Select **File > Open > Folder**
+    3. Navigate to your FLTK source directory
+    4. Visual Studio will detect `CMakeLists.txt`
+    5. Configure build settings in **CMake Settings**
+
+    <Note>
+    This method is newer and may require experimentation.
+    </Note>
+  </Tab>
+</Tabs>
+
+See `README.CMake.txt` for detailed configuration options.
+
+### Building FLTK
+
+<Tabs>
+  <Tab title="Visual Studio IDE">
+    1. Open `FLTK.sln` in Visual Studio
+    2. Choose **Debug** or **Release** configuration
+    3. Right-click the **demo** project
+    4. Select **Set as StartUp Project**
+    5. Press **F7** or select **Build > Build Solution**
+  </Tab>
+
+  <Tab title="Command Line">
+    ```bash
+    cmake --build build --config Release
+    ```
+
+    For Debug builds:
+    ```bash
+    cmake --build build --config Debug
+    ```
+
+    Build specific targets:
+    ```bash
+    cmake --build build --target hello --config Release
+    ```
+  </Tab>
+</Tabs>
+
+### Testing FLTK
+
+Run the demo program:
+
+<Tabs>
+  <Tab title="From Visual Studio">
+    1. Ensure **demo** is the StartUp project
+    2. Press **F5** or select **Debug > Start Debugging**
+    3. Use the Demo launcher to explore test programs
+  </Tab>
+
+  <Tab title="From Explorer">
+    Navigate to:
+    ```
+    C:\path\to\fltk\build\bin\Debug\demo.exe
+    ```
+    or
+    ```
+    C:\path\to\fltk\build\bin\Release\demo.exe
+    ```
+
+    Double-click to run.
+  </Tab>
+</Tabs>
+
+### Building Your Applications
+
+Create a new Visual Studio project:
+
+1. Create a new **Empty Project**
+2. Add your source files (e.g., `main.cxx`)
+3. Configure project properties:
+   - **C/C++ > General > Additional Include Directories**: `C:\path\to\fltk\build`
+   - **Linker > Input > Additional Dependencies**: Add `fltk.lib` and `Comctl32.lib`
+4. Build and run with **F5**
+
+<Info>
+Static linking (`.lib` files) is strongly recommended over DLLs to avoid version conflicts and deployment issues.
+</Info>
+
+## MinGW/MSYS2 Build
+
+### Prerequisites
+
+Download and install MSYS2 from [msys2.org](https://www.msys2.org/).
+
+<Note>
+As of December 2024, traditional MinGW development appears dormant. MSYS2 with MinGW-w64 is the recommended alternative.
+</Note>
+
+Install required packages:
+
+```bash
+pacman -S base-devel
+pacman -S mingw-w64-x86_64-toolchain
+pacman -S mingw-w64-x86_64-cmake
+pacman -S git
+```
+
+### Downloading FLTK
+
+In the MSYS2 shell:
+
+```bash
+cd
+mkdir dev
+cd dev
+git clone https://github.com/fltk/fltk.git
+cd fltk
+```
+
+Or extract a source tarball:
+
+```bash
+tar xvzf fltk-1.x.y-source.tar.gz
+cd fltk-1.x.y
+```
+
+### Building FLTK
+
+Configure and build:
+
+```bash
+cmake -B build -G "Unix Makefiles" -D CMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+### Testing FLTK
+
+```bash
+build/bin/test/demo.exe
+```
+
+### Installing FLTK
+
+System-wide installation:
+
+```bash
+cmake --install build
+```
+
+User-space installation:
+
+```bash
+cmake -B build -D CMAKE_INSTALL_PREFIX=$HOME/fltk
+cmake --build build
+cmake --install build
+```
+
+### Building Your Applications
+
+Use `fltk-config` to compile:
+
+```bash
+fltk-config --compile myProgram.cxx
+```
+
+Manual compilation:
+
+```bash
+g++ myProgram.cxx `fltk-config --cxxflags` `fltk-config --ldflags`
+```
+
+## Windows-Specific Features
+
+### Console vs GUI Applications
+
+Control whether your application shows a console window:
+
+<Tabs>
+  <Tab title="MinGW/GCC">
+    Use linker flags:
+
+    ```bash
+    # GUI application (no console)
+    g++ -mwindows myapp.cxx `fltk-config --ldflags`
+
+    # Console application
+    g++ -mconsole myapp.cxx `fltk-config --ldflags`
+    ```
+  </Tab>
+
+  <Tab title="Visual Studio">
+    Set linker subsystem in project properties:
+    - **Linker > System > SubSystem**: `Windows (/SUBSYSTEM:WINDOWS)`
+    - Or: `Console (/SUBSYSTEM:CONSOLE)`
+
+    In code:
+    ```cpp
+    #pragma comment(linker, "/SUBSYSTEM:WINDOWS")
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Windows GUI applications cannot write to stdout, even when launched from a console.
+</Warning>
+
+### FLUID Integration
+
+Integrate FLUID (FLTK's UI designer) into Visual Studio:
+
+1. Add a `.fl` file to your project as a header
+2. Right-click > **Open With** > Add `fluid.exe`
+3. Set as default editor
+4. Configure **Custom Build Tool**:
+   - **Command Line**: `fluid.exe -c $(InputPath)`
+   - **Description**: `Compiling Fluid .fl file`
+   - **Outputs**: `$(InputDir)$(InputName).cxx; $(InputDir)$(InputName).h`
+5. Add the generated `.cxx` file to your project
+
+### OpenGL Support
+
+OpenGL should work automatically. To verify OpenGL is enabled, check `config.h`:
+
+```cpp
+#define HAVE_GL 1
+```
+
+Link against OpenGL libraries in your project settings.
+
+## Troubleshooting
+
+### Line Ending Issues
+
+If you encounter compilation errors with Git-obtained sources:
+
+```
+error: 'U32' does not name a type
+```
+
+Convert files to Unix line endings (LF):
+
+```bash
+unix2dos configh.in
+```
+
+Modern Git should handle this automatically.
+
+### Missing --enable-auto-import
+
+Older MinGW/MSYS versions may need:
+
+```bash
+cmake -B build -D CMAKE_EXE_LINKER_FLAGS="-Wl,--enable-auto-import"
+```
+
+Upgrade to a current release to avoid this issue.
+
+### CMake Generator Issues
+
+Ensure you're using the correct generator:
+
+```bash
+cmake --help
+```
+
+Lists available generators for your platform.
+
+## Additional Resources
+
+- [CMake Documentation](https://cmake.org/documentation/)
+- [Visual Studio CMake Support](https://devblogs.microsoft.com/cppblog/cmake-support-in-visual-studio/)
+- [MSYS2 Documentation](https://www.msys2.org/docs/what-is-msys2/)
+- [MinGW Wikipedia](https://en.wikipedia.org/wiki/MinGW)
+- [FLTK Windows FAQ](https://www.fltk.org/articles.php?L598)

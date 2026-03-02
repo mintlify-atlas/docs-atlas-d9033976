@@ -1,0 +1,359 @@
+---
+title: Button Widgets
+description: Interactive button widgets including push buttons, checkboxes, and radio buttons
+---
+
+Button widgets generate callbacks when clicked by the user. FLTK provides several button types for different interaction patterns.
+
+## Fl_Button
+
+**Header:** `FL/Fl_Button.H`
+
+The standard push button widget. Clicking the button triggers a callback.
+
+### Constructor
+
+```cpp
+Fl_Button(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="callback() - Set Action">
+    Define what happens when the button is clicked.
+    
+    ```cpp
+    void button_callback(Fl_Widget *w, void *data) {
+      printf("Button clicked!\n");
+    }
+    
+    Fl_Button *btn = new Fl_Button(50, 50, 100, 30, "Click Me");
+    btn->callback(button_callback);
+    
+    // Lambda syntax (C++11)
+    btn->callback([](Fl_Widget *w, void *) {
+      printf("Clicked!\n");
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="value() - Button State">
+    Get or set button state (pressed/unpressed). For normal buttons, this is only meaningful during callback.
+    
+    ```cpp
+    char value() const;           // Get state (0 or 1)
+    int value(int v);             // Set state
+    int set();                    // Same as value(1)
+    int clear();                  // Same as value(0)
+    ```
+  </Accordion>
+
+  <Accordion title="shortcut() - Keyboard Shortcut">
+    Define keyboard shortcut to activate button.
+    
+    ```cpp
+    btn->shortcut(FL_ALT + 'a');        // Alt+A
+    btn->shortcut(FL_CTRL + 's');       // Ctrl+S
+    btn->shortcut(FL_F + 5);            // F5
+    btn->shortcut('a');                 // Just 'a' key
+    
+    // Or use '&' in label
+    btn->label("&Save");  // Alt+S activates
+    ```
+  </Accordion>
+
+  <Accordion title="type() - Button Behavior">
+    Control how the button responds to clicks.
+    
+    - `FL_NORMAL_BUTTON` (0) - Standard push button
+    - `FL_TOGGLE_BUTTON` (1) - Stays pressed/unpressed
+    - `FL_RADIO_BUTTON` - Acts like radio button
+    
+    ```cpp
+    btn->type(FL_TOGGLE_BUTTON);
+    if (btn->value()) {
+      printf("Button is ON\n");
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="when() - Callback Trigger">
+    Control when callback is invoked.
+    
+    - `FL_WHEN_RELEASE` - On mouse release (default)
+    - `FL_WHEN_CHANGED` - On every value change
+    - `FL_WHEN_NOT_CHANGED` - When released but value didn't change
+    
+    ```cpp
+    btn->when(FL_WHEN_RELEASE);  // Default
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Example from Source
+
+<CodeGroup>
+```cpp test/button.cxx
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+
+void beepcb(Fl_Widget *, void *) {
+  fl_beep();
+}
+
+void exitcb(Fl_Widget *, void *) {
+  exit(0);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(320, 65);
+  
+  Fl_Button *b1 = new Fl_Button(20, 20, 80, 25, "&Beep");
+  b1->callback(beepcb, 0);
+  
+  Fl_Button *b2 = new Fl_Button(120, 20, 80, 25, "&no op");
+  
+  Fl_Button *b3 = new Fl_Button(220, 20, 80, 25, "E&xit");
+  b3->callback(exitcb, 0);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+```cpp Toggle Button
+// Create a toggle button
+Fl_Button *toggle = new Fl_Button(50, 50, 120, 30, "Toggle Me");
+toggle->type(FL_TOGGLE_BUTTON);
+toggle->callback([](Fl_Widget *w, void *) {
+  Fl_Button *btn = (Fl_Button*)w;
+  printf("Toggle is %s\n", btn->value() ? "ON" : "OFF");
+});
+```
+</CodeGroup>
+
+## Fl_Check_Button
+
+**Header:** `FL/Fl_Check_Button.H`
+
+A button with a checkbox indicator. Inherits from `Fl_Light_Button`.
+
+### Constructor
+
+```cpp
+Fl_Check_Button(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Example
+
+```cpp
+Fl_Check_Button *check = new Fl_Check_Button(50, 50, 150, 30, "Enable Feature");
+check->value(1);  // Start checked
+check->callback([](Fl_Widget *w, void *) {
+  Fl_Check_Button *cb = (Fl_Check_Button*)w;
+  printf("Checkbox is %s\n", cb->value() ? "checked" : "unchecked");
+});
+```
+
+### Visual Description
+
+Displays a small square checkbox to the left of the label text. When checked, an "X" or checkmark appears inside the box.
+
+## Fl_Radio_Button
+
+**Header:** `FL/Fl_Radio_Button.H`
+
+Radio buttons work in groups where only one can be selected at a time. All radio buttons within the same `Fl_Group` parent are automatically grouped.
+
+### Constructor
+
+```cpp
+Fl_Radio_Button(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Example
+
+```cpp
+Fl_Window *win = new Fl_Window(300, 200);
+
+// Radio buttons in same group are mutually exclusive
+Fl_Radio_Button *r1 = new Fl_Radio_Button(50, 50, 100, 30, "Option 1");
+Fl_Radio_Button *r2 = new Fl_Radio_Button(50, 90, 100, 30, "Option 2");
+Fl_Radio_Button *r3 = new Fl_Radio_Button(50, 130, 100, 30, "Option 3");
+
+r1->type(FL_RADIO_BUTTON);
+r2->type(FL_RADIO_BUTTON);
+r3->type(FL_RADIO_BUTTON);
+
+r1->setonly();  // Select first option initially
+
+win->end();
+```
+
+### Visual Description
+
+Displays a circular button to the left of the label. When selected, the circle is filled with a dot.
+
+## Fl_Return_Button
+
+**Header:** `FL/Fl_Return_Button.H`
+
+A special button that responds to the Enter/Return key. Commonly used for default dialog actions.
+
+```cpp
+Fl_Return_Button *ok = new Fl_Return_Button(200, 150, 80, 30, "OK");
+```
+
+### Visual Description
+
+Appears with a thicker border than regular buttons, indicating it's the default action.
+
+## Button Gallery
+
+<CardGroup cols={2}>
+  <Card title="Standard Button" icon="hand-pointer">
+    **Fl_Button** - Single-click action button
+    
+    Appears as a raised rectangular button. Darkens when pressed.
+    
+    **Use for:** Actions, commands, navigation
+  </Card>
+
+  <Card title="Checkbox" icon="square-check">
+    **Fl_Check_Button** - On/off toggle with indicator
+    
+    Shows a small square box that displays a checkmark when active.
+    
+    **Use for:** Boolean settings, multi-select options
+  </Card>
+
+  <Card title="Radio Button" icon="circle-dot">
+    **Fl_Radio_Button** - Mutually exclusive selection
+    
+    Circular button with filled dot when selected. Only one per group.
+    
+    **Use for:** Single choice from multiple options
+  </Card>
+
+  <Card title="Return Button" icon="arrow-turn-down">
+    **Fl_Return_Button** - Enter key activates
+    
+    Visually emphasized with thicker border.
+    
+    **Use for:** Default dialog actions (OK, Save, etc.)
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### OK/Cancel Dialog
+
+```cpp
+void make_dialog() {
+  Fl_Window *dlg = new Fl_Window(300, 150, "Confirm");
+  
+  Fl_Box *msg = new Fl_Box(50, 30, 200, 30, "Are you sure?");
+  
+  Fl_Return_Button *ok = new Fl_Return_Button(80, 100, 80, 30, "OK");
+  ok->callback([](Fl_Widget *, void *v) {
+    ((Fl_Window*)v)->hide();
+    // Do action
+  }, dlg);
+  
+  Fl_Button *cancel = new Fl_Button(170, 100, 80, 30, "Cancel");
+  cancel->callback([](Fl_Widget *, void *v) {
+    ((Fl_Window*)v)->hide();
+  }, dlg);
+  
+  dlg->end();
+  dlg->set_modal();
+  dlg->show();
+}
+```
+
+### Radio Button Group
+
+```cpp
+// Create explicit group for radio buttons
+Fl_Group *grp = new Fl_Group(50, 50, 200, 120, "Select Size:");
+grp->box(FL_ENGRAVED_BOX);
+grp->align(FL_ALIGN_TOP_LEFT);
+
+Fl_Radio_Button *small = new Fl_Radio_Button(60, 70, 80, 30, "Small");
+Fl_Radio_Button *med = new Fl_Radio_Button(60, 100, 80, 30, "Medium");
+Fl_Radio_Button *large = new Fl_Radio_Button(60, 130, 80, 30, "Large");
+
+small->type(FL_RADIO_BUTTON);
+med->type(FL_RADIO_BUTTON);
+large->type(FL_RADIO_BUTTON);
+
+med->setonly();  // Default to Medium
+
+grp->end();
+```
+
+### Checkbox Settings Panel
+
+```cpp
+Fl_Check_Button *cb1 = new Fl_Check_Button(50, 50, 200, 30, "Auto-save");
+Fl_Check_Button *cb2 = new Fl_Check_Button(50, 90, 200, 30, "Show tooltips");
+Fl_Check_Button *cb3 = new Fl_Check_Button(50, 130, 200, 30, "Play sounds");
+
+cb1->value(1);  // Enabled by default
+cb2->value(1);
+
+// Callback updates configuration
+auto config_cb = [](Fl_Widget *w, void *) {
+  Fl_Check_Button *cb = (Fl_Check_Button*)w;
+  update_config(cb->label(), cb->value());
+};
+
+cb1->callback(config_cb);
+cb2->callback(config_cb);
+cb3->callback(config_cb);
+```
+
+## Styling Buttons
+
+```cpp
+Fl_Button *btn = new Fl_Button(50, 50, 100, 40, "Custom");
+
+// Colors
+btn->color(FL_BLUE);              // Background
+btn->labelcolor(FL_WHITE);        // Text color
+btn->selection_color(FL_DARK_BLUE);  // Pressed color
+
+// Typography
+btn->labelsize(16);
+btn->labelfont(FL_HELVETICA_BOLD);
+
+// Border style
+btn->box(FL_ROUND_UP_BOX);
+btn->down_box(FL_ROUND_DOWN_BOX);
+```
+
+## Important Notes
+
+<Warning>
+  Radio buttons only work correctly when they share the same **parent group**. Buttons in different groups won't be mutually exclusive.
+</Warning>
+
+<Info>
+  The **shortcut** character '&' in a label creates an Alt+key shortcut on most systems. The character after '&' becomes the shortcut key.
+</Info>
+
+<Tip>
+  Use `when(FL_WHEN_CHANGED)` on toggle buttons to get callbacks on both press and release events.
+</Tip>
+
+## Reference
+
+- Source: `FL/Fl_Button.H`
+- Source: `FL/Fl_Check_Button.H`  
+- Source: `FL/Fl_Radio_Button.H`
+- Source: `FL/Fl_Return_Button.H`
+- Example: `test/button.cxx`

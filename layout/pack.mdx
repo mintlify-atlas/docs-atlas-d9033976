@@ -1,0 +1,348 @@
+---
+title: Fl_Pack
+description: Legacy automatic packing widget for horizontal or vertical widget arrangement
+---
+
+Fl_Pack automatically arranges child widgets horizontally or vertically and resizes itself to fit them. It's a legacy widget retained for compatibility.
+
+<Warning>
+  For new code, use [Fl_Flex](/layout/flex) instead. Fl_Flex provides more predictable resize behavior and is the recommended single-row/column container since FLTK 1.4.0.
+</Warning>
+
+## Key Features
+
+- Automatic horizontal or vertical packing
+- Self-resizing to wrap children
+- Configurable spacing between children
+- Simple API for basic layouts
+
+## Creating Fl_Pack
+
+```cpp
+Fl_Pack(int x, int y, int w, int h, const char *label = 0)
+```
+
+**Default type:** `Fl_Pack::VERTICAL` (stacks children vertically)
+
+```cpp
+Fl_Pack *pack = new Fl_Pack(10, 10, 200, 0);  // Height auto-calculated
+pack->type(Fl_Pack::VERTICAL);
+pack->spacing(5);
+
+pack->begin();
+  new Fl_Button(0, 0, 200, 30, "Button 1");
+  new Fl_Button(0, 0, 200, 30, "Button 2");
+  new Fl_Button(0, 0, 200, 30, "Button 3");
+pack->end();
+```
+
+## Pack Types
+
+```cpp
+enum {
+  VERTICAL = 0,    // Stack vertically (default)
+  HORIZONTAL = 1   // Arrange horizontally
+};
+```
+
+### Vertical Packing
+
+```cpp
+pack->type(Fl_Pack::VERTICAL);
+```
+
+**Behavior:**
+- Widgets stacked top to bottom
+- Each widget keeps its height
+- All widgets resized to pack's width
+- Pack height = sum of child heights + spacing
+
+### Horizontal Packing
+
+```cpp
+pack->type(Fl_Pack::HORIZONTAL);
+```
+
+**Behavior:**
+- Widgets arranged left to right
+- Each widget keeps its width
+- All widgets resized to pack's height
+- Pack width = sum of child widths + spacing
+
+### Check Direction
+
+```cpp
+uchar horizontal() const
+```
+
+```cpp
+if (pack->horizontal()) {
+  // Horizontal layout
+} else {
+  // Vertical layout
+}
+```
+
+## Spacing
+
+Set space between adjacent children:
+
+```cpp
+void spacing(int s)
+int spacing() const
+```
+
+```cpp
+pack->spacing(10);  // 10 pixels between children
+```
+
+## Resize Behavior
+
+Fl_Pack has unique resize behavior:
+
+1. **Self-resizing:** Pack resizes itself to "shrink-wrap" around children
+2. **Child sizing:**
+   - Vertical: Children get pack's width
+   - Horizontal: Children get pack's height
+3. **resizable():** Default is `NULL` (fixed positioning)
+4. **Special case:** If resizable is the last child, it extends to fill available space
+
+```cpp
+pack->resizable(NULL);  // Default: fixed children
+
+// OR make last child fill remaining space
+Fl_Box *filler = new Fl_Box(0, 0, 0, 0);
+pack->resizable(filler);  // filler extends to fill
+```
+
+## Complete Example
+
+Vertical button list:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Pack.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(220, 300, "Fl_Pack Demo");
+  
+  // Vertical pack
+  Fl_Pack *pack = new Fl_Pack(10, 10, 200, 0);
+  pack->type(Fl_Pack::VERTICAL);
+  pack->spacing(5);
+  pack->box(FL_DOWN_FRAME);
+  
+  pack->begin();
+  for (int i = 1; i <= 8; i++) {
+    char label[20];
+    snprintf(label, sizeof(label), "Button %d", i);
+    Fl_Button *btn = new Fl_Button(0, 0, 200, 30, label);
+  }
+  pack->end();
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Patterns
+
+### Scrollable List
+
+Combine with Fl_Scroll for long lists:
+
+```cpp
+Fl_Scroll *scroll = new Fl_Scroll(10, 10, 200, 280);
+scroll->box(FL_DOWN_BOX);
+
+Fl_Pack *pack = new Fl_Pack(10, 10, 180, 0);
+pack->type(Fl_Pack::VERTICAL);
+pack->spacing(2);
+
+pack->begin();
+for (int i = 0; i < 50; i++) {
+  char label[32];
+  snprintf(label, sizeof(label), "Item %d", i + 1);
+  new Fl_Button(0, 0, 180, 25, label);
+}
+pack->end();
+
+scroll->end();
+```
+
+### Horizontal Button Bar
+
+```cpp
+Fl_Pack *buttons = new Fl_Pack(0, 0, 0, 35);
+buttons->type(Fl_Pack::HORIZONTAL);
+buttons->spacing(5);
+
+buttons->begin();
+  new Fl_Button(0, 0, 80, 30, "OK");
+  new Fl_Button(0, 0, 80, 30, "Cancel");
+  new Fl_Button(0, 0, 80, 30, "Apply");
+buttons->end();
+```
+
+### Mixed with Fl_Group
+
+```cpp
+Fl_Group *container = new Fl_Group(0, 0, 400, 300);
+
+// Fixed header
+Fl_Box *header = new Fl_Box(0, 0, 400, 40, "Header");
+header->box(FL_UP_BOX);
+
+// Packed content
+Fl_Pack *content = new Fl_Pack(0, 40, 400, 260);
+content->type(Fl_Pack::VERTICAL);
+content->spacing(10);
+content->begin();
+  // ... add widgets ...
+content->end();
+
+container->resizable(content);
+container->end();
+```
+
+## Clearing Contents
+
+```cpp
+void clear()
+```
+
+Removes all children and sets resizable to NULL:
+
+```cpp
+pack->clear();  // Remove all children
+```
+
+## Limitations
+
+<AccordionGroup>
+  <Accordion title="Self-resizing can be unpredictable">
+    Fl_Pack resizes itself during draw(), which can cause:
+    - Unexpected size changes
+    - Complex interactions with parent containers
+    - Difficulty achieving specific layouts
+    
+    **Solution:** Use Fl_Flex for predictable fixed-size containers
+  </Accordion>
+
+  <Accordion title="Type changes after display not supported">
+    Changing `type()` after the widget is displayed requires manual resize:
+    
+    ```cpp
+    for (int i = 0; i < pack->children(); i++) {
+      pack->child(i)->resize(0, 0, 25, 25);
+    }
+    pack->type(Fl_Pack::HORIZONTAL);
+    pack->parent()->redraw();
+    ```
+  </Accordion>
+
+  <Accordion title="Nested packs can be confusing">
+    Nesting Fl_Pack widgets often leads to surprising behavior due to self-resizing.
+    
+    **Solution:** Use Fl_Flex or Fl_Grid for nested layouts
+  </Accordion>
+
+  <Accordion title="Box type limitations">
+    Works best with frame-only boxes (`FL_*_FRAME`). Background boxes (`FL_*_BOX`) can be slower with many children.
+    
+    **Avoid:** Irregular boxes like `FL_DIAMOND_BOX`
+  </Accordion>
+</AccordionGroup>
+
+## Fl_Flex vs Fl_Pack
+
+| Feature | Fl_Pack | Fl_Flex |
+|---------|---------|----------|
+| **Size** | Self-resizing | Fixed size |
+| **Margins** | No | Yes |
+| **Fixed widgets** | No | Yes |
+| **Predictable** | No | Yes |
+| **Recommended** | Legacy code | New code |
+| **Since** | FLTK 1.0 | FLTK 1.4.0 |
+
+**Migration example:**
+
+```cpp
+// OLD: Fl_Pack
+Fl_Pack *pack = new Fl_Pack(10, 10, 200, 0);
+pack->type(Fl_Pack::VERTICAL);
+pack->spacing(5);
+
+// NEW: Fl_Flex (drop-in replacement)
+Fl_Flex *flex = new Fl_Flex(10, 10, 200, 300, Fl_Flex::VERTICAL);
+flex->gap(5);
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Inside Fl_Scroll" icon="scroll">
+    Fl_Pack works well for scrollable content:
+    ```cpp
+    Fl_Scroll *scroll = new Fl_Scroll(...);
+    Fl_Pack *pack = new Fl_Pack(...);
+    ```
+  </Card>
+
+  <Card title="Set resizable(NULL)" icon="lock">
+    Keep children fixed:
+    ```cpp
+    pack->resizable(NULL);
+    ```
+  </Card>
+
+  <Card title="Prefer Fl_Flex" icon="star">
+    Use Fl_Flex for new projects:
+    ```cpp
+    Fl_Flex *flex = new Fl_Flex(...);
+    ```
+  </Card>
+
+  <Card title="Frame Boxes" icon="border-all">
+    Use frame-style boxes:
+    ```cpp
+    pack->box(FL_DOWN_FRAME);
+    ```
+  </Card>
+</CardGroup>
+
+## Reference
+
+### Header File
+
+```cpp
+#include <FL/Fl_Pack.H>
+```
+
+### Key Methods
+
+| Method | Description |
+|--------|-------------|
+| `type(int)` | Set VERTICAL or HORIZONTAL |
+| `spacing(int)` | Set space between children |
+| `horizontal()` | Check if horizontal layout |
+| `clear()` | Remove all children |
+| `resize(x,y,w,h)` | Resize pack (triggers reflow) |
+
+### Enumerations
+
+```cpp
+enum {
+  VERTICAL = 0,    // Stack vertically (default)
+  HORIZONTAL = 1   // Arrange horizontally
+};
+```
+
+## See Also
+
+- [Fl_Flex](/layout/flex) - Modern replacement for Fl_Pack
+- [Fl_Scroll](/layout/scroll) - Scrollable container
+- [Fl_Group](/layout/group) - Base container widget

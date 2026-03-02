@@ -1,0 +1,467 @@
+---
+title: OpenGL Demo
+description: Integrating OpenGL 3D graphics in FLTK applications
+---
+
+## What This Example Demonstrates
+
+This example shows how to use OpenGL with FLTK:
+- Creating an Fl_Gl_Window for OpenGL rendering
+- Using OpenGL 3.x with shaders (modern OpenGL)
+- Handling OpenGL initialization
+- Rendering 3D graphics
+- Overlaying FLTK widgets on OpenGL windows
+- Double buffering
+- Cross-platform OpenGL setup (GLEW for Linux/Windows, native for macOS)
+
+This is a complete, working example using OpenGL 3.x shader pipeline.
+
+## Complete Source Code
+
+Source file: `examples/OpenGL3test.cxx` (core sections)
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Gl_Window.H>
+#include <FL/Fl_Light_Button.H>
+#include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Text_Buffer.H>
+#include <FL/Fl_Button.H>
+
+#if defined(__APPLE__)
+#  include <OpenGL/gl3.h>
+#else
+#  include <GL/glew.h>
+#endif
+#include <FL/gl.h>
+
+void add_output(const char *format, ...);
+
+class SimpleGL3Window : public Fl_Gl_Window {
+  GLuint shaderProgram;
+  GLuint vertexArrayObject;
+  GLuint vertexBuffer;
+  GLint positionUniform;
+  GLint colourAttribute;
+  GLint positionAttribute;
+  int gl_version_major;
+  
+public:
+  SimpleGL3Window(int x, int y, int w, int h) : Fl_Gl_Window(x, y, w, h) {
+    mode(FL_RGB8 | FL_DOUBLE | FL_OPENGL3);
+    shaderProgram = 0;
+    gl_version_major = 0;
+  }
+  
+  void draw(void) FL_OVERRIDE {
+    if (gl_version_major >= 3 && !shaderProgram) {
+      // Initialize shaders
+      GLuint vs, fs;
+      int Mslv, mslv;
+      sscanf((char*)glGetString(GL_SHADING_LANGUAGE_VERSION), "%d.%d", &Mslv, &mslv);
+      add_output("Shading Language Version=%d.%d\n", Mslv, mslv);
+      
+      // Vertex shader
+      const char *vss_format = "#version %d%d\n"
+        "uniform vec2 p;"
+        "in vec4 position;"
+        "in vec4 colour;"
+        "out vec4 colourV;"
+        "void main (void) {"
+        "  colourV = colour;"
+        "  gl_Position = vec4(p, 0.0, 0.0) + position;"
+        "}";
+      char vss_string[300];
+      snprintf(vss_string, 300, vss_format, Mslv, mslv);
+      const char *vss = vss_string;
+      
+      // Fragment shader
+      const char *fss_format = "#version %d%d\n"
+        "in vec4 colourV;"
+        "out vec4 fragColour;"
+        "void main(void) {"
+        "  fragColour = colourV;"
+        "}";
+      char fss_string[200];
+      snprintf(fss_string, 200, fss_format, Mslv, mslv);
+      const char *fss = fss_string;
+      
+      // Compile vertex shader
+      vs = glCreateShader(GL_VERTEX_SHADER);
+      glShaderSource(vs, 1, &vss, NULL);
+      glCompileShader(vs);
+      
+      // Compile fragment shader
+      fs = glCreateShader(GL_FRAGMENT_SHADER);
+      glShaderSource(fs, 1, &fss, NULL);
+      glCompileShader(fs);
+      
+      // Link program
+      shaderProgram = glCreateProgram();
+      glAttachShader(shaderProgram, vs);
+      glAttachShader(shaderProgram, fs);
+      glBindFragDataLocation(shaderProgram, 0, "fragColour");
+      glLinkProgram(shaderProgram);
+      
+      // Get attribute/uniform locations
+      positionUniform = glGetUniformLocation(shaderProgram, "p");
+      colourAttribute = glGetAttribLocation(shaderProgram, "colour");
+      positionAttribute = glGetAttribLocation(shaderProgram, "position");
+      
+      glDeleteShader(vs);
+      glDeleteShader(fs);
+      
+      // Upload vertex data (position + color)
+      GLfloat vertexData[] = {
+        -0.5f, -0.5f, 0.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,  // Red
+        -0.5f,  0.5f, 0.0f, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f,  // Green
+         0.5f,  0.5f, 0.0f, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f,  // Blue
+         0.5f, -0.5f, 0.0f, 1.0f,   1.0f, 1.0f, 1.0f, 1.0f   // White
+      };
+      
+      glGenVertexArrays(1, &vertexArrayObject);
+      glBindVertexArray(vertexArrayObject);
+      
+      glGenBuffers(1, &vertexBuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+      glBufferData(GL_ARRAY_BUFFER, 4*8*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+      
+      glEnableVertexAttribArray((GLuint)positionAttribute);
+      glEnableVertexAttribArray((GLuint)colourAttribute);
+      glVertexAttribPointer((GLuint)positionAttribute, 4, GL_FLOAT, GL_FALSE, 
+                           8*sizeof(GLfloat), 0);
+      glVertexAttribPointer((GLuint)colourAttribute, 4, GL_FLOAT, GL_FALSE, 
+                           8*sizeof(GLfloat), (char*)0 + 4*sizeof(GLfloat));
+      glUseProgram(shaderProgram);
+    }
+    else if (!valid()) {
+      glViewport(0, 0, pixel_w(), pixel_h());
+    }
+    
+    // Clear and draw
+    glClearColor(0.08f, 0.8f, 0.8f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    if (shaderProgram) {
+      GLfloat p[] = {0, 0};
+      glUniform2fv(positionUniform, 1, (const GLfloat *)&p);
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
+    
+    // Draw FLTK child widgets on top
+    Fl_Gl_Window::draw();
+  }
+  
+  int handle(int event) FL_OVERRIDE {
+    static int first = 1;
+    if (first && event == FL_SHOW && shown()) {
+      first = 0;
+      make_current();
+#ifndef __APPLE__
+      GLenum err = glewInit();
+      if (err) Fl::warning("glewInit() failed returning %u", err);
+      else add_output("Using GLEW %s\n", glewGetString(GLEW_VERSION));
+#endif
+      const uchar *glv = glGetString(GL_VERSION);
+      add_output("GL_VERSION=%s\n", glv);
+      sscanf((const char *)glv, "%d", &gl_version_major);
+      if (gl_version_major < 3) {
+        add_output("\nThis platform does not support OpenGL V3\n");
+        mode(mode() & ~FL_OPENGL3);
+      }
+      redraw();
+    }
+    
+    int retval = Fl_Gl_Window::handle(event);
+    if (retval) return retval;
+    
+    // Handle mouse clicks to interact with scene
+    if (event == FL_PUSH && gl_version_major >= 3) {
+      add_output("Mouse clicked in GL window\n");
+      redraw();
+      return 1;
+    }
+    return retval;
+  }
+  
+  void reset(void) { 
+    shaderProgram = 0; 
+    gl_texture_reset(); 
+  }
+};
+
+Fl_Text_Display *output;
+
+void add_output(const char *format, ...) {
+  va_list args;
+  char line_buffer[10000];
+  va_start(args, format);
+  vsnprintf(line_buffer, sizeof(line_buffer)-1, format, args);
+  va_end(args);
+  output->buffer()->append(line_buffer);
+  output->scroll(10000, 0);
+  output->redraw();
+}
+
+void button_cb(Fl_Widget *widget, void *) {
+  add_output("Button '%s' clicked\n", widget->label());
+}
+
+void add_widgets(Fl_Gl_Window *g) {
+  Fl::set_color(FL_FREE_COLOR, 255, 255, 255, 140);
+  g->begin();
+  
+  Fl_Button* b = new Fl_Button(0, 0, 60, 30, "button");
+  b->color(FL_FREE_COLOR);
+  b->box(FL_DOWN_BOX);
+  b->callback(button_cb, NULL);
+  
+  Fl_Button* b2 = new Fl_Button(0, 170, 60, 30, "button2");
+  b2->color(FL_FREE_COLOR);
+  b2->box(FL_BORDER_BOX);
+  b2->callback(button_cb, NULL);
+  
+  g->end();
+}
+
+int main(int argc, char **argv) {
+  Fl::use_high_res_GL(1);
+  
+  Fl_Window *topwin = new Fl_Window(800, 300);
+  SimpleGL3Window *win = new SimpleGL3Window(0, 0, 300, 300);
+  win->end();
+  
+  output = new Fl_Text_Display(300, 0, 500, 280);
+  output->buffer(new Fl_Text_Buffer());
+  
+  add_widgets(win);
+  topwin->end();
+  topwin->resizable(win);
+  topwin->label("OpenGL 3 Demo - Click GL panel");
+  topwin->show(argc, argv);
+  
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+# Linux/Unix (requires GLEW)
+fltk-config --use-gl --compile OpenGL3test.cxx -lGLEW
+
+# macOS (no GLEW needed)
+fltk-config --use-gl --compile OpenGL3test.cxx
+
+# Or with CMake (recommended)
+cmake . && make OpenGL3test
+```
+
+## Expected Behavior
+
+- Left panel shows OpenGL 3.x rendering: colored quad
+- Right panel shows text output with OpenGL version info
+- FLTK buttons overlay on top of the OpenGL scene
+- Clicking in GL window triggers events
+- Works on systems with OpenGL 3.0+
+
+## Key Concepts
+
+### Creating OpenGL Windows
+
+```cpp
+#include <FL/Fl_Gl_Window.H>
+
+class MyGLWindow : public Fl_Gl_Window {
+public:
+  MyGLWindow(int x, int y, int w, int h, const char *l=0)
+    : Fl_Gl_Window(x, y, w, h, l) {
+    
+    // Set OpenGL mode
+    mode(FL_RGB8 | FL_DOUBLE | FL_ALPHA | FL_DEPTH);
+    // FL_OPENGL3 for modern OpenGL
+    
+    end();
+  }
+  
+  void draw() FL_OVERRIDE {
+    // OpenGL rendering code here
+  }
+};
+```
+
+### OpenGL Mode Flags
+
+```cpp
+FL_RGB         // RGB color mode
+FL_RGB8        // RGB with 8 bits per color
+FL_INDEX       // Indexed color mode  
+FL_SINGLE      // Single buffering
+FL_DOUBLE      // Double buffering (recommended)
+FL_ACCUM       // Accumulation buffer
+FL_ALPHA       // Alpha channel
+FL_DEPTH       // Depth buffer (Z-buffer)
+FL_STENCIL     // Stencil buffer
+FL_MULTISAMPLE // Multisampling (anti-aliasing)
+FL_OPENGL3     // OpenGL 3.x and above
+
+// Combine with |
+mode(FL_RGB8 | FL_DOUBLE | FL_DEPTH | FL_OPENGL3);
+```
+
+### Draw Function
+
+```cpp
+void draw() FL_OVERRIDE {
+  if (!valid()) {
+    // First time or after window resize
+    glViewport(0, 0, pixel_w(), pixel_h());
+    // Setup projection, etc.
+  }
+  
+  // Clear buffers
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
+  // Your OpenGL drawing code
+  // ...
+  
+  // Draw FLTK widgets on top
+  Fl_Gl_Window::draw();
+}
+```
+
+### High-Resolution Display Support
+
+```cpp
+// Enable high-DPI support (Retina, etc.)
+Fl::use_high_res_GL(1);
+
+// In draw(), use pixel dimensions:
+glViewport(0, 0, pixel_w(), pixel_h());
+// NOT w() and h() which are logical dimensions
+```
+
+## Simple OpenGL 1.x Example (Legacy)
+
+For systems without modern OpenGL:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Gl_Window.H>
+#include <FL/gl.h>
+#include <math.h>
+
+class SimpleGL : public Fl_Gl_Window {
+  float angle;
+public:
+  SimpleGL(int x, int y, int w, int h, const char *l=0)
+    : Fl_Gl_Window(x, y, w, h, l), angle(0) {
+    mode(FL_RGB | FL_DOUBLE | FL_DEPTH);
+  }
+  
+  void draw() FL_OVERRIDE {
+    if (!valid()) {
+      glLoadIdentity();
+      glViewport(0, 0, pixel_w(), pixel_h());
+      glOrtho(-1, 1, -1, 1, -1, 1);
+      glEnable(GL_DEPTH_TEST);
+    }
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    
+    glPushMatrix();
+    glRotatef(angle, 0, 0, 1);
+    
+    // Draw a colored triangle
+    glBegin(GL_TRIANGLES);
+    glColor3f(1.0, 0.0, 0.0); glVertex2f(-0.6, -0.4);
+    glColor3f(0.0, 1.0, 0.0); glVertex2f( 0.6, -0.4);
+    glColor3f(0.0, 0.0, 1.0); glVertex2f( 0.0,  0.6);
+    glEnd();
+    
+    glPopMatrix();
+  }
+  
+  void animate() {
+    angle += 2.0;
+    if (angle >= 360.0) angle -= 360.0;
+    redraw();
+  }
+};
+
+void timer_cb(void *data) {
+  SimpleGL *gl = (SimpleGL*)data;
+  gl->animate();
+  Fl::repeat_timeout(1.0/60.0, timer_cb, data);  // 60 FPS
+}
+
+int main() {
+  Fl_Window win(400, 400, "Simple OpenGL");
+  SimpleGL gl(10, 10, 380, 380);
+  win.end();
+  win.show();
+  
+  Fl::add_timeout(1.0/60.0, timer_cb, &gl);
+  return Fl::run();
+}
+```
+
+## Overlaying FLTK Widgets on OpenGL
+
+```cpp
+Fl_Gl_Window *glwin = new Fl_Gl_Window(0, 0, 400, 400);
+glwin->begin();
+
+// Add FLTK widgets
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Button");
+btn->box(FL_BORDER_BOX);
+btn->color(FL_WHITE);
+
+Fl_Box *info = new Fl_Box(10, 350, 380, 40, "Info text");
+info->box(FL_FLAT_BOX);
+info->color(FL_BLACK);
+info->labelcolor(FL_WHITE);
+
+glwin->end();
+
+// In draw(), call parent to render widgets:
+void draw() {
+  // ... your OpenGL code ...
+  
+  Fl_Gl_Window::draw();  // Draws FLTK children
+}
+```
+
+## Best Practices
+
+1. **Use FL_DOUBLE** for smooth animation
+2. **Call make_current()** before OpenGL calls outside draw()
+3. **Use pixel_w()/pixel_h()** for high-DPI displays
+4. **Initialize OpenGL in draw()** after checking valid()
+5. **Use timers** for animation, not tight loops
+6. **Check OpenGL version** before using modern features
+7. **Clean up resources** in destructor
+
+## Common Issues
+
+### Black Screen
+- Check if OpenGL context was created: call make_current()
+- Verify viewport is set correctly
+- Ensure shaders compiled successfully
+
+### Flickering
+- Use FL_DOUBLE buffering
+- Don't call redraw() excessively
+
+### High-DPI Issues
+- Use pixel_w()/pixel_h() not w()/h()
+- Call Fl::use_high_res_GL(1)
+
+## Next Steps
+
+- Learn about [multithreading](/examples/multithreading)
+- See [custom widgets](/examples/custom-widgets)
+- Explore [responsive design](/examples/responsive-design)

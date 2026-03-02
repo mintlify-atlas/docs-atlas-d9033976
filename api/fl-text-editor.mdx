@@ -1,0 +1,279 @@
+---
+title: Fl_Text_Editor
+description: Multi-line text editor with syntax highlighting and key bindings
+---
+
+## Overview
+
+The `Fl_Text_Editor` widget allows users to edit multiple lines of text with support for scrolling, highlighting, undo/redo, and customizable key bindings. The buffer displayed is managed by `Fl_Text_Buffer`.
+
+## Constructor
+
+<ParamField path="Fl_Text_Editor" type="constructor">
+  Creates a new text editor widget.
+  
+  <ParamField body="X" type="int" required>
+    X position of the widget
+  </ParamField>
+  
+  <ParamField body="Y" type="int" required>
+    Y position of the widget
+  </ParamField>
+  
+  <ParamField body="W" type="int" required>
+    Width of the widget
+  </ParamField>
+  
+  <ParamField body="H" type="int" required>
+    Height of the widget
+  </ParamField>
+  
+  <ParamField body="l" type="const char*" default="0">
+    Optional label for the widget
+  </ParamField>
+</ParamField>
+
+## Insert Mode
+
+<ParamField path="insert_mode" type="void">
+  Sets the current insert mode.
+  
+  <ParamField body="b" type="int" required>
+    Non-zero for insert mode, 0 for overwrite mode
+  </ParamField>
+  
+  In insert mode, new text is inserted before the cursor. In overwrite mode, new text replaces text at cursor.
+</ParamField>
+
+<ParamField path="insert_mode" type="int">
+  Gets the current insert mode.
+  
+  Returns non-zero if in insert mode, 0 if in overwrite mode.
+</ParamField>
+
+## Key Bindings
+
+<ParamField path="add_key_binding" type="void">
+  Adds a key binding.
+  
+  <ParamField body="key" type="int" required>
+    Key code (e.g., 'a', FL_F+1)
+  </ParamField>
+  
+  <ParamField body="state" type="int" required>
+    Modifier state (FL_COMMAND, FL_SHIFT, FL_CTRL, FL_ALT, or FL_TEXT_EDITOR_ANY_STATE)
+  </ParamField>
+  
+  <ParamField body="f" type="Key_Func" required>
+    Function to call when key is pressed
+  </ParamField>
+</ParamField>
+
+<ParamField path="remove_key_binding" type="void">
+  Removes a key binding.
+  
+  <ParamField body="key" type="int" required>
+    Key code
+  </ParamField>
+  
+  <ParamField body="state" type="int" required>
+    Modifier state
+  </ParamField>
+</ParamField>
+
+<ParamField path="remove_all_key_bindings" type="void">
+  Removes all key bindings.
+</ParamField>
+
+<ParamField path="bound_key_function" type="Key_Func">
+  Returns the function bound to a key.
+  
+  <ParamField body="key" type="int" required>
+    Key code
+  </ParamField>
+  
+  <ParamField body="state" type="int" required>
+    Modifier state
+  </ParamField>
+  
+  Returns the function pointer, or NULL if not bound.
+</ParamField>
+
+<ParamField path="default_key_function" type="void">
+  Sets the default key function for unassigned keys.
+  
+  <ParamField body="f" type="Key_Func" required>
+    Default function
+  </ParamField>
+</ParamField>
+
+## Built-in Key Functions
+
+These static functions can be used with `add_key_binding()`:
+
+<ParamField path="kf_default" type="static int">
+  Default key handler - inserts the character.
+</ParamField>
+
+<ParamField path="kf_ignore" type="static int">
+  Ignores the key press.
+</ParamField>
+
+<ParamField path="kf_backspace" type="static int">
+  Backspace key handler.
+</ParamField>
+
+<ParamField path="kf_enter" type="static int">
+  Enter/return key handler.
+</ParamField>
+
+<ParamField path="kf_delete" type="static int">
+  Delete key handler.
+</ParamField>
+
+<ParamField path="kf_copy" type="static int">
+  Copy selection to clipboard.
+</ParamField>
+
+<ParamField path="kf_cut" type="static int">
+  Cut selection to clipboard.
+</ParamField>
+
+<ParamField path="kf_paste" type="static int">
+  Paste from clipboard.
+</ParamField>
+
+<ParamField path="kf_undo" type="static int">
+  Undo last operation.
+</ParamField>
+
+<ParamField path="kf_redo" type="static int">
+  Redo last undone operation.
+</ParamField>
+
+<ParamField path="kf_select_all" type="static int">
+  Select all text.
+</ParamField>
+
+<ParamField path="kf_move" type="static int">
+  Move cursor (arrow keys).
+</ParamField>
+
+<ParamField path="kf_shift_move" type="static int">
+  Move cursor with shift (extends selection).
+</ParamField>
+
+<ParamField path="kf_ctrl_move" type="static int">
+  Move cursor with control (word movement).
+</ParamField>
+
+<ParamField path="kf_home" type="static int">
+  Home key handler.
+</ParamField>
+
+<ParamField path="kf_end" type="static int">
+  End key handler.
+</ParamField>
+
+<ParamField path="kf_page_up" type="static int">
+  Page up handler.
+</ParamField>
+
+<ParamField path="kf_page_down" type="static int">
+  Page down handler.
+</ParamField>
+
+## Example
+
+```cpp
+#include <FL/Fl_Text_Editor.H>
+#include <FL/Fl_Text_Buffer.H>
+#include <FL/Fl_Window.H>
+
+Fl_Text_Buffer *textbuf;
+
+void changed_cb(int, int nInserted, int nDeleted, 
+                int, const char*, void*) {
+  if (nInserted || nDeleted) {
+    printf("Text was modified\n");
+  }
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(640, 480, "Editor");
+  
+  textbuf = new Fl_Text_Buffer();
+  textbuf->add_modify_callback(changed_cb, NULL);
+  
+  Fl_Text_Editor *editor = new Fl_Text_Editor(10, 10, 620, 460);
+  editor->buffer(textbuf);
+  editor->textfont(FL_COURIER);
+  editor->textsize(14);
+  
+  win->resizable(editor);
+  win->end();
+  win->show();
+  
+  return Fl::run();
+}
+```
+
+## Custom Key Binding Example
+
+```cpp
+// Custom function to insert timestamp
+int insert_timestamp(int, Fl_Text_Editor *e) {
+  time_t t = time(NULL);
+  char buf[100];
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&t));
+  e->insert(buf);
+  return 1;
+}
+
+int main() {
+  // ... create editor ...
+  
+  // Bind F5 to insert timestamp
+  editor->add_key_binding(FL_F+5, 0, insert_timestamp);
+  
+  // ... show window ...
+}
+```
+
+## Syntax Highlighting
+
+```cpp
+#include <FL/Fl_Text_Display.H>
+
+Fl_Text_Buffer *stylebuf;
+
+// Style table for syntax highlighting
+Fl_Text_Display::Style_Table_Entry styletable[] = {
+  { FL_BLACK,      FL_COURIER,      14 }, // A - Plain
+  { FL_DARK_GREEN, FL_COURIER,      14 }, // B - Comments
+  { FL_BLUE,       FL_COURIER_BOLD, 14 }, // C - Keywords
+};
+
+void style_update(int pos, int nInserted, int nDeleted,
+                  int, const char*, void *cbArg) {
+  // Parse text and update style buffer
+  // See FLTK editor.cxx example for full implementation
+}
+
+int main() {
+  // ... create editor and textbuf ...
+  
+  stylebuf = new Fl_Text_Buffer();
+  editor->highlight_data(stylebuf, styletable, 
+                        sizeof(styletable)/sizeof(styletable[0]),
+                        'A', NULL, 0);
+  textbuf->add_modify_callback(style_update, editor);
+  
+  // ... show window ...
+}
+```
+
+## See Also
+
+- [Fl_Text_Display](/api/fl-text-display) - Read-only text display base class
+- [Fl_Text_Buffer](/api/fl-text-buffer) - Text buffer management

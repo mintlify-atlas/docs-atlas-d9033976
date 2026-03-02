@@ -1,0 +1,524 @@
+---
+title: Fl (Global Namespace)
+description: FLTK global namespace containing state information and global methods for the current application
+---
+
+The `Fl` namespace is the FLTK global namespace containing state information and global methods for the current application. It provides the event loop, display management, timing functions, and other system-level functionality.
+
+## Event Loop Methods
+
+These methods control the main event loop and application execution.
+
+### run()
+
+Runs the main event loop.
+
+```cpp
+int Fl::run();
+```
+
+**Returns:** 0 if all windows are closed, non-zero otherwise
+
+**Description:** Waits for and processes events until all windows are closed. This is the normal way to start event processing.
+
+**Example:**
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+
+int main() {
+  Fl_Window *window = new Fl_Window(300, 200);
+  window->show();
+  return Fl::run();
+}
+```
+
+### wait()
+
+Waits for an event and processes it.
+
+```cpp
+int Fl::wait();
+double Fl::wait(double time);
+```
+
+<ParamField path="time" type="double">
+  Maximum time to wait in seconds (optional)
+</ParamField>
+
+**Returns:** 
+- For `wait()`: non-zero if any windows are displayed
+- For `wait(double)`: the time remaining (negative if time expired)
+
+**Description:** Waits for events and processes them. Use this for more fine-grained control over event processing compared to `run()`.
+
+### check()
+
+Checks for events without waiting.
+
+```cpp
+int Fl::check();
+```
+
+**Returns:** Same as `wait()` but returns immediately
+
+**Description:** Processes all pending events and returns immediately. This is useful for updating the display while performing a long operation.
+
+**Example:**
+```cpp
+for (int i = 0; i < 1000; i++) {
+  // Do some work
+  Fl::check();  // Keep GUI responsive
+}
+```
+
+### ready()
+
+Checks if there are pending events.
+
+```cpp
+int Fl::ready();
+```
+
+**Returns:** True if there are events to be processed
+
+## Timeout and Idle Callbacks
+
+Methods for scheduling deferred and repeated callbacks.
+
+### add_timeout()
+
+Adds a one-shot timer callback.
+
+```cpp
+void Fl::add_timeout(double t, Fl_Timeout_Handler cb, void *data = 0);
+```
+
+<ParamField path="t" type="double" required>
+  Time in seconds before callback is called
+</ParamField>
+
+<ParamField path="cb" type="Fl_Timeout_Handler" required>
+  Function to call when timeout expires
+</ParamField>
+
+<ParamField path="data" type="void*">
+  User data passed to callback (optional)
+</ParamField>
+
+**Example:**
+```cpp
+void timeout_callback(void* data) {
+  printf("Timeout fired!\n");
+  Fl::redraw();
+}
+
+Fl::add_timeout(1.0, timeout_callback);
+```
+
+### repeat_timeout()
+
+Reschedules a timeout for repeated callbacks.
+
+```cpp
+void Fl::repeat_timeout(double t, Fl_Timeout_Handler cb, void *data = 0);
+```
+
+<ParamField path="t" type="double" required>
+  Time in seconds before callback is called again
+</ParamField>
+
+<ParamField path="cb" type="Fl_Timeout_Handler" required>
+  Function to call when timeout expires
+</ParamField>
+
+<ParamField path="data" type="void*">
+  User data passed to callback
+</ParamField>
+
+**Description:** Call this from inside a timeout callback to reschedule it.
+
+### remove_timeout()
+
+Removes a timeout callback.
+
+```cpp
+void Fl::remove_timeout(Fl_Timeout_Handler cb, void *data = 0);
+```
+
+<ParamField path="cb" type="Fl_Timeout_Handler" required>
+  Callback function to remove
+</ParamField>
+
+<ParamField path="data" type="void*">
+  User data associated with the callback
+</ParamField>
+
+### add_idle()
+
+Adds an idle callback.
+
+```cpp
+void Fl::add_idle(Fl_Idle_Handler cb, void* data = 0);
+```
+
+<ParamField path="cb" type="Fl_Idle_Handler" required>
+  Function to call when idle
+</ParamField>
+
+<ParamField path="data" type="void*">
+  User data passed to callback
+</ParamField>
+
+**Description:** Idle callbacks are called when there are no pending events. They run continuously when the application is idle.
+
+### remove_idle()
+
+Removes an idle callback.
+
+```cpp
+void Fl::remove_idle(Fl_Idle_Handler cb, void* data = 0);
+```
+
+## Screen and Display Methods
+
+### screen_count()
+
+Returns the number of screens.
+
+```cpp
+int Fl::screen_count();
+```
+
+**Returns:** Number of available screens
+
+### screen_xywh()
+
+Gets screen dimensions.
+
+```cpp
+void Fl::screen_xywh(int &X, int &Y, int &W, int &H);
+void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int n);
+void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int mx, int my);
+```
+
+<ParamField path="X, Y, W, H" type="int&" required>
+  Output parameters for screen position and size
+</ParamField>
+
+<ParamField path="n" type="int">
+  Screen number (optional)
+</ParamField>
+
+<ParamField path="mx, my" type="int">
+  Mouse position to determine which screen (optional)
+</ParamField>
+
+### screen_scale()
+
+Gets or sets screen scaling factor.
+
+```cpp
+float Fl::screen_scale(int n);
+void Fl::screen_scale(int n, float factor);
+```
+
+<ParamField path="n" type="int" required>
+  Screen number
+</ParamField>
+
+<ParamField path="factor" type="float">
+  Scaling factor to set (for setter)
+</ParamField>
+
+**Description:** Screen scaling supports high-DPI displays. The scaling factor is initialized from the OS and can be adjusted programmatically.
+
+### redraw()
+
+Schedules all windows for redrawing.
+
+```cpp
+void Fl::redraw();
+```
+
+**Description:** Marks all windows as needing to be redrawn on the next `wait()` or `flush()`.
+
+### flush()
+
+Forces all pending drawing to be completed.
+
+```cpp
+void Fl::flush();
+```
+
+**Description:** Causes all windows to be redrawn if they need it, and empties the display queue.
+
+## Color Methods
+
+### set_color()
+
+Sets an entry in the color map.
+
+```cpp
+void Fl::set_color(Fl_Color i, uchar r, uchar g, uchar b);
+void Fl::set_color(Fl_Color i, unsigned c);
+```
+
+<ParamField path="i" type="Fl_Color" required>
+  Color index to set
+</ParamField>
+
+<ParamField path="r, g, b" type="uchar" required>
+  RGB color components (0-255)
+</ParamField>
+
+<ParamField path="c" type="unsigned">
+  RGB color as 32-bit value
+</ParamField>
+
+### get_color()
+
+Gets a color from the color map.
+
+```cpp
+unsigned Fl::get_color(Fl_Color i);
+void Fl::get_color(Fl_Color i, uchar &red, uchar &green, uchar &blue);
+```
+
+<ParamField path="i" type="Fl_Color" required>
+  Color index to get
+</ParamField>
+
+<ParamField path="red, green, blue" type="uchar&">
+  Output parameters for RGB components
+</ParamField>
+
+## Scheme Methods
+
+### scheme()
+
+Gets or sets the current widget scheme.
+
+```cpp
+const char* Fl::scheme();
+int Fl::scheme(const char *name);
+```
+
+<ParamField path="name" type="const char*">
+  Scheme name: "none", "base", "gtk+", "gleam", "plastic", or "oxy"
+</ParamField>
+
+**Returns:** 
+- Getter: Current scheme name or NULL for default
+- Setter: 1 if successful, 0 if scheme not found
+
+**Example:**
+```cpp
+Fl::scheme("gtk+");  // Use GTK+ style
+```
+
+### is_scheme()
+
+Checks if a specific scheme is active.
+
+```cpp
+int Fl::is_scheme(const char *name);
+```
+
+<ParamField path="name" type="const char*" required>
+  Lowercase scheme name to check
+</ParamField>
+
+**Returns:** 1 if the scheme is active, 0 otherwise
+
+## Font Methods
+
+### set_fonts()
+
+Enumerates available system fonts.
+
+```cpp
+Fl_Font Fl::set_fonts(const char* xfontname = 0);
+```
+
+<ParamField path="xfontname" type="const char*">
+  X11 font pattern (platform-specific)
+</ParamField>
+
+**Returns:** Number of fonts in the table
+
+### get_font()
+
+Gets the name of a font.
+
+```cpp
+const char* Fl::get_font(Fl_Font font);
+```
+
+<ParamField path="font" type="Fl_Font" required>
+  Font index
+</ParamField>
+
+**Returns:** Font name
+
+### set_font()
+
+Changes a font in the table.
+
+```cpp
+void Fl::set_font(Fl_Font font, const char* name);
+void Fl::set_font(Fl_Font font, Fl_Font from);
+```
+
+<ParamField path="font" type="Fl_Font" required>
+  Font index to change
+</ParamField>
+
+<ParamField path="name" type="const char*">
+  New font name
+</ParamField>
+
+<ParamField path="from" type="Fl_Font">
+  Copy font from this index
+</ParamField>
+
+## Window Management
+
+### first_window()
+
+Gets the first top-level window.
+
+```cpp
+Fl_Window* Fl::first_window();
+```
+
+**Returns:** Pointer to first window or NULL
+
+### next_window()
+
+Gets the next window in the window list.
+
+```cpp
+Fl_Window* Fl::next_window(const Fl_Window* window);
+```
+
+<ParamField path="window" type="const Fl_Window*" required>
+  Current window
+</ParamField>
+
+**Returns:** Pointer to next window or NULL
+
+### modal()
+
+Gets the current modal window.
+
+```cpp
+Fl_Window* Fl::modal();
+```
+
+**Returns:** The topmost modal window or NULL
+
+### grab()
+
+Gets or sets the window grabbing all events.
+
+```cpp
+Fl_Window* Fl::grab();
+void Fl::grab(Fl_Window* window);
+```
+
+<ParamField path="window" type="Fl_Window*">
+  Window to grab events, or NULL to release
+</ParamField>
+
+**Description:** When grab is active, all events go to the grabbed window regardless of pointer or focus location.
+
+## Clipboard Methods
+
+### copy()
+
+Copies data to clipboard or selection.
+
+```cpp
+void Fl::copy(const char *stuff, int len, int destination = 0,
+              const char *type = Fl::clipboard_plain_text);
+```
+
+<ParamField path="stuff" type="const char*" required>
+  Text data to copy
+</ParamField>
+
+<ParamField path="len" type="int" required>
+  Length of data in bytes
+</ParamField>
+
+<ParamField path="destination" type="int">
+  0 = selection buffer, 1 = clipboard, 2 = both
+</ParamField>
+
+<ParamField path="type" type="const char*">
+  Data type (usually clipboard_plain_text)
+</ParamField>
+
+### paste()
+
+Pastes data from clipboard or selection.
+
+```cpp
+void Fl::paste(Fl_Widget &receiver, int source,
+               const char *type = Fl::clipboard_plain_text);
+```
+
+<ParamField path="receiver" type="Fl_Widget&" required>
+  Widget that will receive FL_PASTE event
+</ParamField>
+
+<ParamField path="source" type="int" required>
+  0 = selection buffer, 1 = clipboard
+</ParamField>
+
+<ParamField path="type" type="const char*">
+  Requested data type
+</ParamField>
+
+## Version Information
+
+### api_version()
+
+Returns the API version number.
+
+```cpp
+int Fl::api_version();
+```
+
+**Returns:** API version as integer (e.g., 10400 for 1.4.0)
+
+### abi_version()
+
+Returns the ABI version number.
+
+```cpp
+int Fl::abi_version();
+```
+
+**Returns:** ABI version of the linked library
+
+### abi_check()
+
+Checks if ABI version is compatible.
+
+```cpp
+int Fl::abi_check(const int val = FL_ABI_VERSION);
+```
+
+<ParamField path="val" type="int">
+  ABI version to check against
+</ParamField>
+
+**Returns:** 1 if compatible, 0 otherwise
+
+## Related
+
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Window](/api/fl-window) - Window class
+- [Enumerations](/api/enumerations) - Event types and constants

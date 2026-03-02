@@ -1,0 +1,476 @@
+---
+title: Fl_Tree
+description: Hierarchical tree widget with expandable/collapsible items
+---
+
+## Overview
+
+The `Fl_Tree` widget displays a hierarchical tree of items that can be expanded or collapsed. Items can contain other FLTK widgets, support drag-and-drop, and have custom icons.
+
+## Constructor
+
+<ParamField path="Fl_Tree" type="constructor">
+  Creates a new tree widget.
+  
+  <ParamField body="X" type="int" required>
+    X position of the widget
+  </ParamField>
+  
+  <ParamField body="Y" type="int" required>
+    Y position of the widget
+  </ParamField>
+  
+  <ParamField body="W" type="int" required>
+    Width of the widget
+  </ParamField>
+  
+  <ParamField body="H" type="int" required>
+    Height of the widget
+  </ParamField>
+  
+  <ParamField body="L" type="const char*" default="0">
+    Optional label for the widget
+  </ParamField>
+</ParamField>
+
+## Item Management
+
+<ParamField path="add" type="Fl_Tree_Item*">
+  Adds an item to the tree using a path string.
+  
+  <ParamField body="path" type="const char*" required>
+    Path to the item (e.g., "Parent/Child/Item")
+  </ParamField>
+  
+  <ParamField body="newitem" type="Fl_Tree_Item*" default="0">
+    Optional pre-created item to add
+  </ParamField>
+  
+  Returns pointer to the added item.
+</ParamField>
+
+<ParamField path="insert" type="Fl_Tree_Item*">
+  Inserts an item at a specific position.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Parent item
+  </ParamField>
+  
+  <ParamField body="name" type="const char*" required>
+    Name of the new item
+  </ParamField>
+  
+  <ParamField body="pos" type="int" required>
+    Position to insert at
+  </ParamField>
+  
+  Returns pointer to the inserted item.
+</ParamField>
+
+<ParamField path="insert_above" type="Fl_Tree_Item*">
+  Inserts an item above another item.
+  
+  <ParamField body="above" type="Fl_Tree_Item*" required>
+    Item to insert above
+  </ParamField>
+  
+  <ParamField body="name" type="const char*" required>
+    Name of the new item
+  </ParamField>
+  
+  Returns pointer to the inserted item.
+</ParamField>
+
+<ParamField path="remove" type="int">
+  Removes an item from the tree.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to remove
+  </ParamField>
+  
+  Returns 0 on success, -1 on error.
+</ParamField>
+
+<ParamField path="clear" type="void">
+  Removes all items from the tree.
+</ParamField>
+
+<ParamField path="clear_children" type="void">
+  Removes all children of an item.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Parent item whose children to clear
+  </ParamField>
+</ParamField>
+
+## Finding Items
+
+<ParamField path="find_item" type="Fl_Tree_Item*">
+  Finds an item by its path.
+  
+  <ParamField body="path" type="const char*" required>
+    Path to find (e.g., "Parent/Child")
+  </ParamField>
+  
+  Returns pointer to item, or NULL if not found.
+</ParamField>
+
+<ParamField path="item_pathname" type="int">
+  Gets the pathname for an item.
+  
+  <ParamField body="pathname" type="char*" required>
+    Buffer to store pathname
+  </ParamField>
+  
+  <ParamField body="pathnamelen" type="int" required>
+    Size of pathname buffer
+  </ParamField>
+  
+  <ParamField body="item" type="const Fl_Tree_Item*" required>
+    Item to get path for
+  </ParamField>
+  
+  Returns 0 on success.
+</ParamField>
+
+<ParamField path="first" type="Fl_Tree_Item*">
+  Returns the first item in the tree.
+</ParamField>
+
+<ParamField path="next" type="Fl_Tree_Item*">
+  Returns the next item after the specified item.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" default="0">
+    Item to get next from (NULL for first)
+  </ParamField>
+</ParamField>
+
+<ParamField path="prev" type="Fl_Tree_Item*">
+  Returns the previous item before the specified item.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" default="0">
+    Item to get previous from
+  </ParamField>
+</ParamField>
+
+<ParamField path="last" type="Fl_Tree_Item*">
+  Returns the last item in the tree.
+</ParamField>
+
+## Opening/Closing
+
+<ParamField path="open" type="int">
+  Opens an item (shows its children).
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to open
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+  
+  Returns 1 if item was opened, 0 if already open.
+</ParamField>
+
+<ParamField path="close" type="int">
+  Closes an item (hides its children).
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to close
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+  
+  Returns 1 if item was closed, 0 if already closed.
+</ParamField>
+
+<ParamField path="is_open" type="int">
+  Checks if an item is open.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to check
+  </ParamField>
+  
+  Returns 1 if open, 0 if closed.
+</ParamField>
+
+<ParamField path="is_close" type="int">
+  Checks if an item is closed.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to check
+  </ParamField>
+  
+  Returns 1 if closed, 0 if open.
+</ParamField>
+
+## Selection
+
+<ParamField path="select" type="int">
+  Selects an item.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to select
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+  
+  Returns 1 if state changed.
+</ParamField>
+
+<ParamField path="deselect" type="int">
+  Deselects an item.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to deselect
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+  
+  Returns 1 if state changed.
+</ParamField>
+
+<ParamField path="select_all" type="int">
+  Selects all items in the tree.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" default="0">
+    Root item (NULL for all)
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+  
+  Returns count of items selected.
+</ParamField>
+
+<ParamField path="deselect_all" type="int">
+  Deselects all items in the tree.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" default="0">
+    Root item (NULL for all)
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+  
+  Returns count of items deselected.
+</ParamField>
+
+<ParamField path="select_only" type="int">
+  Selects only the specified item, deselecting all others.
+  
+  <ParamField body="selitem" type="Fl_Tree_Item*" required>
+    Item to select
+  </ParamField>
+  
+  <ParamField body="docallback" type="int" default="1">
+    Whether to invoke callback
+  </ParamField>
+</ParamField>
+
+<ParamField path="is_selected" type="int">
+  Checks if an item is selected.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to check
+  </ParamField>
+  
+  Returns 1 if selected, 0 otherwise.
+</ParamField>
+
+<ParamField path="first_selected_item" type="Fl_Tree_Item*">
+  Returns the first selected item in the tree.
+</ParamField>
+
+<ParamField path="next_selected_item" type="Fl_Tree_Item*">
+  Returns the next selected item after the specified item.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" default="0">
+    Item to get next from
+  </ParamField>
+  
+  <ParamField body="dir" type="int" default="FL_Down">
+    Direction (FL_Down or FL_Up)
+  </ParamField>
+</ParamField>
+
+## Display Control
+
+<ParamField path="show_item" type="void">
+  Scrolls the tree to make an item visible.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to show
+  </ParamField>
+</ParamField>
+
+<ParamField path="show_item_top" type="void">
+  Scrolls item to the top of the display.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to show at top
+  </ParamField>
+</ParamField>
+
+<ParamField path="show_item_middle" type="void">
+  Scrolls item to the middle of the display.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to show in middle
+  </ParamField>
+</ParamField>
+
+<ParamField path="show_item_bottom" type="void">
+  Scrolls item to the bottom of the display.
+  
+  <ParamField body="item" type="Fl_Tree_Item*" required>
+    Item to show at bottom
+  </ParamField>
+</ParamField>
+
+<ParamField path="vposition" type="int">
+  Gets or sets the vertical scroll position.
+  
+  <ParamField body="pos" type="int" required>
+    Scroll position in pixels
+  </ParamField>
+</ParamField>
+
+## Appearance
+
+<ParamField path="item_labelfont" type="void">
+  Sets the default font for item labels.
+  
+  <ParamField body="val" type="Fl_Font" required>
+    Font face
+  </ParamField>
+</ParamField>
+
+<ParamField path="item_labelsize" type="void">
+  Sets the default font size for item labels.
+  
+  <ParamField body="val" type="Fl_Fontsize" required>
+    Font size
+  </ParamField>
+</ParamField>
+
+<ParamField path="item_labelfgcolor" type="void">
+  Sets the default foreground color for item labels.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Foreground color
+  </ParamField>
+</ParamField>
+
+<ParamField path="item_labelbgcolor" type="void">
+  Sets the default background color for item labels.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Background color (0xffffffff for transparent)
+  </ParamField>
+</ParamField>
+
+<ParamField path="connectorcolor" type="void">
+  Sets the color of the connector lines.
+  
+  <ParamField body="val" type="Fl_Color" required>
+    Connector color
+  </ParamField>
+</ParamField>
+
+<ParamField path="selectmode" type="void">
+  Sets the selection mode.
+  
+  <ParamField body="val" type="Fl_Tree_Select" required>
+    Selection mode (NONE, SINGLE, MULTI, SINGLE_DRAGGABLE)
+  </ParamField>
+</ParamField>
+
+## Callbacks
+
+<ParamField path="callback_item" type="Fl_Tree_Item*">
+  Returns the item that triggered the callback.
+</ParamField>
+
+<ParamField path="callback_reason" type="Fl_Tree_Reason">
+  Returns why the callback was invoked:
+  - FL_TREE_REASON_SELECTED
+  - FL_TREE_REASON_DESELECTED  
+  - FL_TREE_REASON_OPENED
+  - FL_TREE_REASON_CLOSED
+  - FL_TREE_REASON_DRAGGED
+</ParamField>
+
+## Example
+
+```cpp
+#include <FL/Fl_Tree.H>
+#include <FL/Fl_Window.H>
+
+void tree_callback(Fl_Widget *w, void *) {
+  Fl_Tree *tree = (Fl_Tree*)w;
+  Fl_Tree_Item *item = tree->callback_item();
+  if (!item) return;
+  
+  switch (tree->callback_reason()) {
+    case FL_TREE_REASON_SELECTED:
+      printf("Item '%s' selected\n", item->label());
+      break;
+    case FL_TREE_REASON_OPENED:
+      printf("Item '%s' opened\n", item->label());
+      break;
+  }
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300);
+  Fl_Tree *tree = new Fl_Tree(10, 10, 380, 280);
+  
+  tree->callback(tree_callback);
+  tree->begin();
+  
+  // Add items
+  tree->add("Flintstones/Fred");
+  tree->add("Flintstones/Wilma");
+  tree->add("Flintstones/Pebbles");
+  tree->add("Simpsons/Homer");
+  tree->add("Simpsons/Marge");
+  tree->add("Simpsons/Bart");
+  tree->add("Simpsons/Lisa");
+  
+  tree->end();
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Walking the Tree
+
+```cpp
+// Walk all items top to bottom
+for (Fl_Tree_Item *item = tree->first(); item; item = tree->next(item)) {
+  printf("Item: %s\n", item->label());
+}
+
+// Walk only selected items
+for (Fl_Tree_Item *item = tree->first_selected_item(); 
+     item; 
+     item = tree->next_selected_item(item)) {
+  printf("Selected: %s\n", item->label());
+}
+```
+
+## See Also
+
+- [Fl_Tree_Item](/api/fl-tree-item) - Individual tree items
+- [Fl_Tree_Prefs](/api/fl-tree-prefs) - Tree appearance preferences

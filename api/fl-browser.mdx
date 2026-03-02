@@ -1,0 +1,290 @@
+---
+title: Fl_Browser
+description: Scrolling list widget for displaying text lines with formatting
+---
+
+## Overview
+
+The `Fl_Browser` widget displays a scrolling list of text lines and manages all the storage for the text. It's useful for showing a vertical list of named objects to the user.
+
+<Note>
+Line numbers start from 1 (zero is reserved for "no line"). Methods do not check if passed line numbers are in range - they must always be greater than zero and ≤ size().
+</Note>
+
+## Constructor
+
+<ParamField path="Fl_Browser" type="constructor">
+  Creates a new browser widget.
+  
+  <ParamField body="X" type="int" required>
+    X position of the widget
+  </ParamField>
+  
+  <ParamField body="Y" type="int" required>
+    Y position of the widget
+  </ParamField>
+  
+  <ParamField body="W" type="int" required>
+    Width of the widget
+  </ParamField>
+  
+  <ParamField body="H" type="int" required>
+    Height of the widget
+  </ParamField>
+  
+  <ParamField body="L" type="const char*" default="0">
+    Optional label for the widget
+  </ParamField>
+</ParamField>
+
+## Item Management
+
+<ParamField path="add" type="void">
+  Adds a new line to the end of the browser.
+  
+  <ParamField body="newtext" type="const char*" required>
+    The text string to add
+  </ParamField>
+  
+  <ParamField body="d" type="void*" default="0">
+    Optional data pointer associated with this line
+  </ParamField>
+</ParamField>
+
+<ParamField path="insert" type="void">
+  Inserts a new line at the specified position.
+  
+  <ParamField body="line" type="int" required>
+    Line number where to insert (1-based)
+  </ParamField>
+  
+  <ParamField body="newtext" type="const char*" required>
+    The text string to insert
+  </ParamField>
+  
+  <ParamField body="d" type="void*" default="0">
+    Optional data pointer associated with this line
+  </ParamField>
+</ParamField>
+
+<ParamField path="remove" type="void">
+  Removes the specified line from the browser.
+  
+  <ParamField body="line" type="int" required>
+    Line number to remove (1-based)
+  </ParamField>
+</ParamField>
+
+<ParamField path="clear" type="void">
+  Removes all lines from the browser.
+</ParamField>
+
+<ParamField path="load" type="int">
+  Loads the browser with the lines from a file.
+  
+  <ParamField body="filename" type="const char*" required>
+    Path to the file to load
+  </ParamField>
+  
+  Returns non-zero on error.
+</ParamField>
+
+<ParamField path="swap" type="void">
+  Swaps two lines in the browser.
+  
+  <ParamField body="a" type="int" required>
+    First line number (1-based)
+  </ParamField>
+  
+  <ParamField body="b" type="int" required>
+    Second line number (1-based)
+  </ParamField>
+</ParamField>
+
+## Selection
+
+<ParamField path="select" type="int">
+  Selects or deselects a line.
+  
+  <ParamField body="line" type="int" required>
+    Line number to select (1-based)
+  </ParamField>
+  
+  <ParamField body="val" type="int" default="1">
+    1 to select, 0 to deselect
+  </ParamField>
+  
+  Returns 1 if state changed, 0 otherwise.
+</ParamField>
+
+<ParamField path="selected" type="int">
+  Returns whether a line is selected.
+  
+  <ParamField body="line" type="int" required>
+    Line number to check (1-based)
+  </ParamField>
+  
+  Returns 1 if selected, 0 otherwise.
+</ParamField>
+
+<ParamField path="value" type="int">
+  Returns the line number of the currently selected line, or 0 if none selected.
+</ParamField>
+
+## Display Control
+
+<ParamField path="topline" type="void">
+  Scrolls the browser so the specified line is at the top.
+  
+  <ParamField body="line" type="int" required>
+    Line number to display at top (1-based)
+  </ParamField>
+</ParamField>
+
+<ParamField path="middleline" type="void">
+  Scrolls the browser so the specified line is in the middle.
+  
+  <ParamField body="line" type="int" required>
+    Line number to display in middle (1-based)
+  </ParamField>
+</ParamField>
+
+<ParamField path="bottomline" type="void">
+  Scrolls the browser so the specified line is at the bottom.
+  
+  <ParamField body="line" type="int" required>
+    Line number to display at bottom (1-based)
+  </ParamField>
+</ParamField>
+
+<ParamField path="displayed" type="int">
+  Checks if a line is currently visible in the display window.
+  
+  <ParamField body="line" type="int" required>
+    Line number to check (1-based)
+  </ParamField>
+  
+  Returns 1 if visible, 0 otherwise.
+</ParamField>
+
+<ParamField path="make_visible" type="void">
+  Scrolls the browser to make the specified line visible.
+  
+  <ParamField body="line" type="int" required>
+    Line number to make visible (1-based)
+  </ParamField>
+</ParamField>
+
+## Text Access
+
+<ParamField path="text" type="const char*">
+  Gets or sets the text for a line.
+  
+  <ParamField body="line" type="int" required>
+    Line number (1-based)
+  </ParamField>
+  
+  Returns pointer to the line's text.
+</ParamField>
+
+<ParamField path="data" type="void*">
+  Gets or sets the user data pointer for a line.
+  
+  <ParamField body="line" type="int" required>
+    Line number (1-based)
+  </ParamField>
+  
+  Returns the data pointer associated with the line.
+</ParamField>
+
+## Formatting
+
+<ParamField path="format_char" type="char">
+  Gets or sets the format code prefix character (default '@').
+</ParamField>
+
+<ParamField path="column_char" type="char">
+  Gets or sets the column separator character (default '\t').
+</ParamField>
+
+<ParamField path="column_widths" type="const int*">
+  Gets or sets the array of column widths in pixels. The array must be zero-terminated.
+</ParamField>
+
+## Format Codes
+
+When format_char() is '@', you can use these codes at the start of each line:
+
+- `@.` - Print rest of line, don't look for more '@' signs
+- `@@` - Print '@' character
+- `@l` - Use large (24 point) font
+- `@m` - Use medium large (18 point) font
+- `@s` - Use small (11 point) font
+- `@b` - Use bold font
+- `@i` - Use italic font
+- `@f` or `@t` - Use fixed-pitch font
+- `@c` - Center the line
+- `@r` - Right-justify the text
+- `@B###` - Fill background with color ###
+- `@C###` - Use color ### for text
+- `@u` or `@_` - Underline the text
+
+## Example
+
+```cpp
+#include <FL/Fl_Select_Browser.H>
+#include <FL/Fl_Double_Window.H>
+
+Fl_Select_Browser *browser;
+
+void browser_callback(Fl_Widget *w, void *) {
+  Fl_Browser *b = (Fl_Browser*)w;
+  printf("Selected line: %d\n", b->value());
+}
+
+int main() {
+  Fl_Double_Window *win = new Fl_Double_Window(400, 300);
+  browser = new Fl_Select_Browser(10, 10, 380, 280);
+  browser->type(FL_MULTI_BROWSER);
+  browser->callback(browser_callback);
+  
+  // Add some items
+  browser->add("@bBold text");
+  browser->add("@iItalic text");
+  browser->add("Normal text");
+  browser->add("@C1Red text");
+  
+  // Or load from file
+  browser->load("/path/to/file.txt");
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Common Patterns
+
+### Iterating Through All Items
+
+```cpp
+for (int i = 1; i <= browser->size(); i++) {
+  printf("Line %d: %s\n", i, browser->text(i));
+}
+```
+
+### Using Columns
+
+```cpp
+static int widths[] = { 50, 50, 70, 0 };  // Zero-terminated
+browser->column_widths(widths);
+browser->column_char('\t');
+browser->add("Name\tAge\tCity");
+browser->add("John\t25\tNew York");
+```
+
+## See Also
+
+- [Fl_Select_Browser](/api/fl-select-browser) - Browser with single selection
+- [Fl_Hold_Browser](/api/fl-hold-browser) - Browser that highlights on mouse down
+- [Fl_Multi_Browser](/api/fl-multi-browser) - Browser with multiple selection

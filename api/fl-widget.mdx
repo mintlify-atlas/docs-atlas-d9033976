@@ -1,0 +1,705 @@
+---
+title: Fl_Widget
+description: Base class for all FLTK widgets
+---
+
+Fl_Widget is the base class for all widgets in FLTK. You cannot create one directly because the constructor is protected, but you can subclass it to create custom widgets.
+
+All property accessing methods, such as `color()`, `parent()`, or `argument()` are implemented as trivial inline functions and are as fast as accessing fields in a structure.
+
+## Constructor
+
+```cpp
+Fl_Widget(int x, int y, int w, int h, const char *label = 0L);
+```
+
+<ParamField path="x, y" type="int" required>
+  Position of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="w, h" type="int" required>
+  Size of the widget in pixels
+</ParamField>
+
+<ParamField path="label" type="const char*">
+  Optional text label for the widget
+</ParamField>
+
+**Note:** The constructor is protected. Use derived widget classes like Fl_Button, Fl_Box, etc.
+
+## Core Methods
+
+### draw()
+
+Draws the widget (pure virtual).
+
+```cpp
+virtual void draw() = 0;
+```
+
+**Description:** Never call this directly. FLTK schedules redrawing automatically. Override this method in custom widgets to implement drawing.
+
+**Example:**
+```cpp
+class My_Widget : public Fl_Widget {
+  void draw() override {
+    draw_box();
+    draw_label();
+  }
+};
+```
+
+### handle()
+
+Handles events.
+
+```cpp
+virtual int handle(int event);
+```
+
+<ParamField path="event" type="int" required>
+  Event type (FL_PUSH, FL_RELEASE, FL_KEYBOARD, etc.)
+</ParamField>
+
+**Returns:** 0 if event was not used, 1 if event was used
+
+**Description:** Override this to handle events in custom widgets. Call the base class `handle()` for events you don't handle.
+
+**Example:**
+```cpp
+int My_Widget::handle(int event) {
+  if (event == FL_PUSH) {
+    // Handle mouse click
+    return 1;
+  }
+  return Fl_Widget::handle(event);
+}
+```
+
+### redraw()
+
+Schedules the widget for redrawing.
+
+```cpp
+void redraw();
+```
+
+**Description:** Marks the widget as needing its `draw()` method called.
+
+### redraw_label()
+
+Schedules just the label for redrawing.
+
+```cpp
+void redraw_label();
+```
+
+## Position and Size
+
+### x(), y(), w(), h()
+
+Gets widget position and size.
+
+```cpp
+int x() const;
+int y() const;
+int w() const;
+int h() const;
+```
+
+**Returns:** Widget's x position, y position, width, or height in pixels
+
+### resize()
+
+Changes widget size and/or position.
+
+```cpp
+virtual void resize(int x, int y, int w, int h);
+```
+
+<ParamField path="x, y" type="int" required>
+  New position relative to parent window
+</ParamField>
+
+<ParamField path="w, h" type="int" required>
+  New size in pixels
+</ParamField>
+
+**Description:** This is virtual so widgets can implement custom resize behavior. The default version does not call `redraw()`.
+
+### position()
+
+Repositions the widget.
+
+```cpp
+void position(int X, int Y);
+```
+
+<ParamField path="X, Y" type="int" required>
+  New position relative to parent window
+</ParamField>
+
+**Description:** Shortcut for `resize(X, Y, w(), h())`.
+
+### size()
+
+Changes the widget size.
+
+```cpp
+void size(int W, int H);
+```
+
+<ParamField path="W, H" type="int" required>
+  New width and height in pixels
+</ParamField>
+
+**Description:** Shortcut for `resize(x(), y(), W, H)`.
+
+## Appearance
+
+### color()
+
+Gets or sets the background color.
+
+```cpp
+Fl_Color color() const;
+void color(Fl_Color bg);
+void color(Fl_Color bg, Fl_Color sel);
+```
+
+<ParamField path="bg" type="Fl_Color" required>
+  Background color
+</ParamField>
+
+<ParamField path="sel" type="Fl_Color">
+  Selection color (optional)
+</ParamField>
+
+**Example:**
+```cpp
+button->color(FL_RED);
+button->color(FL_BLUE, FL_YELLOW);  // Set both colors
+```
+
+### selection_color()
+
+Gets or sets the selection color.
+
+```cpp
+Fl_Color selection_color() const;
+void selection_color(Fl_Color a);
+```
+
+<ParamField path="a" type="Fl_Color" required>
+  New selection color
+</ParamField>
+
+### box()
+
+Gets or sets the box type.
+
+```cpp
+Fl_Boxtype box() const;
+void box(Fl_Boxtype new_box);
+```
+
+<ParamField path="new_box" type="Fl_Boxtype" required>
+  New box type (FL_UP_BOX, FL_DOWN_BOX, etc.)
+</ParamField>
+
+**Description:** The box type determines the background drawing style.
+
+## Labels
+
+### label()
+
+Gets or sets the label text.
+
+```cpp
+const char* label() const;
+void label(const char* text);
+void label(Fl_Labeltype a, const char* b);
+```
+
+<ParamField path="text" type="const char*" required>
+  New label text (pointer stored, not copied)
+</ParamField>
+
+<ParamField path="a" type="Fl_Labeltype">
+  Label type
+</ParamField>
+
+**Important:** The label pointer is stored directly. Use static or permanent strings, or use `copy_label()` instead.
+
+### copy_label()
+
+Sets the label with automatic copying.
+
+```cpp
+void copy_label(const char *new_label);
+```
+
+<ParamField path="new_label" type="const char*" required>
+  Label text to copy
+</ParamField>
+
+**Description:** Allocates a copy of the label string. The copy is automatically freed when the widget is destroyed or the label is changed.
+
+### labeltype()
+
+Gets or sets the label type.
+
+```cpp
+Fl_Labeltype labeltype() const;
+void labeltype(Fl_Labeltype a);
+```
+
+<ParamField path="a" type="Fl_Labeltype" required>
+  Label type (FL_NORMAL_LABEL, FL_SHADOW_LABEL, etc.)
+</ParamField>
+
+### labelcolor()
+
+Gets or sets the label color.
+
+```cpp
+Fl_Color labelcolor() const;
+void labelcolor(Fl_Color c);
+```
+
+<ParamField path="c" type="Fl_Color" required>
+  New label color
+</ParamField>
+
+### labelfont()
+
+Gets or sets the label font.
+
+```cpp
+Fl_Font labelfont() const;
+void labelfont(Fl_Font f);
+```
+
+<ParamField path="f" type="Fl_Font" required>
+  Font index (FL_HELVETICA, FL_COURIER, etc.)
+</ParamField>
+
+### labelsize()
+
+Gets or sets the label font size.
+
+```cpp
+Fl_Fontsize labelsize() const;
+void labelsize(Fl_Fontsize pix);
+```
+
+<ParamField path="pix" type="Fl_Fontsize" required>
+  Font size in pixels
+</ParamField>
+
+### align()
+
+Gets or sets the label alignment.
+
+```cpp
+Fl_Align align() const;
+void align(Fl_Align alignment);
+```
+
+<ParamField path="alignment" type="Fl_Align" required>
+  Alignment flags (FL_ALIGN_CENTER, FL_ALIGN_LEFT, etc.)
+</ParamField>
+
+**Example:**
+```cpp
+widget->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+```
+
+## Images
+
+### image()
+
+Gets or sets the image for active state.
+
+```cpp
+Fl_Image* image();
+const Fl_Image* image() const;
+void image(Fl_Image* img);
+void image(Fl_Image& img);
+```
+
+<ParamField path="img" type="Fl_Image*" required>
+  Image to display when widget is active
+</ParamField>
+
+### bind_image()
+
+Sets and binds an image (widget takes ownership).
+
+```cpp
+void bind_image(Fl_Image* img);
+```
+
+<ParamField path="img" type="Fl_Image*" required>
+  Image to bind to widget
+</ParamField>
+
+**Description:** The widget will delete the image when it's destroyed.
+
+### deimage()
+
+Gets or sets the image for inactive state.
+
+```cpp
+Fl_Image* deimage();
+void deimage(Fl_Image* img);
+```
+
+<ParamField path="img" type="Fl_Image*" required>
+  Image to display when widget is inactive
+</ParamField>
+
+## Callbacks
+
+### callback()
+
+Gets or sets the callback function.
+
+```cpp
+Fl_Callback_p callback() const;
+void callback(Fl_Callback* cb, void* p);
+void callback(Fl_Callback* cb);
+```
+
+<ParamField path="cb" type="Fl_Callback*" required>
+  Callback function pointer
+</ParamField>
+
+<ParamField path="p" type="void*">
+  User data passed to callback
+</ParamField>
+
+**Example:**
+```cpp
+void my_callback(Fl_Widget* w, void* data) {
+  printf("Button clicked!\n");
+}
+
+button->callback(my_callback);
+```
+
+### do_callback()
+
+Calls the callback function.
+
+```cpp
+void do_callback();
+void do_callback(Fl_Widget *widget, void *arg = 0);
+```
+
+<ParamField path="widget" type="Fl_Widget*">
+  Widget to pass as first argument
+</ParamField>
+
+<ParamField path="arg" type="void*">
+  User data to pass as second argument
+</ParamField>
+
+### when()
+
+Gets or sets when the callback is called.
+
+```cpp
+Fl_When when() const;
+void when(uchar i);
+```
+
+<ParamField path="i" type="uchar" required>
+  When flags (FL_WHEN_RELEASE, FL_WHEN_CHANGED, etc.)
+</ParamField>
+
+**Example:**
+```cpp
+input->when(FL_WHEN_CHANGED);  // Call on every change
+```
+
+### user_data()
+
+Gets or sets user data.
+
+```cpp
+void* user_data() const;
+void user_data(void* v);
+```
+
+<ParamField path="v" type="void*" required>
+  User data pointer
+</ParamField>
+
+## State
+
+### visible()
+
+Checks if widget is visible.
+
+```cpp
+unsigned int visible() const;
+```
+
+**Returns:** 1 if visible, 0 if hidden
+
+### visible_r()
+
+Checks if widget and all parents are visible.
+
+```cpp
+int visible_r() const;
+```
+
+**Returns:** 1 if widget and all parents are visible
+
+### show()
+
+Makes the widget visible.
+
+```cpp
+virtual void show();
+```
+
+**Description:** Sends FL_SHOW event and marks widget as visible.
+
+### hide()
+
+Makes the widget invisible.
+
+```cpp
+virtual void hide();
+```
+
+**Description:** Sends FL_HIDE event and marks widget as invisible.
+
+### active()
+
+Checks if widget is active.
+
+```cpp
+unsigned int active() const;
+```
+
+**Returns:** 1 if active, 0 if inactive
+
+### active_r()
+
+Checks if widget and all parents are active.
+
+```cpp
+int active_r() const;
+```
+
+**Returns:** 1 if widget and all parents are active
+
+### activate()
+
+Activates the widget.
+
+```cpp
+void activate();
+```
+
+**Description:** Makes the widget able to receive events. Sends FL_ACTIVATE event.
+
+### deactivate()
+
+Deactivates the widget.
+
+```cpp
+void deactivate();
+```
+
+**Description:** Prevents the widget from receiving events. Widget is drawn grayed out. Sends FL_DEACTIVATE event.
+
+### takesevents()
+
+Checks if widget can receive events.
+
+```cpp
+unsigned int takesevents() const;
+```
+
+**Returns:** 1 if widget is active, visible, and not output-only
+
+### changed()
+
+Checks if widget value has changed.
+
+```cpp
+unsigned int changed() const;
+```
+
+**Returns:** 1 if changed flag is set
+
+### set_changed()
+
+Marks the value as changed.
+
+```cpp
+void set_changed();
+```
+
+### clear_changed()
+
+Clears the changed flag.
+
+```cpp
+void clear_changed();
+```
+
+## Focus
+
+### take_focus()
+
+Gives keyboard focus to the widget.
+
+```cpp
+int take_focus();
+```
+
+**Returns:** 1 if widget accepted focus, 0 otherwise
+
+### visible_focus()
+
+Gets or sets visible focus.
+
+```cpp
+unsigned int visible_focus() const;
+void visible_focus(int v);
+```
+
+<ParamField path="v" type="int" required>
+  1 to enable visible focus, 0 to disable
+</ParamField>
+
+## Hierarchy
+
+### parent()
+
+Gets the parent widget.
+
+```cpp
+Fl_Group* parent() const;
+```
+
+**Returns:** Pointer to parent Fl_Group or NULL
+
+### window()
+
+Gets the window containing this widget.
+
+```cpp
+Fl_Window* window() const;
+```
+
+**Returns:** Pointer to containing Fl_Window
+
+### top_window()
+
+Gets the top-level window.
+
+```cpp
+Fl_Window* top_window() const;
+```
+
+**Returns:** Pointer to top-level window
+
+### contains()
+
+Checks if a widget is a child.
+
+```cpp
+int contains(const Fl_Widget *w) const;
+```
+
+<ParamField path="w" type="const Fl_Widget*" required>
+  Widget to check
+</ParamField>
+
+**Returns:** 1 if w is this widget or a child
+
+### inside()
+
+Checks if this widget is inside another.
+
+```cpp
+int inside(const Fl_Widget *wgt) const;
+```
+
+<ParamField path="wgt" type="const Fl_Widget*" required>
+  Potential parent widget
+</ParamField>
+
+**Returns:** 1 if this widget is wgt or a child of wgt
+
+## Type Checking
+
+### as_group()
+
+Returns this widget as Fl_Group if applicable.
+
+```cpp
+virtual Fl_Group* as_group();
+```
+
+**Returns:** Pointer to Fl_Group or NULL
+
+### as_window()
+
+Returns this widget as Fl_Window if applicable.
+
+```cpp
+virtual Fl_Window* as_window();
+```
+
+**Returns:** Pointer to Fl_Window or NULL
+
+### as_gl_window()
+
+Returns this widget as Fl_Gl_Window if applicable.
+
+```cpp
+virtual Fl_Gl_Window* as_gl_window();
+```
+
+**Returns:** Pointer to Fl_Gl_Window or NULL
+
+## Tooltip
+
+### tooltip()
+
+Gets or sets the tooltip text.
+
+```cpp
+const char *tooltip() const;
+void tooltip(const char *text);
+```
+
+<ParamField path="text" type="const char*" required>
+  Tooltip text to display
+</ParamField>
+
+### copy_tooltip()
+
+Sets tooltip with automatic copying.
+
+```cpp
+void copy_tooltip(const char *text);
+```
+
+<ParamField path="text" type="const char*" required>
+  Tooltip text to copy
+</ParamField>
+
+## Related
+
+- [Fl (Global Namespace)](/api/fl) - Global functions and event loop
+- [Fl_Window](/api/fl-window) - Window class
+- [Fl_Group](/api/fl-group) - Container widget class

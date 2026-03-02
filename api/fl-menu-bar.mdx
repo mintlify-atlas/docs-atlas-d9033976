@@ -1,0 +1,444 @@
+---
+title: Fl_Menu_Bar
+description: Standard menubar interface for placing menus at the top of windows
+---
+
+# Fl_Menu_Bar
+
+The `Fl_Menu_Bar` widget provides a standard menubar interface, typically placed along the top edge of a window. Menu items are defined using a `Fl_Menu_Item` array.
+
+## Header
+
+```cpp
+#include <FL/Fl_Menu_Bar.H>
+```
+
+## Inheritance
+
+```
+Fl_Widget → Fl_Menu_ → Fl_Menu_Bar
+```
+
+## Constructor
+
+### Fl_Menu_Bar()
+
+Creates a new menu bar widget.
+
+```cpp
+Fl_Menu_Bar(int X, int Y, int W, int H, const char *label = 0);
+```
+
+<ParamField path="X" type="int">
+  X coordinate of the widget
+</ParamField>
+
+<ParamField path="Y" type="int">
+  Y coordinate of the widget
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the widget
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the widget (30 recommended for default font)
+</ParamField>
+
+<ParamField path="label" type="const char*">
+  Optional label (usually not used for menubars)
+</ParamField>
+
+**Example:**
+```cpp
+Fl_Menu_Bar *menubar = new Fl_Menu_Bar(0, 0, 640, 30);
+```
+
+## Overview
+
+The menu bar displays top-level menu items horizontally across the bar. When clicked, each item opens a vertical pulldown menu. The menu hierarchy is defined by a single `Fl_Menu_Item` array, where submenus are indicated by the `FL_SUBMENU` flag.
+
+<Note>
+  The recommended height for a menu bar is 30 pixels when using the default font.
+</Note>
+
+## Menu Structure
+
+Menus use a hierarchical structure:
+- **Top level**: Items displayed in the menubar
+- **Submenus**: Items that open when a top-level item is clicked
+- **Sub-submenus**: Additional levels that pop up to the right
+
+If a top-level item is not a submenu, it acts like a button and is immediately picked when clicked.
+
+## Defining Menu Items
+
+### Static Menu Definition
+
+Menus are typically defined as static arrays:
+
+```cpp
+Fl_Menu_Item menutable[] = {
+  {"&File", 0, 0, 0, FL_SUBMENU},
+    {"&Open",  FL_CTRL+'o', file_open_cb},
+    {"&Save",  FL_CTRL+'s', file_save_cb},
+    {"&Quit",  FL_CTRL+'q', quit_cb, 0, FL_MENU_DIVIDER},
+    {0},
+  {"&Edit", 0, 0, 0, FL_SUBMENU},
+    {"&Copy",  FL_CTRL+'c', edit_copy_cb},
+    {"&Paste", FL_CTRL+'v', edit_paste_cb},
+    {0},
+  {0}
+};
+
+menubar->copy(menutable);
+```
+
+### Dynamic Menu Creation with add()
+
+You can build menus dynamically using pathname syntax:
+
+```cpp
+Fl_Menu_Bar *menu = new Fl_Menu_Bar(0, 0, 400, 25);
+menu->add("&File/&Open",  "^o", MyMenuCallback);
+menu->add("&File/&Save",  "^s", MyMenuCallback, 0, FL_MENU_DIVIDER);
+menu->add("&File/&Quit",  "^q", MyMenuCallback);
+menu->add("&Edit/&Copy",  "^c", MyMenuCallback);
+menu->add("&Edit/&Paste", "^v", MyMenuCallback);
+```
+
+See [Fl_Menu_Item](/api/fl-menu-item) for the full list of inherited methods from `Fl_Menu_`.
+
+## Methods
+
+### update()
+
+Updates the menu bar after any changes to its items.
+
+```cpp
+virtual void update();
+```
+
+<Note>
+  This method is particularly useful when the menu bar is an `Fl_Sys_Menu_Bar` object (native macOS menu bar).
+</Note>
+
+### play_menu()
+
+Opens the first-level submenu corresponding to the specified item.
+
+```cpp
+virtual void play_menu(const Fl_Menu_Item *item);
+```
+
+<ParamField path="item" type="const Fl_Menu_Item*">
+  Menu item whose submenu should be opened
+</ParamField>
+
+**Example:**
+```cpp
+const Fl_Menu_Item *file_menu = menubar->find_item("&File");
+if (file_menu) {
+  menubar->play_menu(file_menu);  // Opens File menu
+}
+```
+
+## Callbacks
+
+When a user clicks a menu item:
+
+1. `value()` is set to that item
+2. If the item has a callback, it's invoked with:
+   - The `Fl_Menu_Bar` widget as the first argument
+   - The item's `user_data()` as the second argument
+3. If the item doesn't have a callback, the `Fl_Menu_Bar`'s callback is invoked instead
+
+### Single Callback for All Items
+
+```cpp
+void menu_callback(Fl_Widget *w, void*) {
+  Fl_Menu_Bar *bar = (Fl_Menu_Bar*)w;
+  const Fl_Menu_Item *item = bar->mvalue();
+  
+  char pathname[256];
+  bar->item_pathname(pathname, sizeof(pathname));
+  
+  printf("Selected: %s\n", item->label());
+  printf("Path: %s\n", pathname);
+  
+  if (item->flags & FL_MENU_TOGGLE) {
+    printf("Toggle value: %s\n", item->value() ? "on" : "off");
+  }
+}
+
+Fl_Menu_Bar *menu = new Fl_Menu_Bar(0, 0, 400, 25);
+menu->callback(menu_callback);
+menu->add("File/New");
+menu->add("File/Open");
+```
+
+### Individual Callbacks
+
+```cpp
+void new_cb(Fl_Widget*, void*) {
+  printf("New file\n");
+}
+
+void open_cb(Fl_Widget*, void*) {
+  printf("Open file\n");
+}
+
+menu->add("File/New",  FL_CTRL+'n', new_cb);
+menu->add("File/Open", FL_CTRL+'o', open_cb);
+```
+
+## Keyboard Shortcuts
+
+### Underline Shortcuts
+
+Putting a `&` character in the menu item name creates an underlined letter shortcut:
+
+```cpp
+menu->add("&File");      // 'F' is underlined, Alt+F activates
+menu->add("&Edit");      // 'E' is underlined, Alt+E activates
+```
+
+These shortcuts work:
+- In top-level items: immediately when the menubar has focus
+- In submenu items: when the menu is popped up
+
+### Explicit Shortcuts
+
+Shortcuts work whether the menu is visible or not:
+
+```cpp
+menu->add("File/Save", FL_CTRL+'s', save_cb);    // Ctrl+S
+menu->add("File/Quit", FL_ALT+FL_F+4, quit_cb);  // Alt+F4
+```
+
+## Events
+
+### FL_BEFORE_MENU Event
+
+FLTK triggers an `FL_BEFORE_MENU` event right before displaying the menu. This provides an opportunity to update menu item states:
+
+```cpp
+class MyMenuBar : public Fl_Menu_Bar {
+public:
+  MyMenuBar(int X, int Y, int W, int H) : Fl_Menu_Bar(X, Y, W, H) {}
+  
+  int handle(int event) override {
+    if (event == FL_BEFORE_MENU) {
+      // Update menu items before showing
+      Fl_Menu_Item *save = (Fl_Menu_Item*)find_item("File/Save");
+      if (document_is_modified()) {
+        save->activate();
+      } else {
+        save->deactivate();
+      }
+    }
+    return Fl_Menu_Bar::handle(event);
+  }
+};
+```
+
+## Appearance
+
+### Box Type
+
+The default box type is `FL_UP_BOX`:
+
+```cpp
+menubar->box(FL_FLAT_BOX);  // Flat menubar
+```
+
+### Text Appearance
+
+```cpp
+menubar->textfont(FL_HELVETICA_BOLD);
+menubar->textsize(14);
+menubar->textcolor(FL_BLACK);
+```
+
+### Label Alignment
+
+The menubar's `label()` is ignored unless you change `align()` to position it outside the menubar:
+
+```cpp
+menubar->label("Main Menu");
+menubar->align(FL_ALIGN_LEFT | FL_ALIGN_OUTSIDE);
+```
+
+## Complete Example
+
+From `examples/menubar-add.cxx`:
+
+```cpp
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Menu_Bar.H>
+#include <FL/filename.H>
+
+static void MyMenuCallback(Fl_Widget *w, void *) {
+  Fl_Menu_Bar *bar = (Fl_Menu_Bar*)w;
+  const Fl_Menu_Item *item = bar->mvalue();
+  
+  char ipath[256];
+  bar->item_pathname(ipath, sizeof(ipath));
+  
+  fprintf(stderr, "You picked '%s'\n", item->label());
+  fprintf(stderr, "Path: '%s'\n", ipath);
+  
+  if (item->flags & (FL_MENU_RADIO | FL_MENU_TOGGLE)) {
+    fprintf(stderr, "Value: %s\n", item->value() ? "on" : "off");
+  }
+  
+  if (strcmp(item->label(), "Google") == 0) {
+    fl_open_uri("http://google.com/");
+  }
+  if (strcmp(item->label(), "&Quit") == 0) {
+    exit(0);
+  }
+}
+
+int main() {
+  Fl::scheme("gtk+");
+  Fl_Window *win = new Fl_Window(400, 200, "menubar-simple");
+  
+  Fl_Menu_Bar *menu = new Fl_Menu_Bar(0, 0, 400, 25);
+  menu->add("&File/&Open",  "^o", MyMenuCallback);
+  menu->add("&File/&Save",  "^s", MyMenuCallback, 0, FL_MENU_DIVIDER);
+  menu->add("&File/&Quit",  "^q", MyMenuCallback);
+  
+  menu->add("&Edit/&Copy",  "^c", MyMenuCallback);
+  menu->add("&Edit/&Paste", "^v", MyMenuCallback, 0, FL_MENU_DIVIDER);
+  
+  menu->add("&Edit/Radio 1", 0, MyMenuCallback, 0, FL_MENU_RADIO);
+  menu->add("&Edit/Radio 2", 0, MyMenuCallback, 0, FL_MENU_RADIO | FL_MENU_DIVIDER);
+  
+  menu->add("&Edit/Toggle 1", 0, MyMenuCallback, 0, FL_MENU_TOGGLE);
+  menu->add("&Edit/Toggle 2", 0, MyMenuCallback, 0, FL_MENU_TOGGLE);
+  menu->add("&Edit/Toggle 3", 0, MyMenuCallback, 0, FL_MENU_TOGGLE | FL_MENU_VALUE);
+  
+  menu->add("&Help/Google", 0, MyMenuCallback);
+  
+  // Dynamically change state of an item
+  Fl_Menu_Item *item = (Fl_Menu_Item*)menu->find_item("&Edit/Toggle 2");
+  if (item) item->set();
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Advanced Features
+
+### Finding Menu Items
+
+Inherited from `Fl_Menu_`:
+
+```cpp
+// By pathname
+const Fl_Menu_Item *item = menu->find_item("File/Save");
+
+// By callback
+const Fl_Menu_Item *item = menu->find_item(save_callback);
+
+// By user data
+const Fl_Menu_Item *item = menu->find_item_with_user_data((void*)42);
+
+// Get index
+int index = menu->find_index("File/Save");
+```
+
+### Modifying Menu Items
+
+```cpp
+// Change label
+menu->replace(index, "Save As...");
+
+// Change shortcut
+menu->shortcut(index, FL_CTRL+FL_SHIFT+'s');
+
+// Change flags
+menu->mode(index, FL_MENU_INACTIVE);  // Disable item
+
+// Remove item
+menu->remove(index);
+```
+
+### Menu Item Flags
+
+```cpp
+Fl_Menu_Item *item = (Fl_Menu_Item*)menu->find_item("File/Auto Save");
+
+if (item->value()) {          // Is checkbox checked?
+  item->clear();              // Uncheck it
+}
+
+item->activate();             // Enable item
+item->deactivate();           // Disable item (grayed out)
+item->show();                 // Make visible
+item->hide();                 // Hide (shortcut still works)
+```
+
+### Checkbox and Radio Items
+
+```cpp
+// Checkbox toggles
+menu->add("Options/Auto Save",  0, 0, 0, FL_MENU_TOGGLE);
+menu->add("Options/Show Grid",  0, 0, 0, FL_MENU_TOGGLE | FL_MENU_VALUE);
+
+// Radio buttons (one of many)
+menu->add("View/Small",  0, 0, 0, FL_MENU_RADIO);
+menu->add("View/Medium", 0, 0, 0, FL_MENU_RADIO | FL_MENU_VALUE);
+menu->add("View/Large",  0, 0, 0, FL_MENU_RADIO);
+```
+
+### Dividers
+
+Create visual separators between menu items:
+
+```cpp
+menu->add("File/Save", FL_CTRL+'s', 0, 0, FL_MENU_DIVIDER);
+menu->add("File/Quit", FL_CTRL+'q');
+// Divider appears after Save, before Quit
+```
+
+### Headlines
+
+Create non-selectable section headers:
+
+```cpp
+menu->add("Edit/  Text Style:  ", 0, 0, nullptr, FL_MENU_HEADLINE, 0, FL_BOLD);
+menu->add("Edit/Bold",   FL_CTRL+'b', style_cb);
+menu->add("Edit/Italic", FL_CTRL+'i', style_cb);
+```
+
+## Platform Integration
+
+### macOS System Menu Bar
+
+On macOS, you can use `Fl_Sys_Menu_Bar` for native menu integration:
+
+```cpp
+#include <FL/Fl_Sys_Menu_Bar.H>
+
+Fl_Sys_Menu_Bar *menubar = new Fl_Sys_Menu_Bar(0, 0, 640, 30);
+menubar->add("File/Open",  FL_COMMAND+'o', open_cb);
+menubar->add("File/Quit",  FL_COMMAND+'q', quit_cb);
+```
+
+<Note>
+  `FL_COMMAND` maps to Cmd (⌘) on macOS and Ctrl on other platforms.
+</Note>
+
+## See Also
+
+- [Fl_Menu_Item](/api/fl-menu-item) - Menu item structure and flags
+- [Fl_Menu_Button](/api/fl-menu-button) - Popup menu button
+- [Fl_Choice](/api/fl-choice-menu) - Dropdown choice widget

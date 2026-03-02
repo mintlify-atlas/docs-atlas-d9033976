@@ -1,0 +1,521 @@
+---
+title: Callbacks
+description: Responding to user actions with FLTK's callback system
+---
+
+Callbacks are functions that execute in response to user actions like button clicks, menu selections, or value changes. FLTK provides a flexible callback system defined in `FL/Fl_Widget.H:32-104`.
+
+## Callback Types
+
+FLTK defines several callback function signatures:
+
+```cpp
+// Standard callback (most common)
+typedef void (Fl_Callback)(Fl_Widget*, void*);
+
+// Widget-only callback
+typedef void (Fl_Callback0)(Fl_Widget*);
+
+// Widget + long data callback
+typedef void (Fl_Callback1)(Fl_Widget*, long);
+```
+
+## Setting Callbacks
+
+### Basic Callback
+
+The standard pattern uses `Fl_Callback`:
+
+```cpp
+void button_callback(Fl_Widget *w, void *data) {
+  Fl_Button *btn = (Fl_Button*)w;
+  printf("Button '%s' was clicked\n", btn->label());
+  
+  // Use user data
+  int *count = (int*)data;
+  (*count)++;
+  printf("Click count: %d\n", *count);
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(300, 200);
+  Fl_Button *btn = new Fl_Button(100, 80, 100, 30, "Click Me");
+  
+  static int click_count = 0;
+  btn->callback(button_callback, &click_count);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Widget-Only Callback
+
+Simpler signature when you don't need user data:
+
+```cpp
+void simple_callback(Fl_Widget *w) {
+  printf("Widget clicked\n");
+}
+
+btn->callback((Fl_Callback*)simple_callback);
+```
+
+### Inline Callbacks
+
+For C++11 and later, use lambdas:
+
+```cpp
+btn->callback([](Fl_Widget *w, void *data) {
+  printf("Lambda callback!\n");
+});
+
+// Capture variables
+int count = 0;
+btn->callback([](Fl_Widget *w, void *data) {
+  int *c = (int*)data;
+  printf("Count: %d\n", ++(*c));
+}, &count);
+```
+
+## User Data
+
+From `FL/Fl_Widget.H:790-820`, callbacks receive a user data pointer:
+
+<Tabs>
+  <Tab title="Void Pointer">
+    ```cpp
+    struct AppData {
+      int value;
+      const char *name;
+    };
+    
+    void callback(Fl_Widget *w, void *data) {
+      AppData *app = (AppData*)data;
+      printf("Value: %d, Name: %s\n", 
+             app->value, app->name);
+    }
+    
+    AppData data = {42, "Test"};
+    widget->callback(callback, &data);
+    ```
+  </Tab>
+  
+  <Tab title="Long Integer">
+    ```cpp
+    void callback(Fl_Widget *w, void *data) {
+      long value = (long)(fl_intptr_t)data;
+      printf("Value: %ld\n", value);
+    }
+    
+    // Set long value as user data
+    widget->callback(callback);
+    widget->argument(42);
+    
+    // Or get it
+    long val = widget->argument();
+    ```
+  </Tab>
+  
+  <Tab title="Managed Data">
+    ```cpp
+    class MyData : public Fl_Callback_User_Data {
+    public:
+      int value;
+      
+      MyData(int v) : value(v) {}
+      ~MyData() { 
+        printf("Data cleaned up\n"); 
+      }
+    };
+    
+    void callback(Fl_Widget *w, void *data) {
+      MyData *d = (MyData*)data;
+      printf("Value: %d\n", d->value);
+    }
+    
+    // Widget takes ownership and deletes data
+    MyData *data = new MyData(42);
+    widget->callback(callback, data, true);
+    ```
+  </Tab>
+</Tabs>
+
+## Calling Callbacks
+
+From `FL/Fl_Widget.H:1079-1104`, manually trigger callbacks:
+
+```cpp
+// Call with default arguments
+widget->do_callback();
+
+// Call with custom widget
+widget->do_callback(other_widget, data);
+
+// Call with reason
+widget->do_callback(FL_REASON_SELECTED);
+
+// Get callback function
+Fl_Callback_p cb = widget->callback();
+if (cb) {
+  cb(widget, widget->user_data());
+}
+```
+
+## Callback Timing
+
+From `FL/Fl_Widget.H:821-868` and `FL/Enumerations.H:352-375`, control when callbacks trigger:
+
+```cpp
+// Set when callback is called
+widget->when(FL_WHEN_RELEASE);        // On mouse release (default)
+widget->when(FL_WHEN_CHANGED);        // On value change
+widget->when(FL_WHEN_NEVER);          // Never automatically
+widget->when(FL_WHEN_RELEASE_ALWAYS); // On release, even if unchanged
+widget->when(FL_WHEN_ENTER_KEY);      // On Enter key
+widget->when(FL_WHEN_ENTER_KEY_ALWAYS); // On Enter, even if unchanged
+
+// Get current when condition
+Fl_When condition = widget->when();
+```
+
+### Callback Reasons
+
+From `FL/Enumerations.H:378-400`, determine why callback was triggered:
+
+```cpp
+void callback(Fl_Widget *w, void *data) {
+  Fl_Callback_Reason reason = Fl::callback_reason();
+  
+  switch(reason) {
+    case FL_REASON_SELECTED:
+      printf("Item selected\n");
+      break;
+    case FL_REASON_DESELECTED:
+      printf("Item deselected\n");
+      break;
+    case FL_REASON_CHANGED:
+      printf("Value changed\n");
+      break;
+    case FL_REASON_CLOSED:
+      printf("Window closed\n");
+      break;
+    case FL_REASON_RELEASED:
+      printf("Button released\n");
+      break;
+    case FL_REASON_ENTER_KEY:
+      printf("Enter key pressed\n");
+      break;
+    default:
+      printf("Unknown reason\n");
+  }
+}
+```
+
+## Widget-Specific Callbacks
+
+<AccordionGroup>
+  <Accordion title="Buttons">
+    ```cpp
+    void button_cb(Fl_Widget *w, void *data) {
+      Fl_Button *btn = (Fl_Button*)w;
+      if (btn->value()) {
+        printf("Button is pressed\n");
+      }
+    }
+    
+    Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Click");
+    btn->callback(button_cb);
+    ```
+  </Accordion>
+  
+  <Accordion title="Input Fields">
+    ```cpp
+    void input_cb(Fl_Widget *w, void *data) {
+      Fl_Input *input = (Fl_Input*)w;
+      printf("Text: %s\n", input->value());
+    }
+    
+    Fl_Input *input = new Fl_Input(10, 10, 200, 30);
+    input->callback(input_cb);
+    input->when(FL_WHEN_CHANGED);  // Call on each keystroke
+    // or
+    input->when(FL_WHEN_ENTER_KEY); // Call only on Enter
+    ```
+  </Accordion>
+  
+  <Accordion title="Sliders and Valuators">
+    ```cpp
+    void slider_cb(Fl_Widget *w, void *data) {
+      Fl_Slider *slider = (Fl_Slider*)w;
+      double value = slider->value();
+      printf("Slider value: %.2f\n", value);
+    }
+    
+    Fl_Slider *slider = new Fl_Slider(10, 10, 200, 30);
+    slider->callback(slider_cb);
+    slider->when(FL_WHEN_CHANGED);  // Continuous updates
+    // or
+    slider->when(FL_WHEN_RELEASE);  // Only on release
+    ```
+  </Accordion>
+  
+  <Accordion title="Menus">
+    ```cpp
+    void menu_cb(Fl_Widget *w, void *data) {
+      Fl_Menu_ *menu = (Fl_Menu_*)w;
+      const Fl_Menu_Item *item = menu->mvalue();
+      printf("Selected: %s\n", item->label());
+    }
+    
+    Fl_Menu_Bar *menubar = new Fl_Menu_Bar(0, 0, 400, 30);
+    menubar->add("File/Open", FL_CTRL + 'o', menu_cb);
+    menubar->add("File/Save", FL_CTRL + 's', menu_cb);
+    menubar->add("File/Quit", FL_CTRL + 'q', menu_cb);
+    ```
+  </Accordion>
+  
+  <Accordion title="Windows">
+    ```cpp
+    void window_cb(Fl_Widget *w, void *data) {
+      Fl_Window *win = (Fl_Window*)w;
+      
+      if (Fl::callback_reason() == FL_REASON_CLOSED) {
+        if (fl_choice("Really quit?", "No", "Yes", NULL)) {
+          win->hide();
+        }
+      }
+    }
+    
+    Fl_Window *win = new Fl_Window(400, 300);
+    win->callback(window_cb);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Changed Flag
+
+From `FL/Fl_Widget.H:981-1008`, track value changes:
+
+```cpp
+// Check if value changed
+if (widget->changed()) {
+  printf("Widget value has changed\n");
+  widget->clear_changed();  // Reset flag
+}
+
+// Manually mark as changed
+widget->set_changed();
+
+// Common pattern: scan widgets for changes
+void check_changes(Fl_Group *group) {
+  for (int i = 0; i < group->children(); i++) {
+    Fl_Widget *w = group->child(i);
+    if (w->changed()) {
+      w->do_callback();
+      w->clear_changed();
+    }
+  }
+}
+```
+
+## Default Callback
+
+From `FL/Fl_Widget.H:1057-1077`, widgets without callbacks use the default:
+
+```cpp
+// Default callback adds widget to queue
+static void Fl_Widget::default_callback(
+  Fl_Widget *widget, void *data
+);
+
+// Read callback queue
+Fl_Widget *w;
+while ((w = Fl::readqueue())) {
+  printf("Widget %s was activated\n", w->label());
+}
+```
+
+<Warning>
+  Using the callback queue is not recommended. Always set explicit callbacks for better control.
+</Warning>
+
+## Member Function Callbacks
+
+Use static methods or lambdas to call member functions:
+
+```cpp
+class MyApp {
+  Fl_Window *window;
+  Fl_Button *button;
+  int count;
+  
+public:
+  MyApp() : count(0) {
+    window = new Fl_Window(300, 200);
+    button = new Fl_Button(100, 80, 100, 30, "Click");
+    
+    // Static callback wrapper
+    button->callback(button_cb_static, this);
+    
+    window->end();
+  }
+  
+  // Static wrapper
+  static void button_cb_static(Fl_Widget *w, void *data) {
+    MyApp *app = (MyApp*)data;
+    app->button_cb(w);
+  }
+  
+  // Actual callback
+  void button_cb(Fl_Widget *w) {
+    count++;
+    printf("Button clicked %d times\n", count);
+  }
+  
+  void show() { window->show(); }
+};
+
+int main() {
+  MyApp app;
+  app.show();
+  return Fl::run();
+}
+```
+
+Or with C++11 lambdas:
+
+```cpp
+class MyApp {
+  int count = 0;
+  
+public:
+  MyApp() {
+    Fl_Window *win = new Fl_Window(300, 200);
+    Fl_Button *btn = new Fl_Button(100, 80, 100, 30, "Click");
+    
+    // Lambda captures 'this'
+    btn->callback([](Fl_Widget *w, void *data) {
+      MyApp *app = (MyApp*)data;
+      app->count++;
+      printf("Count: %d\n", app->count);
+    }, this);
+    
+    win->end();
+    win->show();
+  }
+};
+```
+
+## Callback Examples
+
+<Steps>
+  <Step title="Button Toggle">
+    ```cpp
+    void toggle_cb(Fl_Widget *w, void *data) {
+      static bool state = false;
+      state = !state;
+      
+      Fl_Button *btn = (Fl_Button*)w;
+      btn->label(state ? "ON" : "OFF");
+      btn->color(state ? FL_GREEN : FL_RED);
+      btn->redraw();
+    }
+    
+    Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "OFF");
+    btn->color(FL_RED);
+    btn->callback(toggle_cb);
+    ```
+  </Step>
+  
+  <Step title="Text Validation">
+    ```cpp
+    void validate_cb(Fl_Widget *w, void *data) {
+      Fl_Input *input = (Fl_Input*)w;
+      const char *text = input->value();
+      
+      // Check if numeric
+      bool valid = true;
+      for (int i = 0; text[i]; i++) {
+        if (!isdigit(text[i])) {
+          valid = false;
+          break;
+        }
+      }
+      
+      input->color(valid ? FL_WHITE : FL_RED);
+      input->redraw();
+    }
+    
+    Fl_Input *input = new Fl_Input(10, 10, 200, 30);
+    input->callback(validate_cb);
+    input->when(FL_WHEN_CHANGED);
+    ```
+  </Step>
+  
+  <Step title="Linked Widgets">
+    ```cpp
+    void slider_to_input(Fl_Widget *w, void *data) {
+      Fl_Slider *slider = (Fl_Slider*)w;
+      Fl_Input *input = (Fl_Input*)data;
+      
+      char buf[32];
+      snprintf(buf, sizeof(buf), "%.0f", slider->value());
+      input->value(buf);
+    }
+    
+    void input_to_slider(Fl_Widget *w, void *data) {
+      Fl_Input *input = (Fl_Input*)w;
+      Fl_Slider *slider = (Fl_Slider*)data;
+      
+      slider->value(atof(input->value()));
+      slider->redraw();
+    }
+    
+    Fl_Slider *slider = new Fl_Slider(10, 10, 200, 30);
+    Fl_Input *input = new Fl_Input(10, 50, 200, 30);
+    
+    slider->callback(slider_to_input, input);
+    input->callback(input_to_slider, slider);
+    input->when(FL_WHEN_ENTER_KEY);
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use User Data" icon="database">
+    Pass necessary context through user data instead of global variables.
+  </Card>
+  
+  <Card title="Set When Condition" icon="clock">
+    Explicitly set `when()` to control callback timing for inputs and valuators.
+  </Card>
+  
+  <Card title="Check Reason" icon="question">
+    Use `Fl::callback_reason()` to handle different trigger conditions.
+  </Card>
+  
+  <Card title="Avoid Heavy Work" icon="gauge">
+    Keep callbacks fast. Use timeouts or threads for long operations.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Events" icon="bolt" href="/concepts/events">
+    Lower-level event handling
+  </Card>
+  <Card title="Widgets" icon="cube" href="/concepts/widgets">
+    Widget properties and methods
+  </Card>
+  <Card title="Timers" icon="stopwatch" href="/guides/timers-and-idle">
+    Delayed and periodic callbacks
+  </Card>
+  <Card title="Threads" icon="arrows-split" href="/guides/multithreading">
+    Thread-safe callback patterns
+  </Card>
+</CardGroup>

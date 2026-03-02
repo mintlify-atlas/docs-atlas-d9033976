@@ -1,0 +1,374 @@
+---
+title: Menu Widgets
+description: Menu bars, popup menus, and choice widgets for hierarchical options
+---
+
+FLTK provides several menu widgets for presenting hierarchical options to users. All menu widgets use `Fl_Menu_Item` arrays to define menu structure.
+
+## Fl_Menu_Bar
+
+**Header:** `FL/Fl_Menu_Bar.H`
+
+A horizontal menu bar typically placed at the top of a window, similar to standard application menus.
+
+### Constructor
+
+```cpp
+Fl_Menu_Bar(int x, int y, int w, int h, const char *label = 0);
+```
+
+**Parameters:**
+- Typically positioned at `(0, 0)` with width matching window
+- Height should be around **30 pixels** for default font
+- Label usually not used (set to 0)
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="add() - Add Menu Items">
+    Add items to the menu using path notation.
+    
+    ```cpp
+    Fl_Menu_Bar *menu = new Fl_Menu_Bar(0, 0, 400, 30);
+    
+    // Simple items
+    menu->add("File/New");
+    menu->add("File/Open");
+    menu->add("File/Save");
+    menu->add("File/Quit");
+    
+    // With callbacks
+    menu->add("File/Save", FL_CTRL+'s', save_cb);
+    menu->add("Edit/Copy", FL_CTRL+'c', copy_cb);
+    
+    // Submenus
+    menu->add("Edit/Find/Find Next");
+    menu->add("Edit/Find/Replace");
+    
+    // Separator
+    menu->add("File/Recent Files", 0, 0, 0, FL_MENU_DIVIDER);
+    ```
+  </Accordion>
+
+  <Accordion title="value() - Get Selected Item">
+    Returns the last menu item picked by the user.
+    
+    ```cpp
+    const Fl_Menu_Item* value() const;
+    int value(int index);
+    int value(const Fl_Menu_Item *item);
+    
+    const Fl_Menu_Item *item = menu->value();
+    if (item) {
+      printf("Selected: %s\n", item->label());
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="find_item() - Locate Menu Item">
+    Find a menu item by its label path.
+    
+    ```cpp
+    Fl_Menu_Item *item = (Fl_Menu_Item*)menu->find_item("File/Save");
+    if (item) {
+      item->deactivate();  // Disable Save option
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="mode() - Item Flags">
+    Get or set menu item flags (checkmarks, radio buttons, inactive, etc.).
+    
+    ```cpp
+    // Set checkmark
+    menu->mode(menu->find_index("View/Show Grid"), FL_MENU_TOGGLE);
+    
+    // Check if item is checked
+    if (menu->mode(idx) & FL_MENU_VALUE) {
+      printf("Item is checked\n");
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Example from Source
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Menu_Bar.H>
+#include <FL/fl_ask.H>
+
+void menu_cb(Fl_Widget *w, void *) {
+  Fl_Menu_Bar *menu = (Fl_Menu_Bar*)w;
+  const Fl_Menu_Item *item = menu->mvalue();
+  if (!item) return;
+  
+  printf("Menu: %s\n", item->label());
+  
+  if (strcmp(item->label(), "Quit") == 0) {
+    exit(0);
+  }
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300, "Menu Example");
+  
+  Fl_Menu_Bar *menubar = new Fl_Menu_Bar(0, 0, 400, 30);
+  menubar->add("File/New",   FL_CTRL+'n', menu_cb);
+  menubar->add("File/Open",  FL_CTRL+'o', menu_cb);
+  menubar->add("File/Save",  FL_CTRL+'s', menu_cb);
+  menubar->add("File/Quit",  FL_CTRL+'q', menu_cb);
+  menubar->add("Edit/Cut",   FL_CTRL+'x', menu_cb);
+  menubar->add("Edit/Copy",  FL_CTRL+'c', menu_cb);
+  menubar->add("Edit/Paste", FL_CTRL+'v', menu_cb);
+  menubar->add("Help/About", 0, menu_cb);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Visual Description
+
+A Fl_Menu_Bar appears as a horizontal strip with top-level menu labels. Clicking a label drops down a vertical menu. Submenus appear to the right of parent items. Active items highlight on hover.
+
+## Fl_Menu_Button
+
+**Header:** `FL/Fl_Menu_Button.H`
+
+A button that pops up a menu when clicked. Useful for context menus and toolbar dropdowns.
+
+```cpp
+Fl_Menu_Button *popup = new Fl_Menu_Button(100, 50, 100, 30, "Options");
+popup->add("Copy");
+popup->add("Paste");
+popup->add("Delete");
+
+// Right-click popup menu
+popup->type(Fl_Menu_Button::POPUP3);  // Pops up on right-click
+```
+
+## Fl_Choice
+
+**Header:** `FL/Fl_Choice.H`
+
+A button that pops up a menu (similar to HTML `<select>`). Shows the currently selected item on the button face.
+
+### Constructor
+
+```cpp
+Fl_Choice(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Example
+
+```cpp
+Fl_Choice *choice = new Fl_Choice(100, 50, 150, 30, "Size:");
+choice->add("Small");
+choice->add("Medium");
+choice->add("Large");
+choice->add("Extra Large");
+choice->value(1);  // Select "Medium" (zero-based index)
+
+choice->callback([](Fl_Widget *w, void *) {
+  Fl_Choice *ch = (Fl_Choice*)w;
+  printf("Selected: %s (index %d)\n", ch->text(), ch->value());
+});
+```
+
+### Visual Description
+
+Displays as a button showing the current selection with a small down-arrow indicator. Clicking opens a vertical menu of options.
+
+## Menu Item Flags
+
+Menu items can have various flags set:
+
+```cpp
+FL_MENU_INACTIVE    // Grayed out, cannot select
+FL_MENU_TOGGLE      // Checkbox item (can be on/off)
+FL_MENU_VALUE       // Currently checked (for toggle items)
+FL_MENU_RADIO       // Radio button (one of group)
+FL_MENU_INVISIBLE   // Item not displayed
+FL_MENU_DIVIDER     // Horizontal separator after item
+FL_SUBMENU          // Item has submenu
+FL_SUBMENU_POINTER  // Submenu is pointer not array
+```
+
+### Using Flags
+
+```cpp
+// Add checkbox menu item
+menu->add("View/Show Toolbar", 0, toggle_cb, 0, FL_MENU_TOGGLE);
+
+// Add radio button group
+menu->add("Format/Left",   0, align_cb, (void*)0, FL_MENU_RADIO);
+menu->add("Format/Center", 0, align_cb, (void*)1, FL_MENU_RADIO);
+menu->add("Format/Right",  0, align_cb, (void*)2, FL_MENU_RADIO);
+menu->set_only(menu->find_item("Format/Left"));  // Select one
+
+// Add separator
+menu->add("File/Recent", 0, 0, 0, FL_MENU_DIVIDER);
+```
+
+## Menu Widget Gallery
+
+<CardGroup cols={2}>
+  <Card title="Menu Bar" icon="bars">
+    **Fl_Menu_Bar** - Application menu
+    
+    Horizontal bar with top-level items. Clicking opens drop-down submenus.
+    
+    **Use for:** Main application menus (File, Edit, View, etc.)
+  </Card>
+
+  <Card title="Menu Button" icon="ellipsis-vertical">
+    **Fl_Menu_Button** - Popup menu
+    
+    Button that shows menu when clicked. Can be left, middle, or right-click.
+    
+    **Use for:** Context menus, more options, toolbar dropdowns
+  </Card>
+
+  <Card title="Choice Widget" icon="caret-down">
+    **Fl_Choice** - Dropdown selector
+    
+    Shows current selection on button. Opens menu to change selection.
+    
+    **Use for:** Option pickers, single selection from list
+  </Card>
+
+  <Card title="Submenu" icon="arrow-right">
+    **Submenu Items** - Nested menus
+    
+    Menu items with arrows indicating deeper levels.
+    
+    **Use for:** Organizing related commands hierarchically
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Application Menu Bar
+
+```cpp
+Fl_Menu_Bar *menubar = new Fl_Menu_Bar(0, 0, win->w(), 30);
+
+// File menu
+menubar->add("&File/&New",        FL_CTRL+'n', new_cb);
+menubar->add("&File/&Open...",    FL_CTRL+'o', open_cb);
+menubar->add("&File/&Save",       FL_CTRL+'s', save_cb);
+menubar->add("&File/Save &As...", FL_CTRL+FL_SHIFT+'s', saveas_cb);
+menubar->add("&File/_", 0, 0, 0, FL_MENU_DIVIDER);  // Separator
+menubar->add("&File/&Quit",       FL_CTRL+'q', quit_cb);
+
+// Edit menu
+menubar->add("&Edit/&Undo",   FL_CTRL+'z', undo_cb);
+menubar->add("&Edit/&Cut",    FL_CTRL+'x', cut_cb);
+menubar->add("&Edit/C&opy",   FL_CTRL+'c', copy_cb);
+menubar->add("&Edit/&Paste",  FL_CTRL+'v', paste_cb);
+
+// View menu with checkboxes
+menubar->add("&View/&Toolbar", 0, toggle_cb, (void*)0, FL_MENU_TOGGLE|FL_MENU_VALUE);
+menubar->add("&View/&Statusbar", 0, toggle_cb, (void*)1, FL_MENU_TOGGLE|FL_MENU_VALUE);
+```
+
+### Context Menu
+
+```cpp
+class MyWidget : public Fl_Widget {
+  Fl_Menu_Button *context_menu;
+  
+public:
+  MyWidget(int x, int y, int w, int h) : Fl_Widget(x, y, w, h) {
+    context_menu = new Fl_Menu_Button(0, 0, 0, 0);
+    context_menu->type(Fl_Menu_Button::POPUP3);
+    context_menu->add("Cut", 0, cut_cb, this);
+    context_menu->add("Copy", 0, copy_cb, this);
+    context_menu->add("Paste", 0, paste_cb, this);
+  }
+  
+  int handle(int event) {
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE) {
+      const Fl_Menu_Item *m = context_menu->popup(Fl::event_x(), Fl::event_y());
+      if (m) m->do_callback(this, m->user_data());
+      return 1;
+    }
+    return Fl_Widget::handle(event);
+  }
+};
+```
+
+### Dynamic Menu Updates
+
+```cpp
+void update_recent_files(Fl_Menu_Bar *menu) {
+  // Remove old recent files
+  int idx = menu->find_index("File/Recent Files");
+  while (menu->text(idx+1) && strstr(menu->text(idx+1), "Recent")) {
+    menu->remove(idx+1);
+  }
+  
+  // Add new recent files
+  for (auto &file : recent_files) {
+    menu->insert(idx+1, file.c_str(), 0, open_recent_cb);
+  }
+}
+```
+
+### Choice with Callback
+
+```cpp
+Fl_Choice *language = new Fl_Choice(100, 50, 150, 30, "Language:");
+language->add("English");
+language->add("Español");
+language->add("Français");
+language->add("Deutsch");
+language->value(0);
+
+language->callback([](Fl_Widget *w, void *) {
+  Fl_Choice *ch = (Fl_Choice*)w;
+  switch(ch->value()) {
+    case 0: set_locale("en"); break;
+    case 1: set_locale("es"); break;
+    case 2: set_locale("fr"); break;
+    case 3: set_locale("de"); break;
+  }
+});
+```
+
+## Shortcuts and Accelerators
+
+```cpp
+// Keyboard shortcuts
+menu->add("File/Save", FL_CTRL + 's', save_cb);
+menu->add("File/Print", FL_CTRL + 'p', print_cb);
+menu->add("Help", FL_F + 1, help_cb);  // F1 key
+
+// Alt+key shortcuts using & in label
+menu->add("&File/&New");   // Alt+F opens File, Alt+N triggers New
+menu->add("&Edit/&Copy");  // Alt+E opens Edit, Alt+C triggers Copy
+```
+
+## Important Notes
+
+<Warning>
+  Menu items in an Fl_Menu_Bar are stored in a **single array**. Inserting or removing items invalidates any stored pointers to menu items.
+</Warning>
+
+<Info>
+  The **'&'** character in menu labels creates Alt+key shortcuts and underlines the following character on Windows/Linux. It's ignored on macOS.
+</Info>
+
+<Tip>
+  Use the **FL_BEFORE_MENU** event to update menu item states (enable/disable, check/uncheck) just before the menu displays. See `test/menubar.cxx` for examples.
+</Tip>
+
+## Reference
+
+- Source: `FL/Fl_Menu_Bar.H` (lines 25-106)
+- Source: `FL/Fl_Menu_Button.H`
+- Source: `FL/Fl_Choice.H` (lines 25-128)
+- Example: `test/menubar.cxx`

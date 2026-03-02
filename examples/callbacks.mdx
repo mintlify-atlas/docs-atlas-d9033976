@@ -1,0 +1,341 @@
+---
+title: Callback Patterns
+description: Advanced callback techniques including macros for custom parameters
+---
+
+## What This Example Demonstrates
+
+This example shows FLTK's modern callback system using callback macros:
+- Function callbacks with 0-5 custom parameters (not limited to void*)
+- Non-static method callbacks
+- Inline callbacks (lambda-style without C++11)
+- Type-safe parameter passing
+- Dynamic widget creation with independent callbacks
+
+This is a powerful feature for writing cleaner, more maintainable code.
+
+## Complete Source Code
+
+Source file: `examples/callbacks.cxx`
+
+```cpp
+#include <stdio.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+#include <FL/fl_callback_macros.H>
+
+Fl_Window *window = NULL;
+
+// Function callbacks with custom parameters
+void hello_0_args_cb() {
+  fl_message("Hello with 0 arguments");
+}
+
+void hello_2_args_cb(const char *text, int number) {
+  fl_message("Hello with 2 arguments,\n\"%s\" and '%d'", text, number);
+}
+
+void hello_4_args_cb(int a1, int a2, int a3, int a4) {
+  fl_message("Hello with 4 arguments:\n%d %d %d %d", a1, a2, a3, a4);
+}
+
+// Custom button class with method callbacks
+class MyButton : public Fl_Button {
+  int id_;  // instance variable
+public:
+  MyButton(int x, int y, int w, int h, const char *label, int id)
+  : Fl_Button(x, y, w, h, label), id_(id) { }
+  
+  // Non-static method - has access to instance variables
+  void hello(int a, int b, int c) {
+    fl_message("MyButton has the id %d\nand was called with the custom parameters\n%d, %d, and %d.", 
+               id_, a, b, c);
+  }
+};
+
+// Create buttons dynamically with independent callbacks
+void make_button(Fl_Window *win, int set) {
+  int y_lut[] = { 60, 90 };
+  const char *label_lut[] = { "id 2 (5, 6, 7)", "id 3 (6, 7, 8)" };
+  MyButton *btn = new MyButton(200, y_lut[set], 180, 25, label_lut[set], set+2);
+  FL_METHOD_CALLBACK_3(btn, MyButton, btn, hello, int, set+5, int, set+6, int, set+7);
+}
+
+int main(int argc, char ** argv) {
+  window = new Fl_Window(580, 120);
+
+  // Function callbacks with multiple arguments
+  new Fl_Box(10, 5, 180, 25, "Function Callbacks:");
+
+  Fl_Button *func_cb_btn_0 = new Fl_Button(10, 30, 180, 25, "0 args");
+  FL_FUNCTION_CALLBACK_0(func_cb_btn_0, hello_0_args_cb);
+
+  Fl_Button *func_cb_btn_2 = new Fl_Button(10, 60, 180, 25, "2 args");
+  FL_FUNCTION_CALLBACK_2(func_cb_btn_2, hello_2_args_cb, const char *, "FLTK", int, 2);
+
+  Fl_Button *func_cb_btn_4 = new Fl_Button(10, 90, 180, 25, "4 args");
+  FL_FUNCTION_CALLBACK_4(func_cb_btn_4, hello_4_args_cb, int, 1, int, 2, int, 3, int, 4);
+
+  // Non-static method callbacks
+  new Fl_Box(200, 5, 180, 25, "Method Callbacks:");
+
+  MyButton *meth_cb_btn_0 = new MyButton(200, 30, 180, 25, "id 1 (1, 2, 3)", 1);
+  FL_METHOD_CALLBACK_3(meth_cb_btn_0, MyButton, meth_cb_btn_0, hello, int, 1, int, 2, int, 3);
+
+  // Call macro multiple times to ensure individual parameter sets
+  make_button(window, 0);
+  make_button(window, 1);
+
+  // Inline callbacks (lambda-style)
+  new Fl_Box(390, 5, 180, 25, "Inline Callbacks:");
+
+  Fl_Button *inline_cb_btn_0 = new Fl_Button(390, 30, 180, 25, "0 args");
+  FL_INLINE_CALLBACK_0(inline_cb_btn_0,
+                       { fl_message("Inline callback with 0 args."); }
+                       );
+
+  Fl_Button *inline_cb_btn_2 = new Fl_Button(390, 60, 180, 25, "2 args");
+  FL_INLINE_CALLBACK_2(inline_cb_btn_2,
+                       const char *, text, "FLTK", int, number, 2,
+                       { fl_message("We received the message %s with %d!", text, number); }
+                       );
+
+  Fl_Button *inline_cb_btn_4 = new Fl_Button(390, 90, 180, 25, "4 args");
+  FL_INLINE_CALLBACK_4(inline_cb_btn_4,
+                       int, x, window->x(),
+                       int, y, window->y(),
+                       int, w, window->w(),
+                       int, h, window->h(),
+                       { fl_message("The main window was at\nx:%d, y:%d, w:%d, h:%d\n"
+                                    "when the callback was created\n"
+                                    "and is now at x:%d, y:%d", x, y, w, h,
+                                    window->x(), window->y());
+                       }
+                       );
+
+  window->end();
+  window->show(argc,argv);
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+fltk-config --compile callbacks.cxx
+```
+
+## Expected Behavior
+
+The program creates a window with three columns of buttons:
+
+1. **Function Callbacks**: Regular C functions with custom parameters
+2. **Method Callbacks**: Non-static class methods with access to instance data
+3. **Inline Callbacks**: Code blocks executed directly (like lambdas)
+
+Each button demonstrates passing different numbers of typed parameters.
+
+## Key Concepts
+
+### Traditional FLTK Callbacks (Limited)
+
+Traditional callbacks are limited to `void*` or `long` for user data:
+
+```cpp
+void old_style_cb(Fl_Widget *w, void *userdata) {
+  int *count = (int*)userdata;  // Requires casting
+  (*count)++;
+}
+
+int counter = 0;
+button->callback(old_style_cb, &counter);
+```
+
+### Modern Callback Macros (Flexible)
+
+New macros allow type-safe parameters:
+
+```cpp
+void modern_cb(const char *name, int age, double salary) {
+  fl_message("%s is %d years old and earns $%.2f", name, age, salary);
+}
+
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Info");
+FL_FUNCTION_CALLBACK_3(btn, modern_cb, 
+                       const char*, "Alice", 
+                       int, 30, 
+                       double, 75000.50);
+```
+
+### Function Callback Macros
+
+Available macros: `FL_FUNCTION_CALLBACK_0` through `FL_FUNCTION_CALLBACK_5`
+
+```cpp
+// Syntax for N parameters:
+FL_FUNCTION_CALLBACK_N(widget, function_name, 
+                       type1, value1, 
+                       type2, value2, 
+                       ...);
+
+// Examples:
+FL_FUNCTION_CALLBACK_0(btn, no_args_function);
+
+FL_FUNCTION_CALLBACK_1(btn, one_arg, int, 42);
+
+FL_FUNCTION_CALLBACK_3(btn, three_args, 
+                       const char*, "text", 
+                       int, 100, 
+                       bool, true);
+```
+
+### Method Callback Macros
+
+Call non-static methods with access to instance variables:
+
+```cpp
+class Counter : public Fl_Button {
+  int count;
+public:
+  Counter(int x, int y, int w, int h) : Fl_Button(x,y,w,h,"Click"), count(0) {}
+  
+  void increment(int amount) {
+    count += amount;
+    char buf[32];
+    snprintf(buf, sizeof(buf), "Count: %d", count);
+    copy_label(buf);
+  }
+};
+
+// Create and setup
+Counter *cnt = new Counter(10, 10, 100, 30);
+FL_METHOD_CALLBACK_1(cnt, Counter, cnt, increment, int, 5);
+// Syntax: widget, class_name, object, method, type, value, ...
+```
+
+### Inline Callbacks
+
+Like lambdas but C++98 compatible:
+
+```cpp
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Click");
+
+// Capture values at creation time
+int initial_x = window->x();
+
+FL_INLINE_CALLBACK_1(btn,
+                     int, x, initial_x,
+                     {
+                       fl_message("Window was at %d, now at %d", x, window->x());
+                     });
+```
+
+## Variations and Extensions
+
+### Comparing Old vs New Style
+
+**Old Style (Limited)**:
+```cpp
+void old_cb(Fl_Widget *w, void *data) {
+  // Only one void* parameter
+  // Need to pack multiple values into struct
+  MyData *d = (MyData*)data;
+  process(d->name, d->count);
+}
+```
+
+**New Style (Flexible)**:
+```cpp
+void new_cb(const char *name, int count) {
+  // Direct typed parameters, no casting
+  process(name, count);
+}
+
+FL_FUNCTION_CALLBACK_2(btn, new_cb, const char*, "Alice", int, 42);
+```
+
+### Dynamic Callbacks with Loops
+
+```cpp
+for (int i = 0; i < 10; i++) {
+  Fl_Button *btn = new Fl_Button(10, 10 + i*35, 100, 30);
+  char label[32];
+  snprintf(label, sizeof(label), "Button %d", i);
+  btn->copy_label(label);
+  
+  // Each button gets its own copy of 'i'
+  FL_INLINE_CALLBACK_1(btn, int, index, i, {
+    fl_message("You clicked button %d", index);
+  });
+}
+```
+
+### Complex Data Types
+
+```cpp
+#include <string>
+#include <vector>
+
+void process_data(std::string name, std::vector<int> numbers) {
+  printf("Processing %s with %zu numbers\n", name.c_str(), numbers.size());
+}
+
+std::vector<int> data = {1, 2, 3, 4, 5};
+
+FL_FUNCTION_CALLBACK_2(btn, process_data,
+                       std::string, "Dataset1",
+                       std::vector<int>, data);
+```
+
+### Combining with Traditional Callbacks
+
+You can mix old and new styles:
+
+```cpp
+// Traditional callback
+void traditional_cb(Fl_Widget *w, void *data) {
+  Fl_Button *btn = (Fl_Button*)w;
+  int *count = (int*)data;
+  (*count)++;
+}
+
+// Modern callback
+void modern_cb(int value) {
+  printf("Value: %d\n", value);
+}
+
+int counter = 0;
+button1->callback(traditional_cb, &counter);  // Old style
+
+FL_FUNCTION_CALLBACK_1(button2, modern_cb, int, 42);  // New style
+```
+
+### Accessing Widget in Callback
+
+Inline callbacks can access the widget:
+
+```cpp
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Toggle");
+
+FL_INLINE_CALLBACK_0(btn, {
+  // 'btn' is accessible in the inline callback
+  btn->label(btn->value() ? "ON" : "OFF");
+});
+```
+
+## Best Practices
+
+1. **Use type-safe macros** instead of void* when possible
+2. **Inline callbacks** are great for simple, widget-specific code
+3. **Method callbacks** work well for object-oriented designs
+4. **Function callbacks** are best for reusable logic
+5. **Parameters are copied** - use pointers/references for large objects
+
+## Next Steps
+
+- Learn about [threading](/examples/multithreading)
+- Explore [custom widgets](/examples/custom-widgets)
+- See [layout management](/examples/flex-layout)

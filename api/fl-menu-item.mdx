@@ -1,0 +1,571 @@
+---
+title: Fl_Menu_Item
+description: Menu item structure for defining menu hierarchies in FLTK
+---
+
+# Fl_Menu_Item
+
+The `Fl_Menu_Item` structure defines individual menu items used by menu widgets like `Fl_Menu_Bar`, `Fl_Menu_Button`, and `Fl_Choice`.
+
+## Header
+
+```cpp
+#include <FL/Fl_Menu_Item.H>
+```
+
+## Structure Definition
+
+The `Fl_Menu_Item` is a struct containing:
+
+```cpp
+struct Fl_Menu_Item {
+  const char*   text;         // Label text
+  int           shortcut_;    // Keyboard shortcut
+  Fl_Callback*  callback_;    // Callback function
+  void*         user_data_;   // User data passed to callback
+  int           flags;        // Menu item flags
+  uchar         labeltype_;   // Label rendering type
+  Fl_Font       labelfont_;   // Font for label
+  Fl_Fontsize   labelsize_;   // Font size
+  Fl_Color      labelcolor_;  // Label color
+};
+```
+
+## Menu Item Flags
+
+Flags control menu item appearance and behavior:
+
+| Flag | Value | Description |
+|------|-------|-------------|
+| `FL_MENU_INACTIVE` | 1 | Deactivate menu item (gray out) |
+| `FL_MENU_TOGGLE` | 2 | Item is a checkbox toggle (shows checkbox) |
+| `FL_MENU_VALUE` | 4 | On/off state for checkbox/radio buttons |
+| `FL_MENU_RADIO` | 8 | Item is a radio button |
+| `FL_MENU_INVISIBLE` | 0x10 | Item won't show up (shortcut still works) |
+| `FL_SUBMENU_POINTER` | 0x20 | user_data() is pointer to another menu array |
+| `FL_SUBMENU` | 0x40 | Item is a submenu to other items |
+| `FL_MENU_DIVIDER` | 0x80 | Creates divider line below item |
+| `FL_MENU_CHATTY` | 0x200 | Menu item receives additional callbacks |
+| `FL_MENU_HEADLINE` | 0x400 | Mark menu item as a headline |
+
+## Static Menu Definition
+
+Menus are typically defined as static arrays:
+
+```cpp
+Fl_Menu_Item popup[] = {
+  {"&alpha",    FL_ALT+'a', the_cb, (void*)1},
+  {"&beta",     FL_ALT+'b', the_cb, (void*)2},
+  {"gamma",     FL_ALT+'c', the_cb, (void*)3, FL_MENU_DIVIDER},
+  {"&strange",  0,          strange_cb},
+  {"sub&menu",  0,          0, 0, FL_SUBMENU},
+    {"one"},
+    {"two"},
+    {"three"},
+    {0},                    // End submenu
+  {"inactive",  FL_ALT+'i', 0, 0, FL_MENU_INACTIVE},
+  {"check",     FL_ALT+'k', 0, 0, FL_MENU_TOGGLE|FL_MENU_VALUE},
+  {0}                       // End menu
+};
+```
+
+<Note>
+  A submenu is identified by the `FL_SUBMENU` flag and ends with a NULL label. Menus can be nested to any depth.
+</Note>
+
+## Label and Text
+
+### label()
+
+Gets or sets the menu item's label text.
+
+```cpp
+const char* label() const;
+void label(const char* text);
+void label(Fl_Labeltype type, const char* text);
+```
+
+<ParamField path="text" type="const char*">
+  Label text to display. A `&` character creates an underscore under the next letter for keyboard shortcuts.
+</ParamField>
+
+<ParamField path="type" type="Fl_Labeltype">
+  Label type (e.g., `FL_NORMAL_LABEL`, `FL_EMBOSSED_LABEL`, `FL_IMAGE_LABEL`)
+</ParamField>
+
+**Example:**
+```cpp
+item.label("&File");              // Shows "File" with 'F' underlined
+item.label(FL_EMBOSSED_LABEL, "Bold Text");
+```
+
+### image_label()
+
+Sets the label to an image.
+
+```cpp
+void image_label(const Fl_Image *image);
+```
+
+<ParamField path="image" type="const Fl_Image*">
+  Image to display as the menu item label
+</ParamField>
+
+### multi_label()
+
+Sets the label to a multi-part label.
+
+```cpp
+void multi_label(const Fl_Multi_Label *ml);
+```
+
+<ParamField path="ml" type="const Fl_Multi_Label*">
+  Multi-label containing multiple parts (text, images, etc.)
+</ParamField>
+
+## Label Properties
+
+### labeltype()
+
+```cpp
+Fl_Labeltype labeltype() const;
+void labeltype(Fl_Labeltype type);
+```
+
+### labelcolor()
+
+```cpp
+Fl_Color labelcolor() const;
+void labelcolor(Fl_Color color);
+```
+
+### labelfont()
+
+```cpp
+Fl_Font labelfont() const;
+void labelfont(Fl_Font font);
+```
+
+### labelsize()
+
+```cpp
+Fl_Fontsize labelsize() const;
+void labelsize(Fl_Fontsize size);
+```
+
+## Shortcuts
+
+### shortcut()
+
+Gets or sets the keyboard shortcut.
+
+```cpp
+int shortcut() const;
+void shortcut(int s);
+```
+
+<ParamField path="s" type="int">
+  Logical OR of a key and shift flags:
+  - Key: Any value from `Fl::event_key()` (e.g., `'a'`, `FL_F+1`)
+  - Modifiers: `FL_ALT`, `FL_CTRL`, `FL_SHIFT`, `FL_COMMAND`
+</ParamField>
+
+**Example:**
+```cpp
+item.shortcut(FL_CTRL + 's');        // Ctrl+S
+item.shortcut(FL_ALT + FL_F + 4);    // Alt+F4
+item.shortcut(FL_COMMAND + 'q');     // Cmd+Q (Mac) or Ctrl+Q (others)
+```
+
+## Callbacks
+
+### callback()
+
+Gets or sets the callback function.
+
+```cpp
+Fl_Callback_p callback() const;
+void callback(Fl_Callback* cb);
+void callback(Fl_Callback* cb, void* userdata);
+void callback(Fl_Callback0* cb);
+void callback(Fl_Callback1* cb, long arg = 0);
+```
+
+<ParamField path="cb" type="Fl_Callback*">
+  Callback function to invoke when item is selected
+</ParamField>
+
+<ParamField path="userdata" type="void*">
+  User data passed to the callback
+</ParamField>
+
+<ParamField path="arg" type="long">
+  Long integer argument (cast to void* internally)
+</ParamField>
+
+### do_callback()
+
+Manually invokes the callback.
+
+```cpp
+void do_callback(Fl_Widget* widget, Fl_Callback_Reason reason = FL_REASON_UNKNOWN) const;
+void do_callback(Fl_Widget* widget, void* arg, Fl_Callback_Reason reason = FL_REASON_UNKNOWN) const;
+void do_callback(Fl_Widget* widget, long arg, Fl_Callback_Reason reason = FL_REASON_UNKNOWN) const;
+```
+
+<ParamField path="widget" type="Fl_Widget*">
+  Widget that opened the menu (passed to callback)
+</ParamField>
+
+<ParamField path="reason" type="Fl_Callback_Reason">
+  Reason for callback (e.g., `FL_REASON_SELECTED`, `FL_REASON_GOT_FOCUS`)
+</ParamField>
+
+## User Data
+
+### user_data()
+
+```cpp
+void* user_data() const;
+void user_data(void* data);
+```
+
+### argument()
+
+Convenience methods for long integer user data.
+
+```cpp
+long argument() const;
+void argument(long value);
+```
+
+## Item State
+
+### active()
+
+Checks or sets whether the item can be picked.
+
+```cpp
+int active() const;
+void activate();
+void deactivate();
+```
+
+**Example:**
+```cpp
+if (!item.active()) {
+  item.activate();  // Enable the item
+}
+```
+
+### visible()
+
+Checks or sets item visibility.
+
+```cpp
+int visible() const;
+void show();
+void hide();
+```
+
+### value()
+
+For checkbox and radio items, gets or sets the on/off state.
+
+```cpp
+int value() const;        // Returns 1 if checked, 0 otherwise
+void value(int v);
+void set();               // Turn on
+void clear();             // Turn off
+```
+
+**Example:**
+```cpp
+// Toggle checkbox
+Fl_Menu_Item checkbox[] = {
+  {"Option", 0, 0, 0, FL_MENU_TOGGLE},
+  {0}
+};
+
+checkbox[0].set();              // Check it
+if (checkbox[0].value()) {      // Check if checked
+  printf("Checked\n");
+}
+```
+
+### setonly()
+
+For radio items, turns this item on and adjacent radio items off.
+
+```cpp
+void setonly(Fl_Menu_Item const* first);
+```
+
+<ParamField path="first" type="Fl_Menu_Item const*">
+  Pointer to the first item in the menu array
+</ParamField>
+
+## Item Properties
+
+### checkbox()
+
+Returns true if item is a checkbox (toggle or radio).
+
+```cpp
+int checkbox() const;  // Returns non-zero if FL_MENU_TOGGLE is set
+```
+
+### radio()
+
+Returns true if item is a radio button.
+
+```cpp
+int radio() const;     // Returns non-zero if FL_MENU_RADIO is set
+```
+
+### submenu()
+
+Returns true if item is a submenu.
+
+```cpp
+int submenu() const;   // Returns non-zero if FL_SUBMENU or FL_SUBMENU_POINTER
+```
+
+### selectable()
+
+Returns true if item can be selected (not inactive, invisible, or headline).
+
+```cpp
+int selectable() const;
+```
+
+### headline()
+
+Gets or sets whether item is a headline (non-selectable but not grayed out).
+
+```cpp
+int headline() const;
+void headline(bool yes);
+```
+
+**Example:**
+```cpp
+Fl_Menu_Item menu[] = {
+  {"  Categories:  ", 0, 0, nullptr, FL_MENU_HEADLINE, 0, FL_BOLD},
+  {"Option 1"},
+  {"Option 2"},
+  {0}
+};
+menu[0].headline(true);
+```
+
+## Navigation
+
+### next()
+
+Advances through the menu array, skipping submenu contents.
+
+```cpp
+const Fl_Menu_Item* next(int n = 1) const;
+Fl_Menu_Item* next(int n = 1);
+```
+
+<ParamField path="n" type="int">
+  Number of items to advance (default: 1)
+</ParamField>
+
+### first()
+
+Returns the first menu item (same as `next(0)`).
+
+```cpp
+const Fl_Menu_Item* first() const;
+Fl_Menu_Item* first();
+```
+
+## Popup Methods
+
+### popup()
+
+Displays a popup menu at the specified position.
+
+```cpp
+const Fl_Menu_Item* popup(
+  int X, int Y,
+  const char *title = 0,
+  const Fl_Menu_Item* picked = 0,
+  const Fl_Menu_* = 0
+) const;
+```
+
+<ParamField path="X" type="int">
+  Screen X coordinate for menu position
+</ParamField>
+
+<ParamField path="Y" type="int">
+  Screen Y coordinate for menu position
+</ParamField>
+
+<ParamField path="title" type="const char*">
+  Optional title for the menu
+</ParamField>
+
+<ParamField path="picked" type="const Fl_Menu_Item*">
+  Item to be initially highlighted
+</ParamField>
+
+**Returns:** Pointer to the selected item, or NULL if none selected.
+
+### pulldown()
+
+Displays a pulldown menu.
+
+```cpp
+const Fl_Menu_Item* pulldown(
+  int X, int Y, int W, int H,
+  const Fl_Menu_Item* picked = 0,
+  const Fl_Menu_* = 0,
+  const Fl_Menu_Item* title = 0,
+  int menubar = 0
+) const;
+```
+
+## Adding Items Dynamically
+
+### add()
+
+Adds a menu item to the array.
+
+```cpp
+int add(const char* label, int shortcut, Fl_Callback* cb, void* userdata = 0, int flags = 0);
+int add(const char* label, const char* shortcut, Fl_Callback* cb, void* userdata = 0, int flags = 0);
+```
+
+<ParamField path="label" type="const char*">
+  Menu item label (use `/` to create submenus)
+</ParamField>
+
+<ParamField path="shortcut" type="int">
+  Keyboard shortcut combination
+</ParamField>
+
+<ParamField path="cb" type="Fl_Callback*">
+  Callback function
+</ParamField>
+
+<ParamField path="userdata" type="void*">
+  User data for callback
+</ParamField>
+
+<ParamField path="flags" type="int">
+  Menu item flags (e.g., `FL_MENU_TOGGLE`, `FL_MENU_DIVIDER`)
+</ParamField>
+
+**Example:**
+```cpp
+Fl_Menu_Item items[100];
+items[0].add("File/Open", FL_CTRL+'o', open_cb);
+items[0].add("File/Save", FL_CTRL+'s', save_cb, 0, FL_MENU_DIVIDER);
+items[0].add("File/Quit", FL_CTRL+'q', quit_cb);
+```
+
+### insert()
+
+Inserts a menu item at a specific index.
+
+```cpp
+int insert(int index, const char* label, int shortcut, Fl_Callback* cb, void* userdata = 0, int flags = 0);
+```
+
+<ParamField path="index" type="int">
+  Position to insert the item
+</ParamField>
+
+### size()
+
+Returns the number of items in the menu array.
+
+```cpp
+int size() const;
+```
+
+## Shortcut Testing
+
+### test_shortcut()
+
+Tests if the current event matches any menu item's shortcut.
+
+```cpp
+const Fl_Menu_Item* test_shortcut() const;
+```
+
+**Returns:** Pointer to the matching item, or NULL.
+
+### find_shortcut()
+
+Finds an item with the specified shortcut.
+
+```cpp
+const Fl_Menu_Item* find_shortcut(int *ip = 0, const bool require_alt = false) const;
+```
+
+<ParamField path="ip" type="int*">
+  Optional pointer to receive the item's index
+</ParamField>
+
+<ParamField path="require_alt" type="bool">
+  Whether ALT key must be pressed
+</ParamField>
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Menu_Bar.H>
+#include <stdio.h>
+
+void menu_cb(Fl_Widget*, void* data) {
+  printf("Menu item %ld selected\n", (long)data);
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(400, 300, "Menu Demo");
+  Fl_Menu_Bar *menu = new Fl_Menu_Bar(0, 0, 400, 25);
+  
+  // Static menu definition
+  static Fl_Menu_Item items[] = {
+    {"&File", 0, 0, 0, FL_SUBMENU},
+      {"&New",   FL_CTRL+'n', menu_cb, (void*)1},
+      {"&Open",  FL_CTRL+'o', menu_cb, (void*)2},
+      {"&Save",  FL_CTRL+'s', menu_cb, (void*)3, FL_MENU_DIVIDER},
+      {"&Quit",  FL_CTRL+'q', menu_cb, (void*)4},
+      {0},
+    {"&Edit", 0, 0, 0, FL_SUBMENU},
+      {"&Copy",  FL_CTRL+'c', menu_cb, (void*)5},
+      {"&Paste", FL_CTRL+'v', menu_cb, (void*)6},
+      {0},
+    {"&Options", 0, 0, 0, FL_SUBMENU},
+      {"Auto Save", 0, menu_cb, (void*)7, FL_MENU_TOGGLE},
+      {"Verbose",   0, menu_cb, (void*)8, FL_MENU_TOGGLE|FL_MENU_VALUE},
+      {0},
+    {0}
+  };
+  
+  menu->copy(items);
+  
+  // Dynamically add more items
+  menu->add("View/Zoom In", FL_CTRL+'+', menu_cb, (void*)9);
+  menu->add("View/Zoom Out", FL_CTRL+'-', menu_cb, (void*)10);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## See Also
+
+- [Fl_Menu_Bar](/api/fl-menu-bar) - Menu bar widget
+- [Fl_Menu_Button](/api/fl-menu-button) - Popup menu button widget
+- [Fl_Choice](/api/fl-choice-menu) - Dropdown choice widget

@@ -1,0 +1,427 @@
+---
+title: Fonts
+description: Font selection, measurement, and text rendering in FLTK
+---
+
+## Overview
+
+FLTK provides a portable font system that works across Windows, macOS, and Unix/Linux. Fonts are specified by family and size, with automatic platform mapping.
+
+## Standard Fonts
+
+### Built-in Font Constants
+
+```cpp
+// Sans-serif fonts (Helvetica/Arial)
+FL_HELVETICA              // Normal (0)
+FL_HELVETICA_BOLD         // Bold (1)
+FL_HELVETICA_ITALIC       // Italic (2)
+FL_HELVETICA_BOLD_ITALIC  // Bold italic (3)
+
+// Monospace fonts
+FL_COURIER                // Normal (4)
+FL_COURIER_BOLD           // Bold (5)
+FL_COURIER_ITALIC         // Italic (6)
+FL_COURIER_BOLD_ITALIC    // Bold italic (7)
+
+// Serif fonts (Times)
+FL_TIMES                  // Normal (8)
+FL_TIMES_BOLD             // Bold (9)
+FL_TIMES_ITALIC           // Italic (10)
+FL_TIMES_BOLD_ITALIC      // Bold italic (11)
+
+// Special fonts
+FL_SYMBOL                 // Symbol font (12)
+FL_SCREEN                 // Monospace screen font (13)
+FL_SCREEN_BOLD            // Bold screen font (14)
+FL_ZAPF_DINGBATS          // Dingbats (15)
+```
+
+### Font Modifiers
+
+```cpp
+// Add to base font for variants
+FL_BOLD        = 1
+FL_ITALIC      = 2
+FL_BOLD_ITALIC = 3
+
+// Examples
+Fl_Font bold_times = FL_TIMES + FL_BOLD;        // = FL_TIMES_BOLD
+Fl_Font italic_courier = FL_COURIER + FL_ITALIC; // = FL_COURIER_ITALIC
+```
+
+## Using Fonts
+
+### Setting Font
+
+```cpp
+#include <FL/fl_draw.H>
+
+// Set font and size
+fl_font(FL_HELVETICA, 14);
+fl_font(FL_COURIER_BOLD, 12);
+fl_font(FL_TIMES_ITALIC, 16);
+
+// Get current font
+Fl_Font face = fl_font();
+Fl_Fontsize size = fl_size();
+```
+
+### On Widgets
+
+```cpp
+Fl_Button *btn = new Fl_Button(10, 10, 100, 30, "Click");
+btn->labelfont(FL_HELVETICA_BOLD);
+btn->labelsize(16);
+
+Fl_Input *inp = new Fl_Input(10, 50, 200, 30);
+inp->textfont(FL_COURIER);
+inp->textsize(14);
+```
+
+## Font Metrics
+
+### Height and Spacing
+
+```cpp
+fl_font(FL_HELVETICA, 14);
+
+int height = fl_height();    // Total line height
+int descent = fl_descent();  // Pixels below baseline
+int ascent = height - descent;
+
+// For specific font without setting
+int h = fl_height(FL_TIMES, 18);
+```
+
+### Text Width
+
+<CodeGroup>
+```cpp String Width
+fl_font(FL_HELVETICA, 14);
+
+double w = fl_width("Hello World");
+```
+
+```cpp Substring Width
+// Width of first N bytes
+const char *text = "Hello World";
+double w = fl_width(text, 5);  // "Hello"
+```
+
+```cpp Single Character
+// Unicode code point
+double w = fl_width(0x20AC);  // € symbol
+double w = fl_width('A');
+```
+</CodeGroup>
+
+### Text Extents
+
+```cpp
+fl_font(FL_HELVETICA, 14);
+
+int dx, dy, w, h;
+fl_text_extents("Text", dx, dy, w, h);
+
+// dx, dy = offset from draw position to first pixel
+// w, h = bounding box dimensions
+
+// Example: draw text with border
+fl_text_extents(text, dx, dy, w, h);
+fl_rect(x + dx, y + dy, w, h);  // Exact bounding box
+fl_draw(text, x, y);
+```
+
+## Custom Fonts
+
+### Adding System Fonts
+
+```cpp
+// First free font slot
+Fl_Font my_font = FL_FREE_FONT;
+
+// Set font by system name
+Fl::set_font(my_font, "Comic Sans MS");  // Windows
+Fl::set_font(my_font, "Comic Sans");      // macOS  
+Fl::set_font(my_font, "Comic Sans MS");   // Linux
+
+// Use custom font
+fl_font(my_font, 14);
+```
+
+### Loading Font Files
+
+<Tabs>
+  <Tab title="Windows">
+    ```cpp
+    // Load TrueType font
+    AddFontResourceEx("myfont.ttf", FR_PRIVATE, 0);
+    Fl::set_font(FL_FREE_FONT, "My Font Name");
+    ```
+  </Tab>
+  
+  <Tab title="macOS">
+    ```cpp
+    // Register font with system
+    // Then use font PostScript name
+    Fl::set_font(FL_FREE_FONT, "MyFont-Regular");
+    ```
+  </Tab>
+  
+  <Tab title="X11">
+    ```cpp
+    // Use fontconfig
+    Fl::set_font(FL_FREE_FONT, "MyFont:style=Regular");
+    ```
+  </Tab>
+</Tabs>
+
+### Font Families
+
+```cpp
+// Get all available fonts
+int num_fonts = Fl::set_fonts(0);
+
+// Get all fonts with specific attributes
+num_fonts = Fl::set_fonts("-*");  // All fonts
+
+// Iterate available fonts
+for (int i = 0; i < num_fonts; i++) {
+  const char *name = Fl::get_font_name((Fl_Font)i);
+  int attributes = 0;
+  const char *pretty = Fl::get_font_name((Fl_Font)i, &attributes);
+  
+  // Check attributes
+  if (attributes & FL_BOLD) { /* bold */ }
+  if (attributes & FL_ITALIC) { /* italic */ }
+}
+```
+
+## Font Sizes
+
+### Standard Sizes
+
+```cpp
+// Normal size (typically 14)
+Fl_Fontsize normal = FL_NORMAL_SIZE;
+
+// Common sizes
+fl_font(FL_HELVETICA, 10);  // Small
+fl_font(FL_HELVETICA, 12);  // Medium
+fl_font(FL_HELVETICA, 14);  // Normal
+fl_font(FL_HELVETICA, 18);  // Large
+fl_font(FL_HELVETICA, 24);  // Heading
+```
+
+### Dynamic Sizing
+
+```cpp
+class ScalableWidget : public Fl_Widget {
+public:
+  void draw() override {
+    // Scale font with widget size
+    int size = h() / 3;  // Font size = 1/3 of height
+    fl_font(FL_HELVETICA, size);
+    fl_draw("Text", x(), y() + h()/2);
+  }
+};
+```
+
+## Text Alignment
+
+### Vertical Positioning
+
+```cpp
+fl_font(FL_HELVETICA, 14);
+
+int x = 100, y = 100;
+
+// Draw at baseline (default)
+fl_draw("Text", x, y);
+
+// Draw centered vertically
+int h = fl_height();
+int d = fl_descent();
+fl_draw("Text", x, y + h/2 - d);
+
+// Draw at top
+fl_draw("Text", x, y + h - d);
+```
+
+### Horizontal Centering
+
+```cpp
+const char *text = "Centered";
+int box_w = 200;
+
+double w = fl_width(text);
+int x = box_x + (box_w - w) / 2;
+fl_draw(text, x, y);
+```
+
+## UTF-8 Support
+
+### Unicode Text
+
+```cpp
+// FLTK uses UTF-8 encoding
+fl_draw("Hello 世界 🌍", x, y);
+
+// Measure UTF-8 text
+const char *utf8 = "Héllo";
+double w = fl_width(utf8);
+
+// Draw substring (byte count, not character count!)
+fl_draw(utf8, 6, x, y);  // "Hé" (6 bytes for 2 chars)
+```
+
+### Character Width
+
+```cpp
+// Get width of Unicode character
+unsigned int codepoint = 0x4E16;  // 世
+double w = fl_width(codepoint);
+```
+
+## Special Characters
+
+### Symbol Font
+
+```cpp
+fl_font(FL_SYMBOL, 16);
+
+// Draw mathematical symbols
+fl_draw("∑∫√∞", x, y);  // Requires proper encoding
+```
+
+### Dingbats
+
+```cpp
+fl_font(FL_ZAPF_DINGBATS, 16);
+
+// Decorative characters
+fl_draw("✓✗★☎", x, y);
+```
+
+## Performance Tips
+
+<Warning>
+Changing fonts frequently can impact performance. Cache measurements when possible.
+</Warning>
+
+```cpp
+class EfficientWidget : public Fl_Widget {
+  double cached_width;
+  int cached_height;
+  
+public:
+  EfficientWidget(int X, int Y, int W, int H, const char *L = 0)
+    : Fl_Widget(X, Y, W, H, L) {
+    // Cache measurements
+    fl_font(labelfont(), labelsize());
+    cached_width = fl_width(label());
+    cached_height = fl_height();
+  }
+  
+  void draw() override {
+    // Use cached values
+    int tx = x() + (w() - cached_width) / 2;
+    int ty = y() + (h() + cached_height) / 2 - fl_descent();
+    
+    fl_font(labelfont(), labelsize());
+    fl_draw(label(), tx, ty);
+  }
+};
+```
+
+## Platform Differences
+
+<Tabs>
+  <Tab title="Windows">
+    - Fonts mapped to TrueType fonts
+    - FL_HELVETICA → Arial
+    - FL_TIMES → Times New Roman
+    - FL_COURIER → Courier New
+    - Smooth text with ClearType
+  </Tab>
+  
+  <Tab title="macOS">
+    - Fonts mapped to system fonts
+    - FL_HELVETICA → Helvetica Neue
+    - FL_TIMES → Times
+    - FL_COURIER → Courier
+    - Retina display support
+  </Tab>
+  
+  <Tab title="X11">
+    - Uses Xft/fontconfig
+    - Font names are patterns
+    - FL_HELVETICA → "sans"
+    - FL_TIMES → "serif"
+    - FL_COURIER → "monospace"
+    - Subpixel antialiasing available
+  </Tab>
+</Tabs>
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Widget.H>
+#include <FL/fl_draw.H>
+
+class FontDemo : public Fl_Widget {
+public:
+  FontDemo(int X, int Y, int W, int H)
+    : Fl_Widget(X, Y, W, H) {}
+  
+  void draw() override {
+    fl_color(FL_WHITE);
+    fl_rectf(x(), y(), w(), h());
+    
+    int ypos = y() + 30;
+    
+    // Show different fonts
+    struct {
+      Fl_Font font;
+      const char *name;
+    } fonts[] = {
+      {FL_HELVETICA, "Helvetica Normal"},
+      {FL_HELVETICA_BOLD, "Helvetica Bold"},
+      {FL_COURIER, "Courier Normal"},
+      {FL_TIMES_ITALIC, "Times Italic"}
+    };
+    
+    fl_color(FL_BLACK);
+    
+    for (auto &f : fonts) {
+      fl_font(f.font, 14);
+      fl_draw(f.name, x() + 10, ypos);
+      ypos += fl_height() + 5;
+    }
+    
+    // Show size variations
+    ypos += 10;
+    fl_font(FL_HELVETICA, 10);
+    fl_draw("Size 10", x() + 10, ypos);
+    ypos += fl_height();
+    
+    fl_font(FL_HELVETICA, 14);
+    fl_draw("Size 14", x() + 10, ypos);
+    ypos += fl_height();
+    
+    fl_font(FL_HELVETICA, 18);
+    fl_draw("Size 18", x() + 10, ypos);
+  }
+};
+
+int main() {
+  Fl_Window win(300, 250, "Font Demo");
+  FontDemo demo(0, 0, 300, 250);
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```

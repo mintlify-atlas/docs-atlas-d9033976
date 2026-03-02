@@ -1,80 +1,462 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Build your first FLTK application in under 5 minutes
 ---
 
-## Get started in three steps
+# Quick start
 
-Get your documentation site running locally and make your first customization.
+Get up and running with FLTK in under 5 minutes. This guide walks you through creating a complete working application from scratch.
 
-### Step 1: Set up your local environment
+<Note>
+This guide assumes you have already [installed FLTK](/installation). If not, follow the installation guide first.
+</Note>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+## Your first FLTK application
+
+We'll create a simple application with a button that responds to clicks - a perfect introduction to FLTK's event-driven architecture.
+
+<Steps>
+  <Step title="Create the source file">
+    Create a new file called `hello.cxx`:
+
+    ```cpp hello.cxx
+    #include <FL/Fl.H>
+    #include <FL/Fl_Window.H>
+    #include <FL/Fl_Box.H>
+
+    int main(int argc, char **argv) {
+      Fl_Window *window = new Fl_Window(340, 180);
+      Fl_Box *box = new Fl_Box(20, 40, 300, 100, "Hello, World!");
+      box->box(FL_UP_BOX);
+      box->labelfont(FL_BOLD + FL_ITALIC);
+      box->labelsize(36);
+      box->labeltype(FL_SHADOW_LABEL);
+      window->end();
+      window->show(argc, argv);
+      return Fl::run();
+    }
+    ```
+
+    This creates a window with a styled text label.
+  </Step>
+
+  <Step title="Compile the application">
+    <Tabs>
+      <Tab title="Using CMake">
+        Create `CMakeLists.txt` in the same directory:
+
+        ```cmake CMakeLists.txt
+        cmake_minimum_required(VERSION 3.15)
+        project(hello)
+
+        # Point to your FLTK installation or build directory
+        set(FLTK_DIR "/usr/local" CACHE FILEPATH "FLTK directory")
+        
+        find_package(FLTK CONFIG REQUIRED)
+        
+        add_executable(hello WIN32 MACOSX_BUNDLE hello.cxx)
+        target_link_libraries(hello PRIVATE fltk::fltk)
+        ```
+
+        Build the application:
+        ```bash
+        cmake -B build
+        cmake --build build
+        ```
+
+        <Tip>
+        If FLTK isn't installed system-wide, set `FLTK_DIR` to your build directory:
+        ```bash
+        cmake -B build -D FLTK_DIR=/path/to/fltk/build
+        ```
+        </Tip>
+      </Tab>
+
+      <Tab title="Using fltk-config">
+        If you installed FLTK system-wide, use `fltk-config`:
+
+        **Linux/macOS:**
+        ```bash
+        fltk-config --compile hello.cxx
+        ```
+
+        Or manually:
+        ```bash
+        g++ hello.cxx $(fltk-config --cxxflags --ldflags) -o hello
+        ```
+
+        **Windows (MinGW):**
+        ```bash
+        g++ hello.cxx -I/path/to/fltk -L/path/to/fltk/lib \
+            -lfltk -lole32 -luuid -lcomctl32 -o hello.exe
+        ```
+      </Tab>
+
+      <Tab title="Manual compilation">
+        **Linux:**
+        ```bash
+        g++ hello.cxx \
+          -I/path/to/fltk \
+          -I/path/to/fltk/build \
+          -L/path/to/fltk/build/lib \
+          -lfltk -lX11 -lXext -lXft -lfontconfig -lpthread -ldl \
+          -o hello
+        ```
+
+        **macOS:**
+        ```bash
+        clang++ hello.cxx \
+          -I/path/to/fltk \
+          -I/path/to/fltk/build \
+          -L/path/to/fltk/build/lib \
+          -lfltk \
+          -framework Cocoa \
+          -o hello
+        ```
+
+        **Windows (Visual Studio):**
+        ```cmd
+        cl hello.cxx /I C:\path\to\fltk /I C:\path\to\fltk\build \
+           /link /LIBPATH:C:\path\to\fltk\build\lib fltk.lib
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Run the application">
+    ```bash
+    # Linux/macOS
+    ./build/hello
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    # Windows
+    .\build\Release\hello.exe
+    ```
+
+    You should see a window with "Hello, World!" displayed in a 3D box with shadow text.
+
+    <Frame>
+      <img src="/images/hello-world.png" alt="Hello World window" />
+    </Frame>
+  </Step>
+</Steps>
+
+## Add interactivity
+
+Let's enhance the application with a button that responds to clicks:
+
+```cpp button-demo.cxx
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+#include <FL/fl_ask.H>
+
+// Callback function executed when button is clicked
+void button_callback(Fl_Widget *widget, void *data) {
+  fl_message("Button clicked!");
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(320, 180, "Button Demo");
+  
+  // Create a button
+  Fl_Button *button = new Fl_Button(110, 70, 100, 40, "Click Me");
+  button->callback(button_callback);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+<Tip>
+The callback function is called whenever the button is clicked. You can pass custom data through the second parameter.
+</Tip>
+
+Compile and run the same way:
+
+```bash
+cmake -B build
+cmake --build build
+./build/button-demo
+```
+
+## Understanding the code
+
+Let's break down the key components:
+
+<CodeGroup>
+```cpp Headers
+#include <FL/Fl.H>           // Main FLTK header
+#include <FL/Fl_Window.H>    // Window class
+#include <FL/Fl_Button.H>    // Button widget
+```
+
+```cpp Window creation
+Fl_Window *window = new Fl_Window(320, 180, "Title");
+//                                 │    │     └─ Window title
+//                                 │    └─ Height in pixels  
+//                                 └─ Width in pixels
+```
+
+```cpp Widget creation
+Fl_Button *button = new Fl_Button(110, 70, 100, 40, "Click Me");
+//                                 │    │   │    │    └─ Label text
+//                                 │    │   │    └─ Height
+//                                 │    │   └─ Width
+//                                 │    └─ Y position
+//                                 └─ X position
+```
+
+```cpp Event handling
+button->callback(button_callback);
+//                └─ Function called when button clicked
+
+void button_callback(Fl_Widget *widget, void *data) {
+  // widget: pointer to the button that was clicked
+  // data: custom user data (optional)
+}
+```
+
+```cpp Event loop
+window->end();              // Stop adding widgets to window
+window->show(argc, argv);   // Display window
+return Fl::run();           // Enter event loop (blocks until all windows close)
+```
+</CodeGroup>
+
+## Common patterns
+
+### Layout management
+
+FLTK uses absolute positioning by default, but you can make layouts responsive:
+
+```cpp
+Fl_Window *window = new Fl_Window(400, 300, "Resizable");
+Fl_Box *box = new Fl_Box(20, 20, 360, 260, "Content");
+box->box(FL_DOWN_BOX);
+
+window->resizable(box);  // Make box resize with window
+window->end();
+window->show();
+```
+
+### Multiple widgets
+
+Widgets are automatically added to the current window:
+
+```cpp
+window->begin();  // Start adding widgets to window
+  Fl_Button *btn1 = new Fl_Button(20, 20, 80, 25, "Button 1");
+  Fl_Button *btn2 = new Fl_Button(20, 50, 80, 25, "Button 2");
+  Fl_Button *btn3 = new Fl_Button(20, 80, 80, 25, "Button 3");
+window->end();    // Stop adding widgets
+```
+
+### Passing data to callbacks
+
+```cpp
+struct AppData {
+  int counter;
+  Fl_Box *display;
+};
+
+void increment_callback(Fl_Widget *w, void *data) {
+  AppData *app = (AppData*)data;
+  app->counter++;
+  char buf[32];
+  sprintf(buf, "Count: %d", app->counter);
+  app->display->label(buf);
+}
+
+int main() {
+  AppData app = {0, nullptr};
+  
+  Fl_Window *win = new Fl_Window(200, 100);
+  app.display = new Fl_Box(20, 20, 160, 25, "Count: 0");
+  Fl_Button *btn = new Fl_Button(20, 50, 160, 30, "Increment");
+  btn->callback(increment_callback, &app);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+## Example programs
+
+FLTK includes dozens of example programs. After building FLTK with `FLTK_BUILD_EXAMPLES=ON`:
+
+```bash
+# View all examples
+ls build/bin/examples/
+
+# Try some examples
+./build/bin/examples/browser-simple
+./build/bin/examples/table-simple
+./build/bin/examples/menubar-add
+```
+
+Example source code is in `/path/to/fltk/examples/`.
+
+## Using FLUID designer
+
+FLUID is FLTK's visual interface designer. It generates C++ code from a visual layout:
+
+<Steps>
+  <Step title="Launch FLUID">
+    ```bash
+    ./build/bin/fluid
+    ```
+  </Step>
+
+  <Step title="Create interface">
+    1. File → New
+    2. Add widgets from the menu (e.g., New → Window)
+    3. Double-click widgets to set properties
+    4. Drag to position and resize
+  </Step>
+
+  <Step title="Generate code">
+    1. Save as `myapp.fl`
+    2. FLUID generates `myapp.cxx` and `myapp.h`
+    3. Include in your project:
+    ```cpp
+    #include "myapp.h"
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    int main() {
+      make_window()->show();
+      return Fl::run();
+    }
+    ```
+  </Step>
+</Steps>
 
-### Step 2: Deploy your changes
+## Project templates
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+### CMake template
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+A complete CMake project structure:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+```
+myapp/
+├── CMakeLists.txt
+├── src/
+│   └── main.cxx
+└── include/
+    └── myapp.h
+```
 
-### Step 3: Go live
+```cmake CMakeLists.txt
+cmake_minimum_required(VERSION 3.15)
+project(MyApp VERSION 1.0)
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find FLTK
+find_package(FLTK CONFIG REQUIRED)
+
+# Add executable
+add_executable(myapp WIN32 MACOSX_BUNDLE
+  src/main.cxx
+)
+
+target_include_directories(myapp PRIVATE include)
+target_link_libraries(myapp PRIVATE fltk::fltk)
+
+# For images/OpenGL support:
+# target_link_libraries(myapp PRIVATE fltk::images fltk::gl)
+```
+
+### Makefile template
+
+For simple projects without CMake:
+
+```makefile Makefile
+CXX = g++
+CXXFLAGS = $(shell fltk-config --cxxflags)
+LDFLAGS = $(shell fltk-config --ldflags)
+
+TARGET = myapp
+SOURCES = main.cxx window.cxx
+OBJECTS = $(SOURCES:.cxx=.o)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+%.o: %.cxx
+	$(CXX) $(CXXFLAGS) -c $<
+
+clean:
+	rm -f $(OBJECTS) $(TARGET)
+
+.PHONY: all clean
+```
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Hello world deep dive" icon="magnifying-glass" href="/hello-world">
+    Detailed explanation of FLTK program structure
+  </Card>
+  <Card title="API reference" icon="book" href="/api/fl">
+    Complete documentation for all FLTK classes
+  </Card>
+  <Card title="Widget gallery" icon="grid" href="/widgets/overview">
+    Explore all available widgets with examples
+  </Card>
+  <Card title="Examples" icon="code" href="/examples">
+    Browse real-world FLTK example programs
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Linker errors about missing symbols">
+    Make sure you're linking all required libraries:
+    
+    ```bash
+    # For basic apps
+    target_link_libraries(myapp PRIVATE fltk::fltk)
+    
+    # If using images
+    target_link_libraries(myapp PRIVATE fltk::images)
+    
+    # If using OpenGL
+    target_link_libraries(myapp PRIVATE fltk::gl)
+    ```
+  </Accordion>
+
+  <Accordion title="Cannot find FL/Fl.H">
+    Ensure your include paths are correct:
+    
+    ```bash
+    # With CMake, fltk::fltk target handles this automatically
+    
+    # Manual compilation - include both source and build dirs
+    g++ -I/path/to/fltk -I/path/to/fltk/build ...
+    ```
+  </Accordion>
+
+  <Accordion title="Window doesn't appear">
+    Always call these in order:
+    
+    ```cpp
+    window->end();        // First
+    window->show();       // Second
+    return Fl::run();     // Third - enter event loop
+    ```
+  </Accordion>
+
+  <Accordion title="Callback not called">
+    Make sure you:
+    
+    1. Assigned the callback: `widget->callback(my_callback);`
+    2. Entered event loop: `Fl::run();`
+    3. Widget is visible and not disabled
+  </Accordion>
+</AccordionGroup>

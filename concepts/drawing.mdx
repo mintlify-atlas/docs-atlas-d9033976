@@ -1,0 +1,581 @@
+---
+title: Drawing
+description: Custom graphics and drawing operations in FLTK
+---
+
+FLTK provides a comprehensive set of drawing functions in `FL/fl_draw.H` for creating custom graphics, from simple shapes to complex drawings. All drawing must occur within a widget's `draw()` method or when a window is current.
+
+## Drawing Context
+
+Before drawing, ensure you have a valid graphics context:
+
+```cpp
+class My_Widget : public Fl_Widget {
+public:
+  My_Widget(int X, int Y, int W, int H, const char *L = 0)
+    : Fl_Widget(X, Y, W, H, L) {}
+  
+  void draw() override {
+    // Drawing code goes here
+    // Widget's box and label are drawn automatically if needed
+    
+    // Draw widget box and background
+    draw_box();
+    
+    // Custom drawing
+    fl_color(FL_BLACK);
+    fl_rect(x(), y(), w(), h());
+    
+    // Draw widget label
+    draw_label();
+  }
+};
+```
+
+<Note>
+  All drawing coordinates are relative to the window, not the widget. Use `x()`, `y()`, `w()`, `h()` to get widget bounds.
+</Note>
+
+## Colors
+
+From `FL/fl_draw.H:40-76`, set colors before drawing:
+
+<Tabs>
+  <Tab title="Named Colors">
+    ```cpp
+    fl_color(FL_BLACK);
+    fl_color(FL_WHITE);
+    fl_color(FL_RED);
+    fl_color(FL_GREEN);
+    fl_color(FL_BLUE);
+    fl_color(FL_YELLOW);
+    fl_color(FL_CYAN);
+    fl_color(FL_MAGENTA);
+    fl_color(FL_GRAY);
+    ```
+  </Tab>
+  
+  <Tab title="RGB Colors">
+    ```cpp
+    // RGB color (0-255 for each component)
+    fl_color(200, 220, 240);
+    
+    // Or use fl_rgb_color helper
+    Fl_Color c = fl_rgb_color(200, 220, 240);
+    fl_color(c);
+    
+    // Grayscale
+    Fl_Color gray = fl_rgb_color(128);
+    fl_color(gray);
+    ```
+  </Tab>
+  
+  <Tab title="Color Utilities">
+    ```cpp
+    // Lighter/darker versions
+    fl_color(fl_lighter(FL_BLUE));
+    fl_color(fl_darker(FL_RED));
+    
+    // Average two colors
+    Fl_Color mix = fl_color_average(FL_RED, FL_BLUE, 0.5);
+    
+    // Inactive color
+    fl_color(fl_inactive(FL_BLACK));
+    
+    // Get current color
+    Fl_Color current = fl_color();
+    ```
+  </Tab>
+</Tabs>
+
+## Basic Shapes
+
+### Rectangles
+
+From `FL/fl_draw.H:292-392`:
+
+<CodeGroup>
+```cpp Outlines
+// Draw rectangle outline
+fl_rect(x, y, w, h);
+
+// Rounded rectangle outline
+fl_rounded_rect(x, y, w, h, radius);
+
+// Focus rectangle (dotted)
+fl_focus_rect(x, y, w, h);
+
+// Colored outline
+fl_rect(x, y, w, h, FL_RED);
+```
+
+```cpp Filled
+// Fill rectangle
+fl_rectf(x, y, w, h);
+
+// Rounded filled rectangle
+fl_rounded_rectf(x, y, w, h, radius);
+
+// Colored fill
+fl_rectf(x, y, w, h, FL_BLUE);
+
+// RGB fill (exact color)
+fl_rectf(x, y, w, h, r, g, b);
+```
+</CodeGroup>
+
+### Lines
+
+From `FL/fl_draw.H:394-476`:
+
+```cpp
+// Simple line
+fl_line(x1, y1, x2, y2);
+
+// Connected lines
+fl_line(x1, y1, x2, y2, x3, y3);
+
+// Horizontal line
+fl_xyline(x1, y, x2);
+
+// Horizontal then vertical
+fl_xyline(x1, y1, x2, y2);
+
+// H-V-H pattern
+fl_xyline(x1, y1, x2, y2, x3);
+
+// Vertical line
+fl_yxline(x, y1, y2);
+
+// Vertical then horizontal
+fl_yxline(x1, y1, y2, x2);
+
+// V-H-V pattern
+fl_yxline(x1, y1, y2, x2, y3);
+```
+
+### Line Styles
+
+From `FL/fl_draw.H:209-276`, customize line appearance:
+
+```cpp
+// Line style parameters
+enum {
+  FL_SOLID      = 0,    // Solid line
+  FL_DASH       = 1,    // Dashed line
+  FL_DOT        = 2,    // Dotted line
+  FL_DASHDOT    = 3,    // Dash-dot pattern
+  FL_DASHDOTDOT = 4,    // Dash-dot-dot pattern
+  
+  FL_CAP_FLAT   = 0x100,   // Flat line ends
+  FL_CAP_ROUND  = 0x200,   // Round line ends
+  FL_CAP_SQUARE = 0x300,   // Square line ends
+  
+  FL_JOIN_MITER = 0x1000,  // Sharp corners
+  FL_JOIN_ROUND = 0x2000,  // Round corners
+  FL_JOIN_BEVEL = 0x3000   // Beveled corners
+};
+
+// Set line style
+fl_line_style(FL_SOLID, 1);  // Default
+fl_line_style(FL_DASH, 2);   // 2-pixel dashed
+fl_line_style(FL_DOT | FL_CAP_ROUND, 3);
+
+// Custom dash pattern
+char dashes[] = {10, 5, 2, 5, 0};  // 10 on, 5 off, 2 on, 5 off
+fl_line_style(FL_DASH, 1, dashes);
+
+// Reset to default
+fl_line_style(0);
+```
+
+<Warning>
+  Always reset line style to default with `fl_line_style(0)` when done, or FLTK's frame and box drawing will break.
+</Warning>
+
+### Circles and Arcs
+
+<Tabs>
+  <Tab title="Integer Coords">
+    From `FL/fl_draw.H:478-526`, fast integer circle drawing:
+    
+    ```cpp
+    // Arc outline (angles in degrees from 3 o'clock)
+    fl_arc(x, y, w, h, start_angle, end_angle);
+    fl_arc(100, 100, 50, 50, 0, 180);  // Half circle
+    
+    // Filled pie slice
+    fl_pie(x, y, w, h, start_angle, end_angle);
+    fl_pie(100, 100, 50, 50, 45, 135);  // Quarter pie
+    ```
+  </Tab>
+  
+  <Tab title="Floating Point">
+    From `FL/fl_draw.H:528-686`, precise floating-point drawing:
+    
+    ```cpp
+    // Must use with vertex system
+    fl_begin_line();
+    fl_arc(center_x, center_y, radius, start_angle, end_angle);
+    fl_end_line();
+    
+    // Full circle
+    fl_begin_polygon();
+    fl_circle(center_x, center_y, radius);
+    fl_end_polygon();
+    ```
+  </Tab>
+</Tabs>
+
+### Polygons
+
+From `FL/fl_draw.H:408-434`:
+
+```cpp
+// Outlined polygons
+fl_loop(x1, y1, x2, y2, x3, y3);           // Triangle
+fl_loop(x1, y1, x2, y2, x3, y3, x4, y4);   // Quad
+
+// Filled polygons (must be convex)
+fl_polygon(x1, y1, x2, y2, x3, y3);
+fl_polygon(x1, y1, x2, y2, x3, y3, x4, y4);
+```
+
+## Complex Shapes
+
+From `FL/fl_draw.H:593-741`, use the vertex system for complex drawings:
+
+<Steps>
+  <Step title="Begin Shape">
+    ```cpp
+    // Choose drawing mode
+    fl_begin_points();    // Individual points
+    fl_begin_line();      // Connected lines
+    fl_begin_loop();      // Closed line loop
+    fl_begin_polygon();   // Filled polygon
+    ```
+  </Step>
+  
+  <Step title="Add Vertices">
+    ```cpp
+    // Add points
+    fl_vertex(x1, y1);
+    fl_vertex(x2, y2);
+    fl_vertex(x3, y3);
+    
+    // Add curved segments
+    fl_curve(x0, y0, x1, y1, x2, y2, x3, y3);
+    
+    // Add arc
+    fl_arc(center_x, center_y, radius, start, end);
+    
+    // Add circle
+    fl_circle(center_x, center_y, radius);
+    ```
+  </Step>
+  
+  <Step title="End Shape">
+    ```cpp
+    // Finish and draw
+    fl_end_points();
+    fl_end_line();
+    fl_end_loop();
+    fl_end_polygon();
+    ```
+  </Step>
+</Steps>
+
+### Complex Polygon Example
+
+```cpp
+// Draw a star
+void draw_star(int cx, int cy, int r) {
+  fl_begin_polygon();
+  for (int i = 0; i < 10; i++) {
+    double angle = i * M_PI / 5;
+    double radius = (i % 2) ? r/2 : r;
+    fl_vertex(cx + radius * cos(angle),
+              cy + radius * sin(angle));
+  }
+  fl_end_polygon();
+}
+```
+
+## Transformations
+
+From `FL/fl_draw.H:528-591`, apply transformations to drawings:
+
+```cpp
+// Save current transformation
+fl_push_matrix();
+
+// Apply transformations
+fl_translate(dx, dy);           // Move origin
+fl_scale(sx, sy);              // Scale
+fl_scale(s);                   // Uniform scale
+fl_rotate(degrees);            // Rotate (degrees, not radians)
+
+// Or set complete matrix
+fl_mult_matrix(a, b, c, d, x, y);
+
+// Draw with transformations
+fl_rect(0, 0, 100, 50);
+
+// Restore transformation
+fl_pop_matrix();
+```
+
+<Accordion title="Transformation Example">
+```cpp
+void draw() override {
+  draw_box();
+  
+  fl_push_matrix();
+  
+  // Move to center
+  fl_translate(x() + w()/2, y() + h()/2);
+  
+  // Rotate 45 degrees
+  fl_rotate(45);
+  
+  // Draw rotated rectangle centered at origin
+  fl_color(FL_RED);
+  fl_rectf(-25, -25, 50, 50);
+  
+  fl_pop_matrix();
+}
+```
+</Accordion>
+
+## Text Drawing
+
+From `FL/fl_draw.H:802-1063`:
+
+<CodeGroup>
+```cpp Basic Text
+// Set font first
+fl_font(FL_HELVETICA, 14);
+
+// Draw text at position
+fl_draw("Hello World", x, y);
+
+// Draw with length
+fl_draw(text, length, x, y);
+
+// Rotated text (degrees counter-clockwise)
+fl_draw(45, "Rotated", x, y);
+```
+
+```cpp Text Metrics
+// Set font
+fl_font(FL_COURIER, 12);
+
+// Get text width
+double w = fl_width("Text");
+
+// Get character width
+double cw = fl_width('A');
+
+// Get font metrics
+int height = fl_height();
+int descent = fl_descent();
+
+// Get text bounding box
+int dx, dy, w, h;
+fl_text_extents("Text", dx, dy, w, h);
+```
+
+```cpp Fonts
+// Standard fonts
+fl_font(FL_HELVETICA, 14);
+fl_font(FL_HELVETICA_BOLD, 14);
+fl_font(FL_HELVETICA_ITALIC, 14);
+fl_font(FL_COURIER, 12);
+fl_font(FL_COURIER_BOLD, 12);
+fl_font(FL_TIMES, 14);
+fl_font(FL_TIMES_BOLD, 14);
+fl_font(FL_SYMBOL, 14);
+
+// Get current font
+Fl_Font font = fl_font();
+Fl_Fontsize size = fl_size();
+```
+</CodeGroup>
+
+## Images
+
+From `FL/fl_draw.H:1087-1193`, draw raw image data:
+
+```cpp
+// RGB image data (3 bytes per pixel)
+uchar *rgb_data = get_rgb_data();
+fl_draw_image(rgb_data, x, y, w, h);
+
+// With custom stride
+fl_draw_image(rgb_data, x, y, w, h, 
+              3,    // bytes per pixel (RGB)
+              0);   // line stride (0 = w*3)
+
+// Grayscale image (1 byte per pixel)
+uchar *gray_data = get_gray_data();
+fl_draw_image_mono(gray_data, x, y, w, h);
+
+// Draw with callback (for on-demand generation)
+void image_cb(void *data, int x, int y, int w, uchar *buf) {
+  // Fill buf with scanline data
+  // buf must be filled with w pixels starting at x,y
+}
+
+fl_draw_image(image_cb, userdata, x, y, w, h, 3);
+```
+
+## Clipping
+
+From `FL/fl_draw.H:82-197`, restrict drawing to regions:
+
+```cpp
+// Push clip region
+fl_push_clip(x, y, w, h);
+
+// Drawing is clipped to this rectangle
+fl_rectf(0, 0, 1000, 1000);  // Only visible in clip region
+
+// Pop clip region
+fl_pop_clip();
+
+// Check if rectangle is visible
+if (fl_not_clipped(x, y, w, h)) {
+  // At least part is visible
+}
+
+// Get clipped bounding box
+int cx, cy, cw, ch;
+if (fl_clip_box(x, y, w, h, cx, cy, cw, ch)) {
+  // Rectangle was clipped, use cx,cy,cw,ch
+}
+```
+
+## Drawing Helper Functions
+
+```cpp
+// Draw single pixel
+fl_point(x, y);
+
+// Draw widget box
+fl_draw_box(FL_UP_BOX, x, y, w, h, FL_GRAY);
+
+// Draw check mark
+fl_draw_check(Fl_Rect(x, y, w, h), FL_BLACK);
+
+// Draw arrow
+fl_draw_arrow(Fl_Rect(x, y, w, h), 
+              FL_ARROW_SINGLE,    // Arrow type
+              FL_ORIENT_UP,       // Direction
+              FL_BLACK);          // Color
+
+// Draw radio button
+fl_draw_radio(x, y, size, FL_BLACK);
+
+// Draw filled circle
+fl_draw_circle(x, y, diameter, FL_RED);
+```
+
+## Offscreen Drawing
+
+Create and draw to offscreen buffers:
+
+```cpp
+// Create offscreen buffer
+Fl_Offscreen offscreen = fl_create_offscreen(width, height);
+
+// Draw to offscreen
+fl_begin_offscreen(offscreen);
+fl_color(FL_WHITE);
+fl_rectf(0, 0, width, height);
+fl_color(FL_BLACK);
+fl_line(0, 0, width, height);
+fl_end_offscreen();
+
+// Copy to screen
+fl_copy_offscreen(x, y, width, height, offscreen, 0, 0);
+
+// Clean up
+fl_delete_offscreen(offscreen);
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Minimize Redrawing">
+    Only redraw what changed:
+    ```cpp
+    void draw() override {
+      if (damage() & FL_DAMAGE_ALL) {
+        // Full redraw
+        draw_box();
+        draw_content();
+      } else if (damage() & FL_DAMAGE_CHILD) {
+        // Only children changed
+        Fl_Group::draw();
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Reset Drawing State">
+    Always reset line styles and transformations:
+    ```cpp
+    void draw() override {
+      fl_push_matrix();
+      fl_line_style(FL_DASH, 2);
+      
+      // ... drawing ...
+      
+      fl_line_style(0);  // Reset
+      fl_pop_matrix();
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Use Double Buffering">
+    For smooth animation, use Fl_Double_Window:
+    ```cpp
+    class Animated : public Fl_Double_Window {
+      void draw() override {
+        // No flicker with double buffering
+        draw_animation_frame();
+      }
+    };
+    ```
+  </Accordion>
+  
+  <Accordion title="Optimize with Clipping">
+    Use clipping to skip invisible drawing:
+    ```cpp
+    void draw() override {
+      int cx, cy, cw, ch;
+      if (!fl_clip_box(x(), y(), w(), h(), cx, cy, cw, ch)) {
+        return;  // Completely clipped
+      }
+      // Draw only visible region
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Widgets" icon="cube" href="/concepts/widgets">
+    Create custom widgets with drawing
+  </Card>
+  <Card title="Events" icon="bolt" href="/concepts/events">
+    Handle mouse and keyboard in drawings
+  </Card>
+  <Card title="Images" icon="image" href="/api-reference/images">
+    Work with image classes
+  </Card>
+  <Card title="Windows" icon="window" href="/concepts/windows">
+    Drawing in window contexts
+  </Card>
+</CardGroup>

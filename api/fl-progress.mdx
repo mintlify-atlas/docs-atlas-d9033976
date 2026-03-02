@@ -1,0 +1,366 @@
+---
+title: Fl_Progress
+description: API reference for the Fl_Progress class in FLTK
+---
+
+# Fl_Progress
+
+The `Fl_Progress` widget displays a progress bar to show the completion status of an operation. It's ideal for providing visual feedback during long-running tasks.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Progress.H>
+```
+
+## Class Overview
+
+`Fl_Progress` is a simple widget for displaying progress as a filled bar. Features include:
+
+- Configurable minimum and maximum values
+- Current value displayed as a filled portion
+- Customizable colors for bar and background
+- Optional text label showing percentage or custom text
+- Horizontal orientation
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Progress
+```
+
+Inherits from: `Fl_Widget`
+
+## Constructor
+
+```cpp
+Fl_Progress(int x, int y, int w, int h, const char *l = 0)
+```
+
+Creates a new progress bar widget.
+
+<ParamField path="x" type="int">
+  The X coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="y" type="int">
+  The Y coordinate of the widget relative to the enclosing window
+</ParamField>
+
+<ParamField path="w" type="int">
+  Width of the progress bar in pixels
+</ParamField>
+
+<ParamField path="h" type="int">
+  Height of the progress bar in pixels
+</ParamField>
+
+<ParamField path="l" type="const char*" default="nullptr">
+  Optional label text (often used to display percentage)
+</ParamField>
+
+## Public Methods
+
+### maximum()
+
+```cpp
+float maximum() const
+void maximum(float v)
+```
+
+Gets or sets the maximum value for the progress bar.
+
+<ParamField path="v" type="float">
+  Maximum value (typically 1.0 for 0-100% or 100 for percentage values)
+</ParamField>
+
+**Returns:** For getter, the current maximum value
+
+### minimum()
+
+```cpp
+float minimum() const
+void minimum(float v)
+```
+
+Gets or sets the minimum value for the progress bar.
+
+<ParamField path="v" type="float">
+  Minimum value (typically 0.0)
+</ParamField>
+
+**Returns:** For getter, the current minimum value
+
+### value()
+
+```cpp
+float value() const
+void value(float v)
+```
+
+Gets or sets the current value of the progress bar.
+
+<ParamField path="v" type="float">
+  Current progress value (between minimum and maximum)
+</ParamField>
+
+**Returns:** For getter, the current value
+
+<Note>
+Setting the value automatically calls `redraw()` to update the display.
+</Note>
+
+## Protected Methods
+
+### draw()
+
+```cpp
+void draw() override
+```
+
+Draws the progress bar with current value. Called automatically by FLTK.
+
+## Inherited Methods
+
+From `Fl_Widget`, commonly used methods include:
+
+- `color()` / `color(Fl_Color)` - Background color
+- `selection_color()` / `selection_color(Fl_Color)` - Progress bar fill color
+- `labelcolor()` / `labelcolor(Fl_Color)` - Text color for percentage label
+- `box()` / `box(Fl_Boxtype)` - Border/box style
+- `label()` / `label(const char*)` - Text displayed on the bar
+
+## Usage Example
+
+From `examples/progress-simple.cxx`:
+
+```cpp
+#include <stdio.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Progress.H>
+
+#ifdef _WIN32
+#include <windows.h>
+#define usleep(v) Sleep(v/1000)
+#else
+#include <unistd.h>
+#endif
+
+void butt_cb(Fl_Widget *butt, void *data) {
+  // Deactivate the button
+  butt->deactivate();
+  Fl::check();
+  
+  // Create progress bar
+  Fl_Window *w = (Fl_Window*)data;
+  w->begin();
+  Fl_Progress *progress = new Fl_Progress(10, 50, 200, 30);
+  progress->minimum(0);
+  progress->maximum(1);
+  progress->color(0x88888800);            // Background color
+  progress->selection_color(0x4444ff00);  // Progress bar color
+  progress->labelcolor(FL_WHITE);         // Percent text color
+  w->end();
+  
+  // Computation loop
+  for (int t = 1; t <= 500; t++) {
+    progress->value(float(t / 500.0));
+    
+    // Update label with percentage
+    char percent[10];
+    sprintf(percent, "%d%%", int((t / 500.0) * 100.0));
+    progress->label(percent);
+    
+    Fl::check();  // Update screen
+    usleep(1000); // Simulate work
+  }
+  
+  // Cleanup
+  w->remove(progress);
+  delete progress;
+  butt->activate();
+  w->redraw();
+}
+
+int main() {
+  Fl_Window win(220, 90);
+  Fl_Button butt(10, 10, 100, 25, "Press");
+  butt.callback(butt_cb, &win);
+  win.resizable(win);
+  win.show();
+  return Fl::run();
+}
+```
+
+## File Download Progress Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Box.H>
+#include <stdio.h>
+
+Fl_Progress *progress;
+Fl_Box *status_label;
+float downloaded = 0;
+float total_size = 100.0;  // MB
+
+void download_timeout(void *) {
+  downloaded += 2.5;  // Simulate downloading 2.5 MB
+  
+  if (downloaded >= total_size) {
+    downloaded = total_size;
+    progress->value(downloaded);
+    progress->label("Complete!");
+    status_label->label("Download finished");
+    return;  // Stop timer
+  }
+  
+  progress->value(downloaded);
+  
+  char percent[32];
+  sprintf(percent, "%.0f%%", (downloaded / total_size) * 100.0);
+  progress->copy_label(percent);
+  
+  char status[64];
+  sprintf(status, "%.1f / %.1f MB", downloaded, total_size);
+  status_label->copy_label(status);
+  
+  // Schedule next update
+  Fl::repeat_timeout(0.1, download_timeout);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 150);
+  
+  Fl_Box *title = new Fl_Box(50, 20, 300, 25, "Downloading file...");
+  title->labelsize(16);
+  
+  progress = new Fl_Progress(50, 60, 300, 30);
+  progress->minimum(0);
+  progress->maximum(total_size);
+  progress->color(FL_BACKGROUND2_COLOR);
+  progress->selection_color(FL_BLUE);
+  progress->labelcolor(FL_WHITE);
+  progress->label("0%");
+  
+  status_label = new Fl_Box(50, 100, 300, 25, "0.0 / 100.0 MB");
+  
+  window->end();
+  window->show(argc, argv);
+  
+  // Start the download simulation
+  Fl::add_timeout(0.1, download_timeout);
+  
+  return Fl::run();
+}
+```
+
+## Processing Tasks Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Button.H>
+#include <stdio.h>
+
+Fl_Progress *progress;
+int current_task = 0;
+const int total_tasks = 50;
+
+void process_cb(void *) {
+  current_task++;
+  
+  float progress_value = float(current_task) / float(total_tasks);
+  progress->value(progress_value);
+  
+  char label[32];
+  sprintf(label, "Task %d/%d", current_task, total_tasks);
+  progress->copy_label(label);
+  
+  if (current_task < total_tasks) {
+    Fl::repeat_timeout(0.05, process_cb);
+  } else {
+    progress->selection_color(FL_GREEN);
+    progress->label("All tasks complete!");
+    progress->redraw();
+  }
+}
+
+void start_cb(Fl_Widget *w, void *) {
+  current_task = 0;
+  progress->value(0);
+  progress->selection_color(FL_BLUE);
+  progress->label("");
+  w->deactivate();
+  
+  Fl::add_timeout(0.05, process_cb);
+  
+  // Re-enable button after completion
+  Fl::add_timeout(2.6, [](void *btn) { 
+    ((Fl_Widget*)btn)->activate(); 
+  }, w);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(350, 120);
+  
+  Fl_Button *btn = new Fl_Button(100, 20, 150, 30, "Start Processing");
+  btn->callback(start_cb);
+  
+  progress = new Fl_Progress(25, 70, 300, 30);
+  progress->minimum(0.0);
+  progress->maximum(1.0);
+  progress->color(0xDDDDDD00);
+  progress->selection_color(FL_BLUE);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Color Customization
+
+```cpp
+Fl_Progress *progress = new Fl_Progress(10, 10, 300, 40);
+
+// Set background color
+progress->color(FL_DARK_BLUE);
+
+// Set progress bar fill color
+progress->selection_color(FL_GREEN);
+
+// Set text color
+progress->labelcolor(FL_WHITE);
+
+// Set border style
+progress->box(FL_PLASTIC_DOWN_BOX);
+```
+
+## Common Use Cases
+
+- **File operations** - Upload/download progress
+- **Installation** - Software installation progress
+- **Processing** - Batch operation progress (image processing, data conversion)
+- **Loading** - Application startup or resource loading
+- **Rendering** - 3D rendering or video encoding progress
+- **Computation** - Long calculations or simulations
+
+## Tips
+
+- Use `Fl::check()` or `Fl::wait()` in loops to keep the UI responsive
+- Update the label to show percentage, current/total, or status messages
+- Consider using `selection_color()` to change bar color based on status (blue for normal, green for complete, red for error)
+- For indeterminate progress, consider using `Fl_Hor_Fill_Slider` or animating a custom widget
+
+## See Also
+
+- [Fl_Slider](/api/fl-slider) - Interactive slider widget
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Box](/api/fl-box) - Simple display widget

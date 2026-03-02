@@ -1,0 +1,425 @@
+---
+title: macOS Build Guide
+description: Build and install FLTK on macOS using Xcode or command-line tools
+---
+
+## Introduction
+
+FLTK 1.5 supports macOS 10.7 Lion and later. As of February 2026, FLTK compiles and runs on macOS 26 Tahoe for both:
+
+- **Intel (x86_64)** processors
+- **Apple Silicon (arm64)** processors
+
+FLTK provides two main build environments:
+- **Xcode IDE** - Visual development with Apple's IDE
+- **Command-line tools** - Terminal-based builds with make
+
+Both environments generate Unix-style libraries and macOS application bundles.
+
+## Build with Xcode
+
+### Prerequisites
+
+<Steps>
+  <Step title="Install Xcode">
+    Download Xcode from the [Mac App Store](https://itunes.apple.com/de/app/xcode/id497799835?l=en&mt=12).
+
+    Requirements:
+    - Apple ID
+    - Administrator password
+    - Installation time: 1+ hours
+    - Disk space: 10+ GB
+  </Step>
+
+  <Step title="Install CMake">
+    Download CMake from [cmake.org/download](https://cmake.org/download/).
+
+    1. Download the `.dmg` file for macOS
+    2. Open the disk image
+    3. Drag CMake to Applications folder
+  </Step>
+</Steps>
+
+### Download FLTK Source
+
+<Tabs>
+  <Tab title="Via Xcode">
+    Use Xcode's built-in Git support:
+
+    1. Launch Xcode
+    2. Select **Source Control > Clone...**
+    3. Search for `fltk/fltk`
+    4. Select the `fltk` repository owned by `fltk`
+    5. Click **Clone**
+    6. Navigate to your home directory
+    7. Create a new folder: `dev`
+    8. Save as: `fltk-1.5`
+    9. Click **Clone**, then **Done**
+
+    To update later:
+    - Load the project in Xcode
+    - Select **Source Control > Pull...**
+  </Tab>
+
+  <Tab title="Via Command Line">
+    Use Terminal to clone the repository:
+
+    ```bash
+    cd ~
+    mkdir dev
+    cd dev
+    git clone https://github.com/fltk/fltk.git fltk-1.5
+    cd fltk-1.5
+    ```
+
+    Update to the latest version:
+
+    ```bash
+    git pull
+    ```
+  </Tab>
+
+  <Tab title="Via Tarball">
+    Download a snapshot from [fltk.org/software.php](https://www.fltk.org/software.php):
+
+    ```bash
+    cd ~
+    mkdir dev
+    cd dev
+    tar xzf ~/Downloads/fltk-1.x.y-source.tar.gz
+    cd fltk-1.x.y
+    ```
+  </Tab>
+</Tabs>
+
+### Configure with CMake
+
+1. Launch CMake (press **⌘ + Spacebar**, type "CMake", press Enter)
+
+2. Set source directory:
+   - Click **Browse Source...**
+   - Navigate to `/Users/your_name/dev/fltk-1.5`
+   - Click **Open**
+
+3. Set build directory:
+   - Click **Browse Build...**
+   - Navigate to `/Users/your_name/dev/fltk-1.5`
+   - Create folder: `build`
+   - Inside `build`, create folder: `Xcode`
+   - Click **Open**
+
+4. Click **Configure**
+
+5. Select **Xcode** as the generator
+
+6. Click **Done**
+
+7. Review options in the CMake list:
+   - Expand **FLTK** section for FLTK-specific options
+   - Expand **CMAKE** section for general build options
+   - Bundled image libraries are built by default
+
+8. Click **Generate**
+
+9. Click **Open Project** to launch Xcode
+
+<Info>
+CMake generates Xcode projects dynamically, ensuring compatibility with your macOS version and Xcode installation.
+</Info>
+
+### Build in Xcode
+
+1. When Xcode opens, allow it to **Autocreate Schemes**
+
+2. Select a test program:
+   - Choose `hello` or another program from the Scheme menu
+   - Press **⌘ + R** to compile and run
+
+3. To build all of FLTK:
+   - Select the `ALL_BUILD` scheme
+   - Press **⌘ + B** to build
+
+4. To run the demo:
+   - Select the `demo` scheme
+   - Press **⌘ + R** to run
+
+<Note>
+Building `demo` does not automatically build other test programs. This is intentional for incremental builds.
+</Note>
+
+### Build Your Applications
+
+See `README.CMake.txt` in the FLTK source directory for details on creating Xcode projects for your own applications.
+
+## Build with Command Line
+
+### Prerequisites
+
+<Steps>
+  <Step title="Install CMake">
+    Download from [cmake.org/download](https://cmake.org/download/) and install to Applications.
+
+    Add CMake to your PATH:
+
+    ```bash
+    sudo ln -s /Applications/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
+    ```
+
+    Or use CMake's menu: **Tools > How to Install for Command Line Use**
+  </Step>
+
+  <Step title="Install Xcode Command Line Tools">
+    Run in Terminal:
+
+    ```bash
+    xcode-select --install
+    ```
+
+    Follow the installation dialog.
+
+    <Info>
+    On older macOS versions, install Xcode from the App Store first, then install command-line tools from within Xcode.
+    </Info>
+  </Step>
+</Steps>
+
+### Download FLTK Source
+
+See [Download FLTK Source](#download-fltk-source) above for options.
+
+### Configure and Build
+
+In Terminal, navigate to your FLTK source directory:
+
+```bash
+cd ~/dev/fltk-1.5
+```
+
+Configure FLTK:
+
+```bash
+cmake -B build/Makefile -G "Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug
+```
+
+For a release build:
+
+```bash
+cmake -B build/Makefile -G "Unix Makefiles" -D CMAKE_BUILD_TYPE=Release
+```
+
+Build FLTK:
+
+```bash
+cmake --build build/Makefile
+```
+
+Build specific targets:
+
+```bash
+cmake --build build/Makefile --target hello
+```
+
+### Configuration Options
+
+Common CMake options:
+
+```bash
+# Build shared libraries
+cmake -B build/Makefile -G "Unix Makefiles" \
+  -D CMAKE_BUILD_TYPE=Release \
+  -D FLTK_BUILD_SHARED_LIBS=1
+
+# Custom install location
+cmake -B build/Makefile -G "Unix Makefiles" \
+  -D CMAKE_INSTALL_PREFIX=~/local
+```
+
+View all options:
+
+```bash
+cmake -L .
+```
+
+See [FLTK CMake documentation](https://www.fltk.org/doc-1.5/intro.html#intro_cmake) for complete details.
+
+### Testing
+
+Run the demo application:
+
+```bash
+open build/Makefile/bin/test/demo.app
+```
+
+### Installing
+
+Install to `/usr/local` (requires sudo):
+
+```bash
+sudo cmake --build build/Makefile --target install
+```
+
+Install to user directory (no sudo required):
+
+```bash
+cmake -B build/Makefile -G "Unix Makefiles" \
+  -D CMAKE_INSTALL_PREFIX=~/local
+cmake --build build/Makefile
+cmake --build build/Makefile --target install
+```
+
+### Building Your Applications
+
+Use `fltk-config` to compile applications:
+
+```bash
+fltk-config --compile myProgram.cxx
+```
+
+Manual compilation:
+
+```bash
+g++ myProgram.cxx `fltk-config --cxxflags` `fltk-config --ldflags`
+```
+
+Add `/usr/local/bin` to your PATH:
+
+```bash
+export PATH="/usr/local/bin:$PATH"
+```
+
+Add this to `~/.zshrc` or `~/.bash_profile` to make it permanent.
+
+## macOS-Specific Features
+
+### Application Bundles
+
+FLTK automatically creates macOS application bundles (`.app` directories) for GUI programs. These bundles:
+
+- Contain the executable and resources
+- Display properly in Finder
+- Can be launched by double-clicking
+- Support drag-and-drop file opening
+
+### Menu Bar Integration
+
+FLTK applications integrate with the macOS menu bar:
+
+- Menu items appear in the system menu bar
+- Standard macOS shortcuts work automatically
+- About, Preferences, and Quit are in the app menu
+
+### Retina Display Support
+
+FLTK automatically supports Retina displays with high-DPI rendering.
+
+### Dark Mode Support
+
+FLTK respects the system's Dark Mode setting.
+
+## File Drag-and-Drop
+
+Make your application respond to files dropped on its icon:
+
+<Steps>
+  <Step title="Create Info.plist">
+    Create an `Info.plist` file based on `test/mac-resources/editor.plist`:
+
+    ```xml
+    <key>CFBundleDocumentTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleTypeExtensions</key>
+        <array>
+          <string>txt</string>  <!-- Change to your extensions -->
+        </array>
+        <key>CFBundleTypeName</key>
+        <string>Text File</string>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+      </dict>
+    </array>
+    ```
+
+    Use multiple array items for multiple extensions.
+  </Step>
+
+  <Step title="Set Open Callback">
+    In your `main()` function:
+
+    ```cpp
+    #include <FL/platform.H>
+
+    void open_callback(const char *filename) {
+      // Handle opened file
+    }
+
+    int main(int argc, char **argv) {
+      fl_open_callback(open_callback);
+      // Rest of your code
+    }
+    ```
+  </Step>
+
+  <Step title="Configure Build">
+    <Tabs>
+      <Tab title="CMake">
+        In your `CMakeLists.txt`:
+
+        ```cmake
+        set_target_properties(myapp PROPERTIES
+          MACOSX_BUNDLE TRUE
+          MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
+        )
+        ```
+      </Tab>
+
+      <Tab title="Xcode">
+        In your target's Build Settings:
+        - Set **Info.plist File** to your `Info.plist` path
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Rebuild">
+    Rebuild your application to integrate the Info.plist.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Ranlib Warnings
+
+You may see warnings about missing symbols:
+
+```
+ranlib: file has no symbols
+```
+
+This is normal and can be safely ignored.
+
+### Xcode Version
+
+Ensure you're using a recent version of Xcode. FLTK requires Xcode 9.0 or later.
+
+### CMake Not Found
+
+If `cmake` command is not found:
+
+```bash
+sudo ln -s /Applications/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
+```
+
+### Permission Denied
+
+If installation fails with permission errors, use `sudo` or install to a user directory:
+
+```bash
+cmake -B build -D CMAKE_INSTALL_PREFIX=~/local
+```
+
+## Additional Resources
+
+- [FLTK macOS Documentation](https://www.fltk.org/doc-1.5/osissues.html#osissues_macos)
+- [CMake macOS Documentation](https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#cross-compiling-for-ios-tvos-or-watchos)
+- [Xcode Documentation](https://developer.apple.com/documentation/xcode)
+- [GitHub, Git, Forking Guide](https://gist.github.com/Chaser324/ce0505fbed06b947d962)

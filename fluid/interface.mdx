@@ -1,0 +1,540 @@
+---
+title: FLUID Interface Guide
+description: Complete reference for the FLUID user interface and all its components
+---
+
+FLUID's interface consists of several interconnected windows and panels that work together to provide a complete visual design environment. This guide covers every component in detail.
+
+## Main Application Window
+
+The main window is FLUID's control center, displaying your project hierarchy and providing access to all major functions.
+
+### Title Bar
+
+The title bar displays project status:
+
+```
+function_panel.fl* - .cxx*
+```
+
+- **Project name**: Current `.fl` file (`function_panel.fl`)
+- **First asterisk**: Project has unsaved changes (press `Ctrl+S` to save)
+- **.cxx**: Generated code file extension
+- **Second asterisk**: Code files don't match project (press `Ctrl+Shift+C` to update)
+
+<Note>
+FLUID supports only one open project at a time. To work on multiple projects, launch multiple FLUID instances.
+</Note>
+
+### Menu Bar
+
+The menu bar provides access to all FLUID functionality:
+
+#### File Menu
+
+- **New** (`Ctrl+N`) - Close current project and start fresh
+- **Open...** (`Ctrl+O`) - Load existing `.fl` file
+- **Insert...** (`Ctrl+I`) - Merge another `.fl` file into current project
+- **Save** (`Ctrl+S`) - Save current project
+- **Save As...** (`Ctrl+Shift+S`) - Save with new filename
+- **Save A Copy...** - Save copy without changing current filename
+- **Revert...** - Discard changes since last save
+- **New From Template...** - Create project from saved template
+- **Save As Template...** - Save current project as template
+- **Print...** (`Ctrl+P`) - Print all open windows
+- **Write Code** (`Ctrl+Shift+C`) - Generate `.h` and `.cxx` files
+- **Write Strings** (`Ctrl+Shift+W`) - Generate internationalization files
+- **Quit** (`Ctrl+Q`) - Exit FLUID
+
+#### Edit Menu
+
+- **Undo** (`Ctrl+Z`) / **Redo** (`Ctrl+Shift+Z`) - Undo/redo changes
+- **Cut** (`Ctrl+X`) - Remove selected widgets to clipboard
+- **Copy** (`Ctrl+C`) - Copy selected widgets to clipboard  
+- **Paste** (`Ctrl+V`) - Paste widgets from clipboard
+- **Duplicate** (`Ctrl+U`) - Duplicate selected widgets
+- **Delete** - Remove selected widgets permanently
+- **Select All** (`Ctrl+A`) - Select all widgets in current group
+- **Properties...** (`F1`) - Open widget properties panel
+- **Sort** - Sort widgets by position (top-left to bottom-right)
+- **Earlier** (`F2`) - Move widget earlier in hierarchy
+- **Later** (`F3`) - Move widget later in hierarchy
+- **Group** (`F7`) - Create group containing selected widgets
+- **Ungroup** (`F8`) - Extract widgets from group
+- **Show/Hide Overlays** (`Ctrl+Shift+O`) - Toggle selection overlays
+- **Show/Hide Guides** (`Ctrl+Shift+G`) - Toggle alignment guides
+- **Show/Hide Restricted** (`Ctrl+Shift+R`) - Show overlap warnings
+- **Show/Hide Widget Bin** (`Alt+B`) - Toggle widget palette
+- **Show/Hide Code View** (`Alt+C`) - Toggle code preview window
+- **Settings...** (`Alt+P`) - Open settings dialog
+
+#### New Menu
+
+Create new elements (also available as right-click menu in layout windows):
+
+**Code Elements**:
+- **Function** - C++ function that creates widgets
+- **Code** - Single line of C++ code
+- **Code Block** - Multi-line C++ code block
+- **Declaration** - Variable or include declaration
+- **Class** - C++ class definition
+- **Widget Class** - Custom widget class
+- **Comment** - Documentation comment
+- **Data** - Embedded binary data
+
+**Group Widgets**:
+- **Window** - Top-level window
+- **Group** - Generic container
+- **Pack** - Automatic layout group
+- **Flex** - Flexible box layout
+- **Tabs** - Tabbed interface
+- **Scroll** - Scrollable area
+- **Tile** - Resizable tiles
+- **Wizard** - Multi-page wizard
+- **Grid** - Grid layout
+- **Table** - Table widget
+- **Terminal** - Terminal emulator
+
+**Buttons**:
+- **Button** - Standard push button
+- **Return Button** - Default button (responds to Enter)
+- **Light Button** - Toggle with indicator
+- **Check Button** - Checkbox
+- **Round Button** - Radio button
+- **Repeat Button** - Repeats while held
+
+**Valuators**:
+- **Slider** - Linear slider
+- **Scrollbar** - Scrollbar control
+- **Value Slider** - Slider with value display
+- **Value Input** - Numeric input with arrows
+- **Value Output** - Read-only numeric display
+- **Adjuster** - Fine adjustment control
+- **Counter** - Value with increment buttons
+- **Dial** - Rotary dial
+- **Roller** - Mouse-drag value control
+- **Spinner** - Text input with up/down arrows
+
+**Text**:
+- **Input** - Single-line text input
+- **Output** - Read-only text display
+- **Text Display** - Multi-line text viewer
+- **Text Editor** - Multi-line text editor
+- **File Input** - Filename input with browser
+- **Simple Terminal** - Simple terminal widget
+
+**Menus**:
+- **Menu Bar** - Application menu bar
+- **Menu Button** - Pop-up menu button
+- **Choice** - Drop-down choice menu
+- **Input Choice** - Combo box (editable choice)
+- **Menu Item** - Item within a menu
+- **Submenu** - Hierarchical submenu
+- **Checkbox Menu Item** - Toggleable menu item
+- **Radio Menu Item** - Exclusive menu choice
+
+**Browsers**:
+- **Browser** - List browser
+- **Check Browser** - List with checkboxes
+- **File Browser** - File system browser
+- **Tree** - Hierarchical tree view
+- **Help View** - HTML help viewer
+
+**Other Widgets**:
+- **Box** - Static text or image
+- **Clock** - Analog or digital clock
+- **Progress** - Progress bar
+
+#### Layout Menu
+
+Arrange and align widgets:
+
+**Align**:
+- **Left** - Align left edges
+- **Center** - Center horizontally
+- **Right** - Align right edges
+- **Top** - Align top edges  
+- **Middle** - Center vertically
+- **Bottom** - Align bottom edges
+
+**Space Evenly**:
+- **Across** - Distribute horizontally
+- **Down** - Distribute vertically
+
+**Make Same Size**:
+- **Width** - Match width of first selected
+- **Height** - Match height of first selected
+- **Both** - Match both dimensions
+
+**Center in Group**:
+- **Horizontal** - Center horizontally in parent
+- **Vertical** - Center vertically in parent
+- **Both** - Center in both directions
+
+**Other**:
+- **Synchronized Resize** - Toggle live resize preview
+- **Grid and Size Settings...** (`Ctrl+G`) - Configure layout guides
+
+#### Shell Menu
+
+Execute custom shell commands:
+
+- **Customize...** (`Alt+X`) - Configure shell commands
+- *User-defined commands* - Appears after configuration
+
+<Tip>
+Shell commands can be stored in `.fl` files and used to build your project directly from FLUID.
+</Tip>
+
+#### Help Menu
+
+- **About FLUID** - Version information
+
+### Widget Browser
+
+The widget browser displays your project as a hierarchical tree:
+
+```
+├── ▼ Function: make_window()
+│   ├── ▼ Fl_Window "My Main Window"
+│   │   ├── Fl_Menu_Bar
+│   │   ├── ▼ Fl_Group
+│   │   │   ├── Fl_Button "OK"
+│   │   │   └── Fl_Button "Cancel"
+│   │   └── Fl_Box "Status: Ready"
+└── ▼ class MyDialog : Fl_Window
+    └── ...
+```
+
+#### Tree Structure Elements
+
+**Indentation**: Shows hierarchy depth
+
+**Triangle icon**:
+- White: No children
+- Black pointing right: Children hidden (click to expand)
+- Black pointing down: Children visible (click to collapse)
+
+**Type icon**: Visual representation of widget type
+- Gray: Regular widgets
+- Blue title bar: Windows
+- Green: Functional nodes (code, functions, classes)
+- Padlock corner: Private or static element
+
+**Text display**:
+- **Comment** (green): If set, shows above name
+- **Type name** (bold black): Widget class (e.g., `Fl_Button`)
+- **Label** (red): Widget's label text
+- **Variable name** (black): C++ variable name if set
+
+#### Browser Interaction
+
+**Selection**:
+- **Single click**: Select one widget
+- **Shift+Click**: Toggle widget selection
+- **Drag**: Select multiple widgets
+- **Click empty area**: Deselect all
+
+**Opening widgets**:
+- **Double-click**: Open properties panel
+- **F1**: Open properties for selected widget(s)
+
+**Reordering**:
+- **F2**: Move selected earlier in order
+- **F3**: Move selected later in order
+- **Drag and drop**: Not supported (use Cut/Paste instead)
+
+**Organization**:
+- **F7**: Group selected widgets
+- **F8**: Ungroup selected widgets
+- **Ctrl+X/C/V**: Cut, copy, paste
+
+<Warning>
+Hidden children may remain selected even when collapsed. Use "Select All" or click empty area to deselect.
+</Warning>
+
+## Layout Editor Window
+
+Layout editors appear when you create or open windows. They show the actual visual design:
+
+### Visual Elements
+
+**Widget display**: Shows widgets as they will appear at runtime
+
+**Selection overlays** (red boxes):
+- Highlight selected widgets
+- Corner and edge handles for resizing
+- Toggle with `Ctrl+Shift+O`
+
+**Alignment guides** (colored lines):
+- Show margins, gaps, and grid
+- Help align widgets consistently  
+- Toggle with `Ctrl+Shift+G`
+- Configure in **Layout > Grid Settings**
+
+**Restricted areas** (hatch pattern):
+- Highlight overlapping widgets
+- Indicate undefined behavior regions
+- Toggle with `Ctrl+Shift+R`
+
+### Selection and Editing
+
+**Select widgets**:
+- Click widget to select
+- Shift+Click to toggle selection
+- Drag rectangle to select multiple
+- Click empty area to deselect all
+
+**Move widgets**:
+- Drag selected widgets to new position
+- Widgets snap to guides if enabled
+- Hold Shift while dragging to disable snapping
+
+**Resize widgets**:
+- Drag corner handles to resize proportionally
+- Drag edge handles to resize one dimension
+- Snap works on edges and corners
+
+**Right-click menu**:
+- Same as **New** menu
+- Context-appropriate widget creation
+
+### Layout Tools
+
+Use **Layout** menu to arrange widgets:
+
+1. Select multiple widgets
+2. Choose alignment option
+3. Widgets adjust to match first selected widget
+
+**Synchronized Resize**: When enabled, resizing windows or groups also resizes children according to their resize settings.
+
+## Widget Properties Panel
+
+Double-click any widget to open its properties panel. The panel has multiple tabs:
+
+### GUI Tab
+
+Visual properties:
+
+- **Label**: Text displayed on widget
+- **Image**: Image file to display
+- **Inactive**: Grayed-out version of image
+- **Alignment**: Label position (left, center, right, etc.)
+- **Position**: X, Y coordinates
+- **Size**: Width, height
+- **Values**: Widget-specific values (e.g., button state, slider range)
+- **Shortcut**: Keyboard shortcut
+- **Attributes**: Hide, deactivate, resizable, hotspot
+
+### Style Tab
+
+Appearance customization:
+
+- **Label Font**: Font family
+- **Label Size**: Font point size
+- **Label Color**: Text color
+- **Box**: Background box style
+- **Down Box**: Pressed state appearance (buttons)
+- **Color**: Background color
+- **Select Color**: Selection/active color
+
+### C++ Tab
+
+Code generation settings:
+
+- **Name**: C++ variable name
+- **Class**: Widget class (can override default)
+- **Type**: Widget type variant
+- **Callback**: Callback function or inline code
+- **User Data**: Data passed to callback
+- **User Data Type**: Type of user data
+- **When**: When callback fires (changed, released, etc.)
+- **Access**: Public, private, protected
+- **Extra Code**: Additional initialization code
+
+### Grid Tab (Fl_Grid only)
+
+Grid-specific properties:
+
+- **Rows/Columns**: Grid dimensions
+- **Margins**: Space around grid edges
+- **Gaps**: Space between cells
+- **Row/Column Properties**: Height, weight, gap per row/column
+
+### Grid Cell Tab (Children of Fl_Grid)
+
+Cell positioning:
+
+- **Location**: Row and column position
+- **Span**: Rows and columns to span
+- **Alignment**: Widget alignment within cell
+- **Minimum Size**: Minimum cell dimensions
+
+## Widget Bin Panel
+
+The Widget Bin provides quick access to all widget types (**Edit > Show Widget Bin** or `Alt+B`):
+
+**Using the Widget Bin**:
+
+- **Click** widget type to add at default location
+- **Drag** widget from bin to precise position in layout
+- **Organized by category**: Groups, Buttons, Valuators, Text, Menus, Browsers, Other
+
+## Code View Panel
+
+The Code View shows generated C++ code in real-time (**Edit > Show Code View** or `Alt+C`):
+
+### Features
+
+**Tabs**:
+- **Source**: Generated `.cxx` file contents
+- **Header**: Generated `.h` file contents
+
+**Auto-update**: Code refreshes as you make changes
+
+**Selection tracking**: Selecting widget in browser highlights its generated code
+
+**Find function**: Search generated code
+
+**Settings button**: Configure code view preferences
+
+<Tip>
+Use Code View to understand exactly what C++ code FLUID generates for each widget and property.
+</Tip>
+
+## Settings Dialog
+
+Access comprehensive settings via **Edit > Settings** (`Alt+P`):
+
+### General Tab
+
+Application-wide preferences:
+
+- **Use macOS Command key**: Use Cmd instead of Ctrl on macOS
+- **Allow UTF-8 in source**: Include UTF-8 directly vs escape sequences
+- **Avoid early includes**: Delay `#include <FL/Fl.H>` in generated code
+
+### Project Tab
+
+Current project settings:
+
+- **Header filename**: Generated `.h` file name or extension
+- **Code filename**: Generated `.cxx` file name or extension  
+- **Include header from code**: Add `#include "header.h"` to code file
+
+### Layout Tab
+
+Alignment and grid configuration:
+
+- **Layout suites**: FLTK, Grid, or custom layouts
+- **Presets**: Main window, dialog box, toolbox
+- **Margins**: Space from parent edges
+- **Gaps**: Space between widgets
+- **Grid**: Grid line spacing
+
+### Shell Tab
+
+Custom shell commands:
+
+- **Add commands**: Create build scripts
+- **Assign shortcuts**: Quick access keys
+- **Set conditions**: When command is available
+- **Configure flags**: Run in terminal, save before running, etc.
+
+### i18n Tab
+
+Internationalization:
+
+- **Type**: None, GNU gettext, or POSIX catgets  
+- **Function names**: Translation function names
+- **Include files**: Headers for i18n functions
+- **File/Set names**: Output file configuration
+
+### User Tab
+
+Customize FLUID appearance:
+
+- **Browser colors**: Tree view color scheme
+- **Font styles**: Bold, italic for different elements  
+- **Icon sizes**: Widget browser icon dimensions
+
+## Window Management
+
+**Closing windows**:
+- Closing layout window doesn't delete it
+- Windows persist in project and can be reopened
+- Delete window via widget browser or Edit menu
+
+**Opening windows**:
+- Double-click window in browser
+- Or select and press F1
+- Window appears at saved position
+
+**Multiple windows**:
+- Projects can have many windows
+- All can be open simultaneously
+- Each has independent layout editor
+
+## Keyboard Shortcuts Reference
+
+<AccordionGroup>
+  <Accordion title="File Operations">
+    - `Ctrl+N` - New project
+    - `Ctrl+O` - Open project
+    - `Ctrl+S` - Save project
+    - `Ctrl+Shift+S` - Save as
+    - `Ctrl+Shift+C` - Write code
+    - `Ctrl+P` - Print
+    - `Ctrl+Q` - Quit
+  </Accordion>
+
+  <Accordion title="Editing">
+    - `Ctrl+Z` - Undo
+    - `Ctrl+Shift+Z` - Redo
+    - `Ctrl+X` - Cut
+    - `Ctrl+C` - Copy
+    - `Ctrl+V` - Paste
+    - `Ctrl+U` - Duplicate
+    - `Ctrl+A` - Select all
+    - `Delete` - Delete selected
+  </Accordion>
+
+  <Accordion title="Widget Operations">
+    - `F1` - Properties
+    - `F2` - Earlier
+    - `F3` - Later
+    - `F7` - Group
+    - `F8` - Ungroup
+  </Accordion>
+
+  <Accordion title="View Options">
+    - `Alt+B` - Toggle Widget Bin
+    - `Alt+C` - Toggle Code View  
+    - `Alt+P` - Settings
+    - `Ctrl+Shift+O` - Toggle overlays
+    - `Ctrl+Shift+G` - Toggle guides
+    - `Ctrl+Shift+R` - Toggle restricted areas
+    - `Ctrl+G` - Grid settings
+  </Accordion>
+</AccordionGroup>
+
+## Tips and Tricks
+
+**Fast widget creation**: Use Widget Bin drag-and-drop for precise placement
+
+**Batch editing**: Select multiple widgets, then change properties - affects all selected
+
+**Template hierarchy**: Create one widget, set all properties, then duplicate
+
+**Live preview**: Keep Code View open to learn FLUID's code generation
+
+**Keyboard navigation**: Learn F-key shortcuts for 10× faster workflow
+
+**Grid presets**: Switch between FLTK and Grid layouts to see different alignment approaches
+
+**Sort after layout**: Always sort widgets (`Edit > Sort`) before finalizing to fix tab order
+
+<Card title="File Format Reference" icon="file-code" href="/fluid/file-format">
+  Deep dive into the .fl file format specification
+</Card>

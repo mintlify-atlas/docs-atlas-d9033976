@@ -1,0 +1,641 @@
+---
+title: Fl_Window
+description: Window class for creating top-level windows and subwindows
+---
+
+Fl_Window produces an actual window that can be a main window with borders and title bar, or a subwindow inside another window. Once created, add child widgets using `window->add(child)`.
+
+The window's callback is called when the user tries to close the window. The default callback calls `hide()`.
+
+## Constructors
+
+```cpp
+Fl_Window(int w, int h, const char *title = 0);
+Fl_Window(int x, int y, int w, int h, const char *title = 0);
+```
+
+<ParamField path="w, h" type="int" required>
+  Width and height of the window in pixels
+</ParamField>
+
+<ParamField path="x, y" type="int">
+  Position of the window (for positioned constructor)
+</ParamField>
+
+<ParamField path="title" type="const char*">
+  Window title bar text (optional)
+</ParamField>
+
+**Description:** 
+- The (w, h) form creates a top-level window and asks the window manager to position it.
+- The (x, y, w, h) form creates a window at the specified location.
+
+**Example:**
+```cpp
+// Let window manager position it
+Fl_Window *win1 = new Fl_Window(400, 300, "My Window");
+
+// Position at (100, 100)
+Fl_Window *win2 = new Fl_Window(100, 100, 400, 300, "Positioned");
+```
+
+## Display Methods
+
+### show()
+
+Displays the window on screen.
+
+```cpp
+virtual void show();
+void show(int argc, char **argv);
+```
+
+<ParamField path="argc" type="int">
+  Command-line argument count
+</ParamField>
+
+<ParamField path="argv" type="char**">
+  Command-line argument vector
+</ParamField>
+
+**Description:** 
+- `show()` displays the window. If already shown, it is restored and raised to top.
+- `show(argc, argv)` is used for top-level windows and parses command-line arguments.
+
+**Example:**
+```cpp
+window->show();
+return Fl::run();
+```
+
+### hide()
+
+Removes the window from the screen.
+
+```cpp
+virtual void hide() override;
+```
+
+**Description:** If the window is already hidden or not shown, this does nothing.
+
+### shown()
+
+Checks if window has been shown.
+
+```cpp
+int shown() const;
+```
+
+**Returns:** Non-zero if `show()` has been called (but not `hide()`)
+
+**Note:** You can tell if a window is iconified with `(w->shown() && !w->visible())`.
+
+### iconize()
+
+Iconifies the window.
+
+```cpp
+void iconize();
+```
+
+**Description:** Minimizes the window. Call `show()` to restore it.
+
+## Size and Position
+
+### resize()
+
+Changes window size and/or position.
+
+```cpp
+void resize(int X, int Y, int W, int H) override;
+```
+
+<ParamField path="X, Y" type="int" required>
+  New position
+</ParamField>
+
+<ParamField path="W, H" type="int" required>
+  New size
+</ParamField>
+
+**Description:** For shown windows, changes are communicated to the window server. Window managers may refuse the size/position.
+
+### position()
+
+Sets window position.
+
+```cpp
+void position(int X, int Y);
+```
+
+<ParamField path="X, Y" type="int" required>
+  New window position
+</ParamField>
+
+**Description:** Inherited from Fl_Widget, shortcut for `resize(X, Y, w(), h())`.
+
+### hotspot()
+
+Positions window with mouse at specified point.
+
+```cpp
+void hotspot(int x, int y, int offscreen = 0);
+void hotspot(const Fl_Widget* widget, int offscreen = 0);
+```
+
+<ParamField path="x, y" type="int" required>
+  Position where mouse should point
+</ParamField>
+
+<ParamField path="widget" type="const Fl_Widget*">
+  Widget to center mouse on
+</ParamField>
+
+<ParamField path="offscreen" type="int">
+  Allow window to extend offscreen if non-zero
+</ParamField>
+
+### size_range()
+
+Sets minimum and maximum window size.
+
+```cpp
+void size_range(int minw, int minh, int maxw=0, int maxh=0, 
+                int dw=0, int dh=0, int aspect=0);
+```
+
+<ParamField path="minw, minh" type="int" required>
+  Minimum width and height
+</ParamField>
+
+<ParamField path="maxw, maxh" type="int">
+  Maximum width and height (0 = unlimited)
+</ParamField>
+
+<ParamField path="dw, dh" type="int">
+  Width and height step increments
+</ParamField>
+
+<ParamField path="aspect" type="int">
+  Flag to keep aspect ratio
+</ParamField>
+
+**Example:**
+```cpp
+window->size_range(300, 200, 800, 600);  // Min 300x200, max 800x600
+```
+
+## Fullscreen
+
+### fullscreen()
+
+Makes window fullscreen.
+
+```cpp
+void fullscreen();
+```
+
+**Description:** Makes the window fill one or more screens without window manager borders.
+
+### fullscreen_off()
+
+Returns from fullscreen mode.
+
+```cpp
+void fullscreen_off();
+void fullscreen_off(int X, int Y, int W, int H);
+```
+
+<ParamField path="X, Y, W, H" type="int">
+  Window dimensions to restore to (optional)
+</ParamField>
+
+### fullscreen_active()
+
+Checks if fullscreen is active.
+
+```cpp
+unsigned int fullscreen_active() const;
+```
+
+**Returns:** Non-zero if window is fullscreen
+
+### fullscreen_screens()
+
+Sets which screens to use in fullscreen.
+
+```cpp
+void fullscreen_screens(int top, int bottom, int left, int right);
+```
+
+<ParamField path="top, bottom, left, right" type="int" required>
+  Screen indices for each edge
+</ParamField>
+
+## Maximize
+
+### maximize()
+
+Maximizes the window.
+
+```cpp
+void maximize();
+```
+
+**Description:** Maximizes the window to fill available screen space.
+
+### un_maximize()
+
+Restores window from maximized state.
+
+```cpp
+void un_maximize();
+```
+
+### maximize_active()
+
+Checks if window is maximized.
+
+```cpp
+unsigned int maximize_active() const;
+```
+
+**Returns:** Non-zero if window is maximized
+
+## Window Properties
+
+### label()
+
+Gets or sets window title.
+
+```cpp
+const char* label() const;
+void label(const char* title);
+void label(const char* label, const char* iconlabel);
+```
+
+<ParamField path="title" type="const char*" required>
+  Window title bar text
+</ParamField>
+
+<ParamField path="iconlabel" type="const char*">
+  Text for iconified window
+</ParamField>
+
+### iconlabel()
+
+Gets or sets icon label.
+
+```cpp
+const char* iconlabel() const;
+void iconlabel(const char* label);
+```
+
+<ParamField path="label" type="const char*" required>
+  Label for iconified window
+</ParamField>
+
+### xclass()
+
+Gets or sets X11 class hint.
+
+```cpp
+const char* xclass() const;
+void xclass(const char* c);
+```
+
+<ParamField path="c" type="const char*" required>
+  X11 window class name
+</ParamField>
+
+## Window Icons
+
+### icon()
+
+Sets the window icon.
+
+```cpp
+void icon(const Fl_RGB_Image* img);
+```
+
+<ParamField path="img" type="const Fl_RGB_Image*" required>
+  Image to use as window icon
+</ParamField>
+
+### icons()
+
+Sets multiple window icons.
+
+```cpp
+void icons(const Fl_RGB_Image*[] images, int count);
+```
+
+<ParamField path="images" type="const Fl_RGB_Image*[]" required>
+  Array of icon images at different sizes
+</ParamField>
+
+<ParamField path="count" type="int" required>
+  Number of images in array
+</ParamField>
+
+## Window Borders
+
+### border()
+
+Gets or sets window border.
+
+```cpp
+unsigned int border() const;
+void border(int b);
+```
+
+<ParamField path="b" type="int" required>
+  1 to show border, 0 to hide
+</ParamField>
+
+**Description:** Controls whether window manager border is shown. Must be called before `show()`.
+
+### clear_border()
+
+Turns off window border.
+
+```cpp
+void clear_border();
+```
+
+**Description:** Fast inline function. Only works before `show()` is called.
+
+### set_override()
+
+Activates override redirect.
+
+```cpp
+void set_override();
+```
+
+**Description:** Sets NOBORDER and OVERRIDE flags for popup windows.
+
+## Modal Windows
+
+### modal()
+
+Checks if window is modal.
+
+```cpp
+unsigned int modal() const;
+```
+
+**Returns:** Non-zero if window is modal
+
+### set_modal()
+
+Makes window modal.
+
+```cpp
+void set_modal();
+```
+
+**Description:** Modal windows prevent events to other windows and remain on top.
+
+### non_modal()
+
+Checks if window is non-modal.
+
+```cpp
+unsigned int non_modal() const;
+```
+
+**Returns:** Non-zero if window is modal or non-modal
+
+### set_non_modal()
+
+Makes window non-modal.
+
+```cpp
+void set_non_modal();
+```
+
+**Description:** Non-modal windows stay on top but don't block events to other windows.
+
+### clear_modal_states()
+
+Clears modal and non-modal flags.
+
+```cpp
+void clear_modal_states();
+```
+
+**Description:** Converts modal or non-modal window back to normal. Call `hide()` first, then change state, then `show()`.
+
+## Special Window Types
+
+### set_menu_window()
+
+Marks window as a menu window.
+
+```cpp
+void set_menu_window();
+```
+
+**Description:** For internal use. Must be called before `show()`.
+
+### menu_window()
+
+Checks if window is a menu window.
+
+```cpp
+unsigned int menu_window() const;
+```
+
+**Returns:** Non-zero if window is a menu window
+
+### set_tooltip_window()
+
+Marks window as a tooltip window.
+
+```cpp
+void set_tooltip_window();
+```
+
+**Description:** For internal use. Must be called before `show()`.
+
+### tooltip_window()
+
+Checks if window is a tooltip window.
+
+```cpp
+unsigned int tooltip_window() const;
+```
+
+**Returns:** Non-zero if window is a tooltip window
+
+## Rendering
+
+### make_current()
+
+Sets this window as the current drawing context.
+
+```cpp
+void make_current();
+```
+
+**Description:** Sets up drawing functions to draw into this window. Useful for incremental updates.
+
+### current()
+
+Gets the current window.
+
+```cpp
+static Fl_Window *current();
+```
+
+**Returns:** Pointer to window that was last made current
+
+### flush()
+
+Forces window to redraw.
+
+```cpp
+virtual void flush();
+```
+
+**Description:** Forces the window to be drawn and makes it current.
+
+## Screen Information
+
+### screen_num()
+
+Gets or sets which screen the window is on.
+
+```cpp
+int screen_num() const;
+void screen_num(int screen_num);
+```
+
+<ParamField path="screen_num" type="int" required>
+  Screen number to use
+</ParamField>
+
+### decorated_w(), decorated_h()
+
+Gets window size including decorations.
+
+```cpp
+int decorated_w() const;
+int decorated_h() const;
+```
+
+**Returns:** Window width/height including title bar and borders
+
+**Description:** Returns same as `w()` or `h()` if window is not yet mapped.
+
+## Position Helper
+
+### x_root(), y_root()
+
+Gets absolute screen position.
+
+```cpp
+int x_root() const;
+int y_root() const;
+```
+
+**Returns:** X or Y coordinate relative to screen origin
+
+## Cursor
+
+### cursor()
+
+Sets the cursor for this window.
+
+```cpp
+void cursor(Fl_Cursor cursor);
+void cursor(const Fl_RGB_Image* img, int hotx, int hoty);
+```
+
+<ParamField path="cursor" type="Fl_Cursor" required>
+  Standard cursor type (FL_CURSOR_ARROW, FL_CURSOR_WAIT, etc.)
+</ParamField>
+
+<ParamField path="img" type="const Fl_RGB_Image*">
+  Custom cursor image
+</ParamField>
+
+<ParamField path="hotx, hoty" type="int">
+  Hot spot coordinates for custom cursor
+</ParamField>
+
+### default_cursor()
+
+Sets the default cursor.
+
+```cpp
+void default_cursor(Fl_Cursor cursor);
+```
+
+<ParamField path="cursor" type="Fl_Cursor" required>
+  Default cursor to use
+</ParamField>
+
+## Window Callbacks
+
+### default_callback()
+
+Default callback for windows.
+
+```cpp
+static void default_callback(Fl_Window* window, void* v);
+```
+
+<ParamField path="window" type="Fl_Window*" required>
+  Window receiving callback
+</ParamField>
+
+<ParamField path="v" type="void*">
+  User data
+</ParamField>
+
+**Description:** Default callback calls `hide()` on the window.
+
+## Type Checking
+
+### as_window()
+
+Returns this as an Fl_Window pointer.
+
+```cpp
+Fl_Window* as_window() override;
+```
+
+**Returns:** Pointer to this window
+
+## Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+
+void button_callback(Fl_Widget*, void*) {
+  printf("Button clicked!\n");
+}
+
+int main() {
+  Fl_Window *window = new Fl_Window(400, 300, "My Application");
+  window->begin();
+  
+  Fl_Button *button = new Fl_Button(150, 125, 100, 50, "Click Me");
+  button->callback(button_callback);
+  
+  window->end();
+  window->show();
+  
+  return Fl::run();
+}
+```
+
+## Related
+
+- [Fl (Global Namespace)](/api/fl) - Event loop and global functions
+- [Fl_Widget](/api/fl-widget) - Base widget class
+- [Fl_Group](/api/fl-group) - Container base class

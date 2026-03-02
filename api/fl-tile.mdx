@@ -1,0 +1,497 @@
+---
+title: Fl_Tile
+description: API reference for Fl_Tile user-resizable tiled layout container
+---
+
+## Overview
+
+Fl_Tile is a container widget that allows users to resize its children by dragging the borders between them. It creates a tiled layout where adjacent widgets share edges, and dragging those edges redistributes space between widgets.
+
+**Header:** `<FL/Fl_Tile.H>`
+
+**Inherits:** [Fl_Group](/api/fl-group)
+
+### Key Features
+
+- User-resizable widget boundaries
+- Interactive border dragging
+- Configurable size constraints per widget
+- Automatic cursor changes
+- Flexible tiling arrangements
+- Support for nested layouts
+
+### Use Cases
+
+- Splitter panels
+- Resizable tool panels
+- Multi-pane editors
+- Layout customization interfaces
+- Dashboard-style layouts
+- IDE-style window arrangements
+
+## Layout Algorithm
+
+Fl_Tile manages resizable boundaries between children:
+
+1. Children are positioned adjacent to each other, sharing edges
+2. When user drags a border (intersection point), adjacent widgets resize
+3. Widgets sharing that border edge are affected
+4. Size constraints limit minimum/maximum widget sizes
+5. Cursor changes to indicate draggable borders
+
+### Intersection Points
+
+An **intersection** is where widget edges meet. Dragging an intersection:
+- Moves the shared edges of adjacent widgets
+- Respects size constraints
+- Affects all widgets touching that intersection
+
+## Constructor
+
+```cpp
+Fl_Tile(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates an Fl_Tile container.
+
+<ParamField path="X" type="int">
+X position of the tile container
+</ParamField>
+
+<ParamField path="Y" type="int">
+Y position of the tile container
+</ParamField>
+
+<ParamField path="W" type="int">
+Width of the tile container
+</ParamField>
+
+<ParamField path="H" type="int">
+Height of the tile container
+</ParamField>
+
+<ParamField path="L" type="const char*">
+Optional label (default: NULL)
+</ParamField>
+
+## Size Constraints
+
+### size_range() - By Widget
+
+```cpp
+void size_range(Fl_Widget *w, int minw, int minh, 
+                int maxw = 0x7FFFFFFF, int maxh = 0x7FFFFFFF)
+```
+
+Sets size constraints for a specific child widget.
+
+<ParamField path="w" type="Fl_Widget*">
+Child widget to constrain
+</ParamField>
+
+<ParamField path="minw" type="int">
+Minimum width in pixels
+</ParamField>
+
+<ParamField path="minh" type="int">
+Minimum height in pixels
+</ParamField>
+
+<ParamField path="maxw" type="int">
+Maximum width in pixels (default: unlimited)
+</ParamField>
+
+<ParamField path="maxh" type="int">
+Maximum height in pixels (default: unlimited)
+</ParamField>
+
+### size_range() - By Index
+
+```cpp
+void size_range(int index, int minw, int minh,
+                int maxw = 0x7FFFFFFF, int maxh = 0x7FFFFFFF)
+```
+
+Sets size constraints for a child widget by index.
+
+<ParamField path="index" type="int">
+Child index (0-based)
+</ParamField>
+
+### init_size_range()
+
+```cpp
+void init_size_range(int default_min_w = -1, int default_min_h = -1)
+```
+
+Initializes default minimum size constraints for all children.
+
+<ParamField path="default_min_w" type="int">
+Default minimum width for all children (-1 = no constraint)
+</ParamField>
+
+<ParamField path="default_min_h" type="int">
+Default minimum height for all children (-1 = no constraint)
+</ParamField>
+
+Call this once after adding all children, before showing the window.
+
+## Intersection Movement
+
+### move_intersection()
+
+```cpp
+void move_intersection(int oldx, int oldy, int newx, int newy)
+```
+
+Moves an intersection point from old to new coordinates, resizing adjacent widgets.
+
+<ParamField path="oldx" type="int">
+Old X coordinate of intersection
+</ParamField>
+
+<ParamField path="oldy" type="int">
+Old Y coordinate of intersection
+</ParamField>
+
+<ParamField path="newx" type="int">
+New X coordinate of intersection
+</ParamField>
+
+<ParamField path="newy" type="int">
+New Y coordinate of intersection
+</ParamField>
+
+This method moves the intersection and updates all affected widget sizes. Respects size constraints.
+
+### drag_intersection()
+
+```cpp
+void drag_intersection(int oldx, int oldy, int newx, int newy)
+```
+
+Interactive version of `move_intersection()`, called during mouse drag operations.
+
+### position() - DEPRECATED
+
+```cpp
+[DEPRECATED] void position(int oldx, int oldy, int newx, int newy)
+```
+
+<Warning>
+Deprecated since FLTK 1.4.0. Use `move_intersection()` instead.
+</Warning>
+
+## Resize Behavior
+
+### resize()
+
+```cpp
+void resize(int X, int Y, int W, int H) override
+```
+
+Resizes the Fl_Tile container and proportionally adjusts child sizes.
+
+### resizable()
+
+Set one child as resizable to control how extra space is distributed:
+
+```cpp
+tile->resizable(main_panel);  // This widget gets extra space
+```
+
+## Cursor Management
+
+### set_cursor()
+
+```cpp
+protected:
+void set_cursor(int n)
+```
+
+Sets one of four cursors (0-3) for border dragging. Called internally; rarely needed by users.
+
+### cursor()
+
+```cpp
+protected:
+Fl_Cursor cursor(int n)
+```
+
+Returns the cursor for index n.
+
+## Example: Simple Horizontal Splitter
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Tile.H>
+#include <FL/Fl_Box.H>
+
+int main() {
+  Fl_Window win(400, 300, "Tile Example");
+  
+  Fl_Tile tile(0, 0, 400, 300);
+  
+  // Left panel
+  Fl_Box left(0, 0, 100, 300, "Left");
+  left.box(FL_DOWN_BOX);
+  
+  // Right panel
+  Fl_Box right(100, 0, 300, 300, "Right");
+  right.box(FL_DOWN_BOX);
+  
+  tile.end();
+  tile.resizable(right);  // Right panel expands
+  
+  win.resizable(tile);
+  win.end();
+  win.show();
+  return Fl::run();
+}
+```
+
+## Example: Three-Panel Layout with Constraints
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Tile.H>
+#include <FL/Fl_Box.H>
+
+int main(int argc, char** argv) {
+  Fl_Window win(400, 300, "Three Panel Layout");
+  
+  Fl_Tile tile(0, 0, 400, 300);
+  
+  // Set default minimum sizes for all children
+  tile.init_size_range(50, 50);
+  
+  // Left tool panel
+  Fl_Box left_tools(0, 0, 100, 300, "Tools");
+  left_tools.box(FL_DOWN_BOX);
+  tile.size_range(&left_tools, 50, 50);  // Min 50x50
+  
+  // Center document area
+  Fl_Box document(100, 0, 200, 300, "Document");
+  document.box(FL_DOWN_BOX);
+  tile.size_range(&document, 100, 50);  // Min 100x50
+  
+  // Right tool panel
+  Fl_Box right_tools(300, 0, 100, 300, "More\nTools");
+  right_tools.box(FL_DOWN_BOX);
+  tile.size_range(&right_tools, 50, 50);
+  
+  tile.end();
+  tile.resizable(document);  // Document expands
+  
+  win.end();
+  win.resizable(tile);
+  win.size_range(200, 50);
+  win.show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Example: Nested Tiles (2x2 Grid)
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Tile.H>
+#include <FL/Fl_Box.H>
+
+int main(int argc, char** argv) {
+  Fl_Double_Window window(300, 300, "2x2 Tile Grid");
+  
+  Fl_Tile tile(0, 0, 300, 300);
+  tile.init_size_range(30, 30);
+  
+  // Top-left
+  Fl_Box box0(0, 0, 150, 150, "0");
+  box0.box(FL_DOWN_BOX);
+  box0.color(FL_CYAN);
+  box0.labelsize(36);
+  tile.resizable(&box0);  // This one expands
+  
+  // Top-right (using a sub-window)
+  Fl_Window w1(150, 0, 150, 150, "1");
+  w1.box(FL_NO_BOX);
+  Fl_Box box1(0, 0, 150, 150, "1\nChild Window");
+  box1.box(FL_DOWN_BOX);
+  box1.color(FL_YELLOW);
+  box1.labelsize(18);
+  w1.resizable(box1);
+  w1.end();
+  
+  // Bottom-left
+  Fl_Box box2(0, 150, 150, 150, "2");
+  box2.box(FL_DOWN_BOX);
+  box2.color(FL_MAGENTA);
+  box2.labelsize(36);
+  
+  // Bottom-right
+  Fl_Box box3(150, 150, 150, 150, "3");
+  box3.box(FL_DOWN_BOX);
+  box3.color(FL_RED);
+  box3.labelsize(36);
+  
+  tile.end();
+  
+  window.end();
+  window.resizable(tile);
+  window.show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Example: Vertical Splitter with Minimum Sizes
+
+```cpp
+Fl_Window win(400, 400);
+
+Fl_Tile tile(0, 0, 400, 400);
+tile.init_size_range(50, 50);  // All panels min 50x50
+
+// Top panel
+Fl_Box top(0, 0, 400, 200, "Top");
+top.box(FL_DOWN_BOX);
+tile.size_range(&top, 50, 100);  // Min height 100
+
+// Bottom panel
+Fl_Box bottom(0, 200, 400, 200, "Bottom");
+bottom.box(FL_DOWN_BOX);
+tile.size_range(&bottom, 50, 100);
+
+tile.end();
+tile.resizable(bottom);
+
+win.resizable(tile);
+win.end();
+win.show();
+```
+
+## Example: Programmatic Intersection Movement
+
+```cpp
+// Move a border programmatically
+void move_border(Fl_Tile *tile) {
+  // Move intersection from (200, 150) to (250, 150)
+  tile->move_intersection(200, 150, 250, 150);
+  tile->redraw();
+}
+
+// Useful for:
+// - Restoring saved layouts
+// - Animated transitions
+// - Keyboard-based resizing
+```
+
+## Best Practices
+
+### Always Set Size Constraints
+
+Prevent widgets from becoming unusably small:
+
+```cpp
+Fl_Tile tile(0, 0, 400, 300);
+tile.init_size_range(50, 50);  // Set defaults first
+
+// Then set specific constraints
+tile.size_range(&main_panel, 200, 100);  // Main area needs more space
+tile.size_range(&side_panel, 50, 50, 200, 300);  // Side limited to 200px wide
+```
+
+### Set Resizable Widget
+
+Control which widget receives extra space when container grows:
+
+```cpp
+tile.resizable(main_content);  // Main content expands
+// Tool panels stay at minimum/preferred size
+```
+
+### Use with Window Size Range
+
+Prevent window from becoming too small:
+
+```cpp
+win.size_range(min_width, min_height);
+```
+
+### Cursor Feedback
+
+Fl_Tile automatically changes cursors over draggable borders. No action needed.
+
+### Nested Tiles
+
+You can nest Fl_Tile widgets for complex layouts:
+
+```cpp
+Fl_Tile outer(0, 0, 600, 400);
+
+// Left side is another tile
+Fl_Tile left_tile(0, 0, 300, 400);
+// ... add children to left_tile ...
+left_tile.end();
+
+// Right side
+Fl_Box right(300, 0, 300, 400);
+
+outer.end();
+```
+
+## Interaction Details
+
+### Dragging Borders
+
+1. Move mouse over widget border (intersection point)
+2. Cursor changes to resize cursor (↔ or ↕ or ↔↕)
+3. Click and drag to move border
+4. Release to complete resize
+
+### Keyboard Support
+
+Fl_Tile does not have built-in keyboard support. Implement custom keyboard handling if needed:
+
+```cpp
+class MyTile : public Fl_Tile {
+  int handle(int event) override {
+    if (event == FL_KEYBOARD) {
+      // Implement keyboard border movement
+      // Use move_intersection() to move borders
+    }
+    return Fl_Tile::handle(event);
+  }
+};
+```
+
+## Limitations
+
+### Complex Grids
+
+Fl_Tile works best for simple splitter layouts. For complex grids, consider:
+- Multiple nested Fl_Tile widgets
+- [Fl_Grid](/api/fl-grid) for non-resizable grids
+- Custom layout logic
+
+### Widget Overlap
+
+Ensure child widgets don't overlap. Fl_Tile assumes widgets share edges without gaps or overlaps.
+
+## Notes
+
+- Children should be adjacent (share edges)
+- Dragging moves shared edges between widgets
+- Size constraints prevent unusably small widgets
+- resizable() widget receives extra space during container resize
+- Cursor automatically changes over draggable borders
+- Works with nested Fl_Window children
+- Call `init_size_range()` after adding children
+
+## See Also
+
+- [Fl_Group](/api/fl-group) - Base container class
+- [Fl_Grid](/api/fl-grid) - Fixed grid layout (non-resizable)
+- [Fl_Flex](/api/fl-flex) - Flexible row/column layout
+- [Fl_Window](/api/fl-window) - Can be used as Fl_Tile children

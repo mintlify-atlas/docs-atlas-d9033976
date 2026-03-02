@@ -1,0 +1,210 @@
+---
+title: Button Examples
+description: Working with buttons and callbacks in FLTK
+---
+
+## What This Example Demonstrates
+
+This example shows how to:
+- Create different types of buttons
+- Attach callback functions to handle button clicks
+- Use FLTK's built-in dialogs and alerts
+- Exit an application gracefully
+- Trigger system sounds (beep)
+
+## Complete Source Code
+
+Source file: `test/button.cxx`
+
+```cpp
+#include <stdlib.h>
+#include <stdio.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+#include <FL/fl_ask.H>
+
+void beepcb(Fl_Widget *, void *) {
+  fl_beep();
+  fflush(stdout);
+}
+
+void exitcb(Fl_Widget *, void *) {
+  exit(0);
+}
+
+int main(int argc, char ** argv) {
+  Fl_Window *window = new Fl_Window(320,65);
+  Fl_Button *b1 = new Fl_Button(20, 20, 80, 25, "&Beep");
+  b1->callback(beepcb,0);
+  /*Fl_Button *b2 =*/ new Fl_Button(120,20, 80, 25, "&no op");
+  Fl_Button *b3 = new Fl_Button(220,20, 80, 25, "E&xit");
+  b3->callback(exitcb,0);
+  window->end();
+  window->show(argc,argv);
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+# Using fltk-config
+fltk-config --compile button.cxx
+
+# Or manually
+g++ -o button button.cxx `fltk-config --cxxflags --ldflags`
+
+# Run
+./button
+```
+
+## Expected Behavior
+
+The program displays a window with three buttons:
+1. **Beep** - Triggers a system beep sound when clicked
+2. **no op** - Does nothing (no callback attached)
+3. **Exit** - Closes the application
+
+Notice the `&` character in button labels creates keyboard shortcuts:
+- Alt+B for Beep
+- Alt+N for "no op"
+- Alt+X for Exit
+
+## Key Concepts
+
+### Button Creation
+```cpp
+Fl_Button *b1 = new Fl_Button(20, 20, 80, 25, "&Beep");
+```
+Syntax: `Fl_Button(x, y, width, height, label)`
+
+### Callback Functions
+
+Callbacks have this signature:
+```cpp
+void callback_name(Fl_Widget *widget, void *userdata) {
+  // Handle the event
+}
+```
+
+Attach callbacks with:
+```cpp
+b1->callback(beepcb, 0);
+```
+The second parameter (0 here) is optional user data passed to the callback.
+
+### Keyboard Shortcuts
+
+The `&` character in a label creates an Alt+key shortcut:
+- `"&Beep"` → Alt+B
+- `"E&xit"` → Alt+X
+
+The underlined character shows which key to press.
+
+### System Functions
+
+```cpp
+fl_beep();        // System beep
+fflush(stdout);   // Flush output buffer
+exit(0);          // Exit program
+```
+
+## Variations and Extensions
+
+### Using Different Button Types
+
+```cpp
+#include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Light_Button.H>
+#include <FL/Fl_Toggle_Button.H>
+#include <FL/Fl_Radio_Button.H>
+
+// Return button (default action, highlighted)
+Fl_Return_Button *ok = new Fl_Return_Button(10, 10, 80, 30, "OK");
+
+// Toggle button (on/off state)
+Fl_Toggle_Button *toggle = new Fl_Toggle_Button(10, 50, 80, 30, "Toggle");
+
+// Light button (with indicator light)
+Fl_Light_Button *light = new Fl_Light_Button(10, 90, 80, 30, "Light");
+
+// Radio button (mutually exclusive in group)
+Fl_Radio_Button *radio1 = new Fl_Radio_Button(10, 130, 80, 30, "Option 1");
+Fl_Radio_Button *radio2 = new Fl_Radio_Button(10, 160, 80, 30, "Option 2");
+```
+
+### Passing User Data to Callbacks
+
+```cpp
+void counter_cb(Fl_Widget *w, void *data) {
+  int *count = (int*)data;
+  (*count)++;
+  printf("Button clicked %d times\n", *count);
+}
+
+int main() {
+  int click_count = 0;
+  Fl_Window *win = new Fl_Window(300, 100);
+  Fl_Button *btn = new Fl_Button(100, 35, 100, 30, "Click Me");
+  btn->callback(counter_cb, &click_count);
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Getting Button State
+
+```cpp
+void toggle_cb(Fl_Widget *w, void *) {
+  Fl_Toggle_Button *btn = (Fl_Toggle_Button*)w;
+  if (btn->value()) {
+    printf("Button is ON\n");
+  } else {
+    printf("Button is OFF\n");
+  }
+}
+```
+
+### Button Colors and Appearance
+
+```cpp
+button->color(FL_RED);                    // Background color
+button->labelcolor(FL_WHITE);             // Text color
+button->selection_color(FL_DARK_RED);     // Color when pressed
+button->box(FL_ROUND_UP_BOX);             // Rounded style
+button->down_box(FL_ROUND_DOWN_BOX);      // Style when pressed
+```
+
+### Using Dialogs
+
+```cpp
+#include <FL/fl_ask.H>
+
+void show_message_cb(Fl_Widget*, void*) {
+  fl_message("This is a message dialog");
+}
+
+void show_alert_cb(Fl_Widget*, void*) {
+  fl_alert("Warning: This is an alert!");
+}
+
+void ask_question_cb(Fl_Widget*, void*) {
+  int choice = fl_choice("Save changes?", "No", "Yes", "Cancel");
+  // Returns: 0=No, 1=Yes, 2=Cancel
+}
+
+void get_input_cb(Fl_Widget*, void*) {
+  const char *name = fl_input("Enter your name:");
+  if (name) {
+    printf("Hello, %s!\n", name);
+  }
+}
+```
+
+## Next Steps
+
+- Learn about [advanced callbacks](/examples/callbacks)
+- Explore [input widgets](/examples/inputs)
+- See [custom widgets](/examples/custom-widgets)

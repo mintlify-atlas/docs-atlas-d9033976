@@ -1,0 +1,274 @@
+---
+title: OpenGL Integration
+description: Hardware-accelerated 3D graphics with Fl_Gl_Window
+---
+
+## Overview
+
+FLTK provides the `Fl_Gl_Window` class for creating windows with OpenGL rendering contexts. This enables hardware-accelerated 2D and 3D graphics within your FLTK applications.
+
+<Note>
+The `FL_OPENGL3` flag is recommended (and required on macOS) for using OpenGL 3.0 or higher.
+</Note>
+
+## Basic GL Window
+
+### Creating a Window
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Gl_Window.H>
+#include <FL/gl.h>
+
+class MyGLWindow : public Fl_Gl_Window {
+public:
+  MyGLWindow(int x, int y, int w, int h, const char *l = 0)
+    : Fl_Gl_Window(x, y, w, h, l) {
+    mode(FL_RGB | FL_DOUBLE | FL_DEPTH);
+  }
+
+  void draw() override {
+    if (!valid()) {
+      glViewport(0, 0, pixel_w(), pixel_h());
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      // Setup your projection...
+    }
+    
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Your OpenGL drawing code here
+  }
+};
+```
+
+### GL Mode Flags
+
+Set the OpenGL capabilities using `mode()`:
+
+<CodeGroup>
+```cpp Color & Buffering
+FL_RGB          // RGB color (not indexed)
+FL_RGB8         // RGB with 8 bits per channel
+FL_INDEX        // Indexed mode
+FL_SINGLE       // Single buffered
+FL_DOUBLE       // Double buffered
+```
+
+```cpp Buffers
+FL_ACCUM        // Accumulation buffer
+FL_ALPHA        // Alpha channel in color
+FL_DEPTH        // Depth buffer
+FL_DEPTH32      // 32-bit depth buffer
+FL_STENCIL      // Stencil buffer
+```
+
+```cpp Advanced
+FL_MULTISAMPLE  // Multisample antialiasing
+FL_OPENGL3      // OpenGL 3.0 or higher
+```
+</CodeGroup>
+
+## OpenGL 3+ Example
+
+From `examples/OpenGL3test.cxx`:
+
+```cpp
+class SimpleGL3Window : public Fl_Gl_Window {
+  GLuint shaderProgram;
+  GLuint vertexArrayObject;
+  GLuint vertexBuffer;
+  
+public:
+  SimpleGL3Window(int x, int y, int w, int h) : Fl_Gl_Window(x, y, w, h) {
+    mode(FL_RGB8 | FL_DOUBLE | FL_OPENGL3);
+    shaderProgram = 0;
+  }
+  
+  void draw() override {
+    if (!shaderProgram) {
+      // Compile shaders
+      GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+      const char *vss = "#version 330\n"
+        "in vec4 position;\n"
+        "in vec4 colour;\n"
+        "out vec4 colourV;\n"
+        "void main() {\n"
+        "  colourV = colour;\n"
+        "  gl_Position = position;\n"
+        "}";
+      glShaderSource(vs, 1, &vss, NULL);
+      glCompileShader(vs);
+      
+      // Create shader program
+      shaderProgram = glCreateProgram();
+      glAttachShader(shaderProgram, vs);
+      glLinkProgram(shaderProgram);
+      
+      // Upload vertices
+      GLfloat vertexData[] = {
+        -0.5f, -0.5f, 0.0f, 1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f, 1.0f,  0.0f, 1.0f, 0.0f, 1.0f,
+         0.5f,  0.5f, 0.0f, 1.0f,  0.0f, 0.0f, 1.0f, 1.0f,
+         0.5f, -0.5f, 0.0f, 1.0f,  1.0f, 1.0f, 1.0f, 1.0f
+      };
+      
+      glGenVertexArrays(1, &vertexArrayObject);
+      glBindVertexArray(vertexArrayObject);
+      glGenBuffers(1, &vertexBuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), 
+                   vertexData, GL_STATIC_DRAW);
+      glUseProgram(shaderProgram);
+    } else if (!valid()) {
+      glViewport(0, 0, pixel_w(), pixel_h());
+    }
+    
+    glClearColor(0.08f, 0.8f, 0.8f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+  }
+};
+```
+
+## Context Management
+
+### Validation States
+
+<CodeGroup>
+```cpp valid()
+// Check if context needs initialization
+if (!valid()) {
+  glViewport(0, 0, pixel_w(), pixel_h());
+  // Setup projection matrices
+}
+```
+
+```cpp context_valid()
+// Check if context was recreated
+if (!context_valid()) {
+  // Reload textures, shaders, etc.
+}
+```
+</CodeGroup>
+
+### Making Current
+
+```cpp
+class MyGLWindow : public Fl_Gl_Window {
+  void some_method() {
+    make_current();  // Activate this GL context
+    // Now OpenGL calls affect this window
+  }
+};
+```
+
+## High-DPI Support
+
+<Warning>
+On high-DPI displays, use `pixel_w()` and `pixel_h()` instead of `w()` and `h()` for OpenGL calls.
+</Warning>
+
+```cpp
+void draw() override {
+  if (!valid()) {
+    // Use pixel dimensions for OpenGL
+    glViewport(0, 0, pixel_w(), pixel_h());
+  }
+  
+  // Get scaling factor
+  float ppu = pixels_per_unit();
+}
+```
+
+## API Reference
+
+<ParamField path="mode" type="int">
+  Set OpenGL capabilities. Can be changed while window is displayed.
+</ParamField>
+
+<ParamField path="valid" type="bool">
+  Returns true if context is valid and sized correctly. Reset on resize.
+</ParamField>
+
+<ParamField path="context_valid" type="bool">
+  Returns true if context hasn't been recreated. Reset on context change.
+</ParamField>
+
+<ParamField path="make_current" type="void">
+  Activate this window's OpenGL context for rendering.
+</ParamField>
+
+<ParamField path="swap_buffers" type="void">
+  Swap front and back buffers (for double-buffered windows).
+</ParamField>
+
+<ParamField path="pixel_w" type="int">
+  Window width in OpenGL pixels (accounts for high-DPI scaling).
+</ParamField>
+
+<ParamField path="pixel_h" type="int">
+  Window height in OpenGL pixels (accounts for high-DPI scaling).
+</ParamField>
+
+## Adding FLTK Widgets
+
+<Note>
+FLTK 1.4 allows adding widgets on top of GL windows. Use `FL_OPENGL3` mode.
+</Note>
+
+```cpp
+Fl_Gl_Window *gl = new SimpleGL3Window(0, 0, 300, 300);
+gl->begin();
+  Fl_Button *btn = new Fl_Button(10, 10, 80, 30, "Click");
+  btn->color(FL_FREE_COLOR);  // Semi-transparent
+gl->end();
+```
+
+## Platform Notes
+
+<Tabs>
+  <Tab title="X11/Wayland">
+    - May require linking with `-lGL`
+    - Use GLEW for extension loading on Linux
+    - Requires Xrender for best performance
+  </Tab>
+  
+  <Tab title="Windows">
+    - Links automatically with `opengl32.lib`
+    - Use GLEW for extensions
+    - Supports all Windows OpenGL drivers
+  </Tab>
+  
+  <Tab title="macOS">
+    - Must use `FL_OPENGL3` for OpenGL 3.0+
+    - No GLEW needed - use `#include <OpenGL/gl3.h>`
+    - Core profile only (no deprecated functions)
+  </Tab>
+</Tabs>
+
+## Common Patterns
+
+### Ortho Projection Helper
+
+```cpp
+void draw() override {
+  if (!valid()) {
+    ortho();  // Sets up 2D orthographic projection
+  }
+  // Draw in pixel coordinates
+}
+```
+
+### Overlay Support
+
+```cpp
+if (can_do_overlay()) {
+  redraw_overlay();  // Request overlay redraw
+}
+
+void draw_overlay() override {
+  // Draw overlay graphics
+}
+```

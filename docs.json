@@ -1,122 +1,202 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "FLTK",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#0066CC",
+    "light": "#3399FF",
+    "dark": "#004080"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/fltk/fltk"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/fltk/fltk"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
+              "introduction",
+              "installation",
               "quickstart",
-              "development"
+              "hello-world"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/widgets",
+              "concepts/windows",
+              "concepts/events",
+              "concepts/drawing",
+              "concepts/layout",
+              "concepts/callbacks"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Widgets",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "widgets/overview",
+              "widgets/basic",
+              "widgets/buttons",
+              "widgets/input",
+              "widgets/menus",
+              "widgets/browsers",
+              "widgets/text",
+              "widgets/valuators",
+              "widgets/containers"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Layout Management",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "layout/overview",
+              "layout/group",
+              "layout/flex",
+              "layout/grid",
+              "layout/pack",
+              "layout/scroll",
+              "layout/tabs"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "advanced/opengl",
+              "advanced/cairo",
+              "advanced/images",
+              "advanced/drawing",
+              "advanced/fonts",
+              "advanced/colors",
+              "advanced/clipboard"
+            ]
+          },
+          {
+            "group": "FLUID Designer",
+            "pages": [
+              "fluid/overview",
+              "fluid/getting-started",
+              "fluid/interface",
+              "fluid/file-format"
+            ]
+          },
+          {
+            "group": "Platform Guides",
+            "pages": [
+              "platforms/linux",
+              "platforms/windows",
+              "platforms/macos",
+              "platforms/wayland"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core Classes",
             "pages": [
-              "api-reference/introduction"
+              "api/fl",
+              "api/fl-widget",
+              "api/fl-window",
+              "api/fl-group",
+              "api/enumerations"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Basic Widgets",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/fl-box",
+              "api/fl-button",
+              "api/fl-input",
+              "api/fl-output",
+              "api/fl-choice",
+              "api/fl-slider",
+              "api/fl-progress"
+            ]
+          },
+          {
+            "group": "Menu Widgets",
+            "pages": [
+              "api/fl-menu-item",
+              "api/fl-menu-bar",
+              "api/fl-menu-button",
+              "api/fl-choice-menu"
+            ]
+          },
+          {
+            "group": "Container Widgets",
+            "pages": [
+              "api/fl-flex",
+              "api/fl-grid",
+              "api/fl-pack",
+              "api/fl-scroll",
+              "api/fl-tabs",
+              "api/fl-tile"
+            ]
+          },
+          {
+            "group": "Complex Widgets",
+            "pages": [
+              "api/fl-browser",
+              "api/fl-table",
+              "api/fl-tree",
+              "api/fl-text-editor",
+              "api/fl-terminal"
+            ]
+          },
+          {
+            "group": "Drawing & Graphics",
+            "pages": [
+              "api/fl-image",
+              "api/fl-rgb-image",
+              "api/fl-pixmap",
+              "api/drawing-functions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Basic Examples",
+            "pages": [
+              "examples/hello-world",
+              "examples/buttons",
+              "examples/inputs",
+              "examples/callbacks"
+            ]
+          },
+          {
+            "group": "Layout Examples",
+            "pages": [
+              "examples/flex-layout",
+              "examples/grid-layout",
+              "examples/responsive-design"
+            ]
+          },
+          {
+            "group": "Advanced Examples",
+            "pages": [
+              "examples/opengl-demo",
+              "examples/custom-widgets",
+              "examples/multithreading"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

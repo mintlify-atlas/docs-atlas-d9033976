@@ -1,0 +1,127 @@
+---
+title: Hello World Example
+description: Your first FLTK application - a simple hello world program
+---
+
+## What This Example Demonstrates
+
+This example demonstrates the absolute basics of creating an FLTK application:
+- Creating a window (`Fl_Window`)
+- Adding a widget to display text (`Fl_Box`)
+- Customizing appearance with fonts, sizes, and box styles
+- Running the FLTK event loop
+
+This is the traditional "Hello, World!" program adapted for GUI applications. It creates a window with a styled text label.
+
+## Complete Source Code
+
+Source file: `test/hello.cxx`
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(340, 180);
+  Fl_Box *box = new Fl_Box(20, 40, 300, 100, "Hello, World!");
+  box->box(FL_UP_BOX);
+  box->labelfont(FL_BOLD + FL_ITALIC);
+  box->labelsize(36);
+  box->labeltype(FL_SHADOW_LABEL);
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Compilation Command
+
+```bash
+# Using fltk-config (recommended)
+fltk-config --compile hello.cxx
+
+# Or manually with g++
+g++ -o hello hello.cxx `fltk-config --cxxflags --ldflags`
+
+# Run the program
+./hello
+```
+
+## Expected Output
+
+When you run this program, you'll see:
+- A 340x180 pixel window
+- Text reading "Hello, World!" in bold italic font
+- Font size of 36 points
+- Shadow effect on the text
+- A raised box style (FL_UP_BOX) around the text
+
+## Key Concepts
+
+### Window Creation
+```cpp
+Fl_Window *window = new Fl_Window(340, 180);
+```
+Creates a window with width=340, height=180. The window is the top-level container.
+
+### Widget Positioning
+```cpp
+Fl_Box *box = new Fl_Box(20, 40, 300, 100, "Hello, World!");
+```
+FLTK uses absolute positioning: `Fl_Box(x, y, width, height, label)`
+- x=20, y=40: position from top-left corner
+- width=300, height=100: size of the box
+
+### Box Styles
+`box->box(FL_UP_BOX)` sets the visual style. Other options include:
+- `FL_DOWN_BOX` - recessed appearance
+- `FL_FLAT_BOX` - no border
+- `FL_BORDER_BOX` - simple border
+- `FL_NO_BOX` - invisible
+
+### Font Properties
+```cpp
+box->labelfont(FL_BOLD + FL_ITALIC);
+box->labelsize(36);
+box->labeltype(FL_SHADOW_LABEL);
+```
+Combine font styles with `+` and set size in points.
+
+### Event Loop
+```cpp
+window->show(argc, argv);
+return Fl::run();
+```
+- `show()` displays the window and parses command-line arguments
+- `Fl::run()` starts the event loop and handles user interaction
+
+## Variations and Extensions
+
+### Centered Text
+```cpp
+Fl_Box *box = new Fl_Box(0, 0, 340, 180, "Hello, World!");
+box->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
+```
+
+### Different Colors
+```cpp
+box->color(FL_WHITE);
+box->labelcolor(FL_BLUE);
+```
+
+### Window Title
+```cpp
+window->label("My First FLTK App");
+```
+
+### Minimum Window Size
+```cpp
+window->size_range(200, 100);  // min width, min height
+```
+
+## Next Steps
+
+- Learn about [buttons and callbacks](/examples/buttons)
+- Explore [input fields](/examples/inputs)
+- Understand [layout management](/examples/flex-layout)

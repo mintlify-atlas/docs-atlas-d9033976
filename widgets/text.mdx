@@ -1,0 +1,525 @@
+---
+title: Text Display and Editor
+description: Multi-line text display and editing widgets with syntax highlighting support
+---
+
+FLTK provides powerful multi-line text widgets for displaying and editing text documents, with support for syntax highlighting, line numbers, word wrap, and more.
+
+## Fl_Text_Display
+
+**Header:** `FL/Fl_Text_Display.H`
+
+Displays multi-line text with optional syntax highlighting, line numbers, and scrolling. This is a display-only widget - use `Fl_Text_Editor` for editing.
+
+### Constructor
+
+```cpp
+Fl_Text_Display(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Key Methods
+
+<AccordionGroup>
+  <Accordion title="buffer() - Set Text Buffer">
+    Associate a text buffer containing the text to display.
+    
+    ```cpp
+    void buffer(Fl_Text_Buffer *buf);
+    Fl_Text_Buffer* buffer() const;
+    
+    Fl_Text_Buffer *textbuf = new Fl_Text_Buffer();
+    Fl_Text_Display *display = new Fl_Text_Display(10, 10, 640, 480);
+    display->buffer(textbuf);
+    
+    textbuf->text("Line one\nLine two\nLine three");
+    ```
+    
+    **Important:** The buffer is **not** owned by the display widget. You must manage its lifetime.
+  </Accordion>
+
+  <Accordion title="insert_position() - Cursor Position">
+    Get or set the text insertion cursor position.
+    
+    ```cpp
+    void insert_position(int pos);
+    int insert_position() const;
+    
+    display->insert_position(0);  // Move to start
+    display->show_insert_position();  // Scroll to cursor
+    ```
+  </Accordion>
+
+  <Accordion title="textfont/textsize/textcolor() - Text Style">
+    Control the appearance of displayed text.
+    
+    ```cpp
+    void textfont(Fl_Font font);
+    Fl_Font textfont() const;
+    
+    void textsize(Fl_Fontsize size);
+    Fl_Fontsize textsize() const;
+    
+    void textcolor(Fl_Color color);
+    Fl_Color textcolor() const;
+    
+    display->textfont(FL_COURIER);
+    display->textsize(14);
+    display->textcolor(FL_BLACK);
+    ```
+  </Accordion>
+
+  <Accordion title="wrap_mode() - Word Wrapping">
+    Control how long lines are wrapped.
+    
+    ```cpp
+    void wrap_mode(int wrap, int wrap_margin);
+    
+    display->wrap_mode(Fl_Text_Display::WRAP_AT_BOUNDS, 0);  // Wrap at widget edge
+    display->wrap_mode(Fl_Text_Display::WRAP_AT_COLUMN, 80); // Wrap at column 80
+    display->wrap_mode(Fl_Text_Display::WRAP_NONE, 0);       // No wrapping
+    ```
+    
+    **Wrap modes:**
+    - `WRAP_NONE` - No wrapping, horizontal scrollbar appears
+    - `WRAP_AT_COLUMN` - Wrap at specified column
+    - `WRAP_AT_PIXEL` - Wrap at pixel position
+    - `WRAP_AT_BOUNDS` - Wrap to fit widget width
+  </Accordion>
+
+  <Accordion title="linenumber_width() - Show Line Numbers">
+    Display line numbers in left margin.
+    
+    ```cpp
+    void linenumber_width(int width);  // Width in pixels (0 = hide)
+    int linenumber_width() const;
+    
+    void linenumber_font(Fl_Font font);
+    void linenumber_size(Fl_Fontsize size);
+    void linenumber_fgcolor(Fl_Color color);
+    void linenumber_bgcolor(Fl_Color color);
+    
+    display->linenumber_width(50);
+    display->linenumber_bgcolor(FL_BACKGROUND_COLOR);
+    display->linenumber_fgcolor(FL_DARK3);
+    ```
+  </Accordion>
+
+  <Accordion title="cursor_style() - Cursor Appearance">
+    Set cursor style (for editor use).
+    
+    ```cpp
+    void cursor_style(int style);
+    
+    // Cursor styles
+    NORMAL_CURSOR   // I-beam
+    CARET_CURSOR    // Caret under text
+    DIM_CURSOR      // Dim I-beam
+    BLOCK_CURSOR    // Block under character
+    HEAVY_CURSOR    // Thick I-beam
+    SIMPLE_CURSOR   // Like Fl_Input cursor
+    ```
+  </Accordion>
+
+  <Accordion title="highlight_data() - Syntax Highlighting">
+    Add syntax highlighting using a style buffer.
+    
+    ```cpp
+    void highlight_data(Fl_Text_Buffer *styleBuffer,
+                       const Style_Table_Entry *styleTable,
+                       int nStyles, char unfinishedStyle,
+                       Unfinished_Style_Cb unfinishedHighlightCB,
+                       void *cbArg);
+    
+    // Define styles
+    Fl_Text_Display::Style_Table_Entry styletable[] = {
+      { FL_BLACK,      FL_COURIER, 14 },  // A - Plain
+      { FL_DARK_GREEN, FL_COURIER, 14 },  // B - Comments
+      { FL_BLUE,       FL_COURIER, 14 },  // C - Keywords
+      { FL_RED,        FL_COURIER, 14 },  // D - Strings
+    };
+    
+    Fl_Text_Buffer *stylebuf = new Fl_Text_Buffer();
+    display->highlight_data(stylebuf, styletable, 4, 'A', 0, 0);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Text_Display.H>
+
+int main() {
+  Fl_Window *win = new Fl_Window(640, 480, "Text Display");
+  
+  // Create text buffer
+  Fl_Text_Buffer *buff = new Fl_Text_Buffer();
+  
+  // Create display widget
+  Fl_Text_Display *disp = new Fl_Text_Display(10, 10, 620, 460);
+  disp->buffer(buff);
+  disp->textfont(FL_COURIER);
+  disp->textsize(14);
+  
+  // Load some text
+  buff->text("This is a multi-line\n"
+             "text display widget.\n"
+             "It supports:\n"
+             "  - Word wrapping\n"
+             "  - Syntax highlighting\n"
+             "  - Line numbers\n"
+             "  - Scrolling\n");
+  
+  // Enable line numbers
+  disp->linenumber_width(50);
+  disp->linenumber_bgcolor(FL_BACKGROUND_COLOR);
+  
+  win->end();
+  win->show();
+  return Fl::run();
+}
+```
+
+### Visual Description
+
+Fl_Text_Display appears as a rectangular text area with scrollbars (if needed). Text is displayed in monospace or proportional font. Optional line numbers appear in a shaded left margin. Selected text is highlighted.
+
+## Fl_Text_Editor
+
+**Header:** `FL/Fl_Text_Editor.H`
+
+Extends Fl_Text_Display with editing capabilities - keyboard input, mouse selection, undo/redo.
+
+### Constructor
+
+```cpp
+Fl_Text_Editor(int x, int y, int w, int h, const char *label = 0);
+```
+
+### Additional Features
+
+All Fl_Text_Display features plus:
+
+- **Keyboard editing** - Type, delete, insert text
+- **Mouse selection** - Click and drag to select
+- **Undo/redo** - Ctrl+Z / Ctrl+Shift+Z
+- **Cut/copy/paste** - Standard clipboard operations
+- **Find/replace** - Text search functionality
+
+### Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Text_Editor.H>
+#include <FL/Fl_Button.H>
+
+Fl_Text_Buffer *textbuf = 0;
+
+void save_cb(Fl_Widget *, void *) {
+  const char *text = textbuf->text();
+  // Save text to file...
+  printf("Saving: %s\n", text);
+  free((void*)text);
+}
+
+int main() {
+  Fl_Window *win = new Fl_Window(640, 500, "Text Editor");
+  
+  textbuf = new Fl_Text_Buffer();
+  
+  Fl_Text_Editor *editor = new Fl_Text_Editor(10, 10, 620, 440);
+  editor->buffer(textbuf);
+  editor->textfont(FL_COURIER);
+  editor->textsize(14);
+  
+  Fl_Button *save = new Fl_Button(270, 460, 100, 30, "Save");
+  save->callback(save_cb);
+  
+  win->end();
+  win->resizable(editor);
+  win->show();
+  return Fl::run();
+}
+```
+
+## Fl_Text_Buffer
+
+**Header:** `FL/Fl_Text_Buffer.H`
+
+Manages the actual text data for text widgets. Provides text manipulation methods.
+
+### Key Methods
+
+```cpp
+// Get/set entire text
+const char* text() const;
+void text(const char *txt);
+
+// Length
+int length() const;
+
+// Insert/remove
+void insert(int pos, const char *text);
+void remove(int start, int end);
+void replace(int start, int end, const char *text);
+
+// Search
+int search_forward(int startPos, const char *searchString, int *foundPos);
+int search_backward(int startPos, const char *searchString, int *foundPos);
+
+// Selection
+void select(int start, int end);
+void unselect();
+int selection_position(int *start, int *end);
+char* selection_text();
+
+// Undo
+void canundo(char flag);
+int undo(int *cursorPos);
+int redo(int *cursorPos);
+
+// Load/save
+int loadfile(const char *file);
+int savefile(const char *file);
+```
+
+## Text Widget Gallery
+
+<CardGroup cols={2}>
+  <Card title="Text Display" icon="file-lines">
+    **Fl_Text_Display** - Read-only text
+    
+    Multi-line text viewer with scrolling and highlighting.
+    
+    **Use for:** Log viewers, read-only documents, formatted output
+  </Card>
+
+  <Card title="Text Editor" icon="pen-to-square">
+    **Fl_Text_Editor** - Editable text
+    
+    Full-featured text editor with undo, selection, clipboard.
+    
+    **Use for:** Code editors, note taking, text documents
+  </Card>
+
+  <Card title="Syntax Highlighting" icon="code">
+    **Style Buffers** - Colored text
+    
+    Style buffer parallels text buffer to assign colors/fonts.
+    
+    **Use for:** Source code, markup languages, logs
+  </Card>
+
+  <Card title="Line Numbers" icon="list-ol">
+    **Line Number Margin** - Show line count
+    
+    Optional gutter showing line numbers.
+    
+    **Use for:** Code editors, technical documents
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Simple Text Editor
+
+```cpp
+class TextEditor {
+  Fl_Window *window;
+  Fl_Text_Editor *editor;
+  Fl_Text_Buffer *textbuf;
+  
+public:
+  TextEditor() {
+    window = new Fl_Window(640, 480, "Editor");
+    
+    textbuf = new Fl_Text_Buffer();
+    textbuf->canundo(1);  // Enable undo
+    
+    editor = new Fl_Text_Editor(0, 30, 640, 450);
+    editor->buffer(textbuf);
+    editor->textfont(FL_COURIER);
+    editor->textsize(14);
+    
+    create_menubar();
+    
+    window->end();
+    window->resizable(editor);
+  }
+  
+  void show() { window->show(); }
+};
+```
+
+### Syntax Highlighting for C++
+
+```cpp
+// Define color styles
+Fl_Text_Display::Style_Table_Entry styletable[] = {
+  { FL_BLACK,      FL_COURIER, 14, 0, 0 }, // A - Plain
+  { FL_DARK_GREEN, FL_COURIER, 14, 0, 0 }, // B - Line comments  
+  { FL_BLUE,       FL_COURIER, 14, 0, 0 }, // C - Keywords
+  { FL_RED,        FL_COURIER, 14, 0, 0 }, // D - Strings
+  { FL_DARK_CYAN,  FL_COURIER, 14, 0, 0 }, // E - Directives
+};
+
+const char *keywords[] = {
+  "if", "else", "while", "for", "return", "int", "void", 
+  "char", "class", "public", "private", "namespace", NULL
+};
+
+void style_update(int pos, int nInserted, int nDeleted,
+                 int nRestyled, const char *deletedText, void *cbArg) {
+  Fl_Text_Buffer *textbuf = ((Fl_Text_Editor*)cbArg)->buffer();
+  Fl_Text_Buffer *stylebuf = ((Fl_Text_Editor*)cbArg)->style_buffer();
+  
+  // Re-parse text and update styles
+  // This is simplified - real implementation is more complex
+  char *text = textbuf->text();
+  char *style = new char[strlen(text) + 1];
+  
+  memset(style, 'A', strlen(text));  // Default to plain
+  
+  // Mark keywords
+  for (int i = 0; keywords[i]; i++) {
+    char *p = text;
+    while ((p = strstr(p, keywords[i])) != NULL) {
+      int offset = p - text;
+      memset(style + offset, 'C', strlen(keywords[i]));
+      p += strlen(keywords[i]);
+    }
+  }
+  
+  style[strlen(text)] = '\0';
+  stylebuf->text(style);
+  
+  delete[] style;
+  free(text);
+}
+
+// Apply to editor
+Fl_Text_Buffer *stylebuf = new Fl_Text_Buffer();
+editor->highlight_data(stylebuf, styletable, 
+                      sizeof(styletable)/sizeof(styletable[0]),
+                      'A', style_update, editor);
+textbuf->add_modify_callback(style_update, editor);
+```
+
+### Log Viewer with Auto-Scroll
+
+```cpp
+void append_log(Fl_Text_Display *display, const char *msg) {
+  Fl_Text_Buffer *buf = display->buffer();
+  
+  buf->append(msg);
+  buf->append("\n");
+  
+  // Scroll to bottom
+  display->insert_position(buf->length());
+  display->show_insert_position();
+  
+  // Limit buffer size (keep last 1000 lines)
+  if (buf->count_lines(0, buf->length()) > 1000) {
+    int pos = buf->skip_lines(0, 100);  // Skip first 100 lines
+    buf->remove(0, pos);
+  }
+}
+```
+
+### Read-Only Display with Selection
+
+```cpp
+Fl_Text_Display *display = new Fl_Text_Display(10, 10, 600, 400);
+Fl_Text_Buffer *textbuf = new Fl_Text_Buffer();
+
+display->buffer(textbuf);
+textbuf->loadfile("document.txt");
+
+// Allow selection and copying, but not editing
+// (Fl_Text_Display is already read-only)
+display->cursor_style(Fl_Text_Display::NORMAL_CURSOR);
+```
+
+### Find and Replace
+
+```cpp
+void find_next(Fl_Text_Editor *editor, const char *searchtext) {
+  Fl_Text_Buffer *buf = editor->buffer();
+  int pos = editor->insert_position();
+  int found = 0;
+  
+  if (buf->search_forward(pos, searchtext, &found)) {
+    buf->select(found, found + strlen(searchtext));
+    editor->insert_position(found + strlen(searchtext));
+    editor->show_insert_position();
+  } else {
+    fl_alert("Not found: %s", searchtext);
+  }
+}
+
+void replace_all(Fl_Text_Editor *editor, 
+                const char *find, const char *replace) {
+  Fl_Text_Buffer *buf = editor->buffer();
+  int pos = 0;
+  int count = 0;
+  
+  while (buf->search_forward(pos, find, &pos)) {
+    buf->select(pos, pos + strlen(find));
+    buf->remove_selection();
+    buf->insert(pos, replace);
+    pos += strlen(replace);
+    count++;
+  }
+  
+  fl_message("Replaced %d occurrences", count);
+}
+```
+
+## Keyboard Shortcuts (Editor)
+
+Fl_Text_Editor supports these default key bindings:
+
+| Action | Shortcut |
+|--------|----------|
+| Undo | Ctrl+Z |
+| Redo | Ctrl+Shift+Z |
+| Cut | Ctrl+X |
+| Copy | Ctrl+C |
+| Paste | Ctrl+V |
+| Select All | Ctrl+A |
+| Move to line start | Home |
+| Move to line end | End |
+| Move to doc start | Ctrl+Home |
+| Move to doc end | Ctrl+End |
+| Delete line | Ctrl+K |
+
+## Important Notes
+
+<Warning>
+  The `text()` method of Fl_Text_Buffer returns a **malloc'd string** that you must `free()` when done. Forgetting this causes memory leaks.
+</Warning>
+
+<Info>
+  For **syntax highlighting**, the style buffer must be the same length as the text buffer, with one style character per text character.
+</Info>
+
+<Tip>
+  Use `wrap_mode(WRAP_AT_BOUNDS, 0)` for a better user experience in editors - text wraps to window width automatically.
+</Tip>
+
+## Performance Tips
+
+- For large files (>100K lines), consider lazy loading or pagination
+- Use `canundo(0)` if you don't need undo to save memory
+- Disable syntax highlighting for very large files
+- Use `suspend_undo()` / `resume_undo()` during bulk updates
+
+## Reference
+
+- Source: `FL/Fl_Text_Display.H` (lines 32-674)
+- Source: `FL/Fl_Text_Editor.H`
+- Source: `FL/Fl_Text_Buffer.H`
+- Example: `test/editor.cxx`

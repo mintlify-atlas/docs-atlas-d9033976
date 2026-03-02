@@ -1,0 +1,700 @@
+---
+title: FLUID File Format
+description: Technical reference for the .fl file format structure and syntax
+---
+
+FLUID stores projects in plain-text `.fl` files using a hierarchical format based on the original Forms Library `.fd` format. This reference documents the complete file structure for FLUID version 1.4 and later.
+
+## File Format Overview
+
+FLUID `.fl` files are:
+
+- **Plain text**: Human-readable, UTF-8 compatible
+- **Hierarchical**: Tree structure reflecting widget hierarchy
+- **Line-based**: Generally one element per line
+- **Version-tagged**: Includes FLTK version number
+- **Backward compatible**: Newer FLUID reads older files
+
+<Note>
+While `.fl` files are plain text and can be manually edited, FLUID provides no guarantees about preserving manual edits. Always keep backups when hand-editing.
+</Note>
+
+## File Structure
+
+Every `.fl` file consists of three main sections:
+
+```
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0500
+header_name {.h}
+code_name {.cxx}
+
+Function {make_window()} {open
+} {
+  Fl_Window {} {open
+    xywh {100 100 400 300}
+  } {
+    Fl_Button {} {
+      label {Click Me}
+      xywh {10 10 100 30}
+    }
+  }
+}
+```
+
+1. **Header**: File identification and version
+2. **Options**: Project-wide settings
+3. **Tree**: Hierarchical widget and code structure
+
+## Header Format
+
+Every `.fl` file must start with exactly this header:
+
+```
+# data file for the Fltk User Interface Designer (fluid)
+```
+
+Followed by a version line:
+
+```
+version <float>
+```
+
+The version number format is: `major.minor_patch`
+- FLTK 1.3.4 = `1.0304`
+- FLTK 1.4.0 = `1.0400`  
+- FLTK 1.5.0 = `1.0500`
+
+Version corresponds to FLTK library version, not FLUID version.
+
+<Warning>
+FLUID will warn but attempt to read files with version numbers higher than its internal version. Features may not load correctly.
+</Warning>
+
+### Legacy Formats
+
+Files starting with `Magic:` are Forms/XForms `.fd` files. FLUID can import these but may not understand all elements.
+
+## Basic Syntax Elements
+
+### Words
+
+Words are the fundamental data unit:
+
+**Simple words** (alphanumeric and underscore only):
+```
+xywh
+my_button
+Fl_Window
+```
+
+**Complex words** (any characters, enclosed in braces):
+```
+{.h}
+{My Window Title}
+{\#define}
+{if (x > 0) return;}
+```
+
+**Escaping rules**:
+- `\` and `#` are escaped with `\`: `{\#define}`
+- `{` and `}` must match or be escaped: `{\{unmatched}`
+- Line endings within words are preserved
+
+### Strings
+
+Strings are generated with `printf`-style formatting:
+
+```
+xywh {%d %d %d %d}
+```
+
+Readers must know when strings appear based on context, as there are no explicit delimiters beyond word boundaries.
+
+### Groups
+
+Groups create hierarchy using brace pairs:
+
+```
+Fl_Window {} {          ← Opens group
+  Fl_Button {} {}       ← Child element
+}                       ← Closes group
+```
+
+Groups can be nested to any depth.
+
+### Comments
+
+Line comments start with `#` only in header. Elsewhere, `#` must be escaped.
+
+```
+# This is the header comment
+comment {This is a FLUID comment node} {in_source in_header}
+```
+
+## Options Section
+
+Options appear after the header and before the first Type definition. All options are optional with default values.
+
+### Common Options
+
+**File naming**:
+```
+header_name {.h}           # Header file extension or full name
+code_name {.cxx}           # Source file extension or full name
+```
+
+**Compilation behavior**:
+```
+do_not_include_H_from_C    # Don't add #include "header.h" to source
+avoid_early_includes       # Delay #include <FL/Fl.H>
+utf8_in_src                # Allow UTF-8 in source (vs escape sequences)
+```
+
+**Platform**:
+```
+use_FL_COMMAND             # Use macOS Cmd key instead of Ctrl
+```
+
+### Internationalization Options
+
+```
+i18n_type 1                        # 0=none, 1=GNU gettext, 2=POSIX catgets
+i18n_gnu_function {gettext}        # Translation function
+i18n_gnu_static_function {gettext_noop}
+i18n_include {<libintl.h>}         # Header for i18n functions
+```
+
+### Layout Presets (FLUID 1.4+)
+
+```
+snap {
+  ver 1
+  current_suite {FLTK}
+  current_preset 0
+  suite {
+    name {My Layout}
+    preset { 1
+      10 10 10 10 10 10 0 0
+      1 1 1 1 1 1 1 1
+      10 10 10 10 10 10 10 10
+    }
+  }
+}
+```
+
+Stores grid/margin layout configurations. Can be skipped by reading entire block as one word.
+
+### Shell Commands (FLUID 1.4+)
+
+```
+shell_commands {
+  command {
+    name {Build}
+    label {Build Project}
+    shortcut 0xffc1        # F4 key
+    command {make}
+    flags 1                # Run in terminal
+  }
+}
+```
+
+Stores user-defined build commands within the project file.
+
+## Tree Section: Types
+
+The tree section contains hierarchical Type nodes representing code and widgets.
+
+### Type Structure
+
+Every Type follows this pattern:
+
+```
+TypeName Name {           ← Type keyword, name, properties start
+  property1 value         ← Properties
+  property2 {value}
+} {                       ← Properties end, children start
+  ChildType {} {}         ← Child Types
+}                         ← Children end
+```
+
+Types without children omit the second group:
+
+```
+Fl_Button {} {
+  label {OK}
+  xywh {10 10 80 25}
+}
+```
+
+### Type Categories
+
+**Functional Types** (code generation):
+- `Function` - C++ function
+- `code` - Single line of code
+- `codeblock` - Code block with `{}`
+- `decl` - Declaration or include
+- `declblock` - Declaration block
+- `data` - Embedded binary data
+- `comment` - Documentation comment
+- `class` - Class definition
+- `widget_class` - Custom widget class
+
+**Widget Types**: Any FLTK widget class name:
+- `Fl_Window`, `Fl_Group`, `Fl_Button`, etc.
+- Full list matches FLTK widget hierarchy
+
+### Type Hierarchy
+
+Simplified inheritance (affects available properties):
+
+```
+Node (base)
+├── Function
+├── code
+├── decl
+├── class  
+└── Fl_Widget
+    ├── Fl_Window
+    ├── Fl_Group
+    │   ├── Fl_Pack
+    │   ├── Fl_Tabs
+    │   └── Fl_Grid
+    ├── Fl_Button
+    │   ├── Fl_Light_Button
+    │   └── Fl_Check_Button
+    ├── Fl_Input
+    └── ... (all FLTK widgets)
+```
+
+## Properties
+
+Properties are key-value pairs within a Type's first group. The number and meaning of arguments depends on the property and Type.
+
+### Common Node Properties
+
+Available to all Types:
+
+```
+uid 001a                       # Unique ID (4-digit hex, since Oct 2023)
+label {Button Text}            # Display text
+comment {This is OK button}    # Documentation
+open                           # Node expanded in tree view
+selected                       # Node selected when file loaded
+user_data {(void*)42}          # Callback user data
+user_data_type {void*}         # Type of user data  
+callback {button_cb}           # Callback function or code
+```
+
+### Function Properties
+
+```
+Function {make_window()} {open return_type {Fl_Window*}
+} {
+  ...
+}
+```
+
+- `return_type` - Can include `virtual`, `static` keywords
+- Access: `private`, `protected`, or default (public)
+- `C` - Marks function as `extern "C"`
+
+### Code Block Properties
+
+```
+codeblock {if (condition)} {open
+  after {// end if}
+} {
+  code {...}
+}
+```
+
+- `after` - Text after closing `}`
+
+### Class Properties
+
+```
+class MyClass {open : Fl_Window
+} {
+  Function {MyClass()} {open
+  } {...}
+}
+```
+
+Format: `class [prefix] name`
+- Optional prefix: `FL_EXPORT`, `MY_API`, etc.
+- `:` base_class - Base class name
+- Access: `private`, `protected`, or default (public)
+
+### Widget Properties
+
+Available to all Fl_Widget-derived Types:
+
+**Position and Size**:
+```
+xywh {100 50 300 200}          # x y width height
+```
+
+**Visual**:
+```
+tooltip {Hover text}
+image {icon.png}                # Image file
+compress_image 1                # Compress embedded image
+scale_image {32 32}            # Scale to size
+deimage {icon_inactive.png}     # Inactive image
+```
+
+**Appearance**:
+```
+type 0                         # Widget type variant (int)
+box FL_UP_BOX                  # Box style
+down_box FL_DOWN_BOX           # Pressed appearance
+color 255                      # Background color index
+selection_color 1              # Selection/active color
+labeltype FL_NORMAL_LABEL      # Label rendering type
+labelfont 0                    # Font index
+labelsize 14                   # Font size
+labelcolor 0                   # Text color
+align 128                      # FL_ALIGN_* flags
+h_label_margin 2               # Horizontal label margin
+v_label_margin 2               # Vertical label margin  
+image_spacing 2                # Space between image and text
+```
+
+**Behavior**:
+```
+value 1                        # Button state or valuator value
+minimum 0.0                    # Valuator minimum
+maximum 100.0                  # Valuator maximum
+step 1.0                       # Valuator step
+slider_size 0.1                # Slider size (valuators)
+shortcut 0xff0d                # Keyboard shortcut (hex)
+when 1                         # When callback fires (FL_WHEN_*)
+```
+
+**State**:
+```
+hide                           # Widget initially hidden
+deactivate                     # Widget initially inactive
+resizable                      # Widget resizes with parent
+hotspot                        # Window hotspot (for positioning)
+```
+
+**Code Generation**:
+```
+class {My_Button}              # Override widget class
+private                        # or protected (default is public)
+code0 {o->value(1);}          # Extra init code (4 slots: code0-3)
+extra_code {o->value(1);}     # Alternative extra code
+```
+
+### Window-Specific Properties
+
+```
+Fl_Window {} {open
+  xywh {100 100 400 300}       # Ensures top-level window
+  modal                        # or non_modal
+  visible                      # Show when loading
+  noborder                     # Borderless window
+  xclass {MyApp}              # X11 window class
+  size_range {200 150 800 600} # min_w min_h max_w max_h
+} {...}
+```
+
+### Grid Layout Properties
+
+For `Fl_Grid`:
+
+```
+Fl_Grid {} {
+  dimensions {3 4}                    # 3 rows, 4 columns
+  margin {10 10 10 10}               # left top right bottom
+  gap {5 5}                          # row_gap col_gap
+  rowheights {30 30 30}              # per-row heights
+  rowweights {0 1 0}                 # per-row weights
+  colwidths {100 100 100 100}        # per-column widths
+} {...}
+```
+
+For children of `Fl_Grid`:
+
+```
+Fl_Button {} {
+  parent_properties {
+    location {0 1}                   # row 0, col 1
+    colspan 2                        # span 2 columns
+    rowspan 1                        # span 1 row
+    align 5                          # Fl_Grid_Align value
+    min_size {80 25}                 # minimum cell size
+  }
+}
+```
+
+### Flex Layout Properties
+
+For `Fl_Flex`:
+
+```
+Fl_Flex {} {
+  margins {5 5 5 5}                  # left top right bottom
+  gap 5                              # spacing between children
+  fixed_size_tuples {2 0 30 2 50}    # count, index size, index size...
+} {...}
+```
+
+## Example File Breakdown
+
+Complete annotated example:
+
+```fl
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0500
+header_name {.h}
+code_name {.cxx}
+
+decl {\#include <FL/fl_ask.h>} {public global
+}
+
+Function {make_window()} {open return_type {Fl_Window*}
+} {
+  Fl_Window main_window {open
+    label {My Application}
+    xywh {100 100 400 300}
+  } {
+    Fl_Menu_Bar {} {open
+      xywh {0 0 400 25}
+    } {}
+    Fl_Group {} {open
+      xywh {10 40 380 220}
+      box FL_ENGRAVED_BOX
+    } {
+      Fl_Button ok_btn {
+        label OK
+        callback {fl_message("OK clicked");}
+        xywh {20 50 100 30}
+      }
+      Fl_Button cancel_btn {
+        label Cancel
+        callback {main_window->hide();}
+        xywh {140 50 100 30}
+      }
+    }
+    Fl_Box {} {
+      label {Status: Ready}
+      xywh {10 270 380 20}
+      align 20
+    }
+  }
+}
+```
+
+Breakdown:
+1. **Header**: FLTK 1.5.0 format
+2. **Options**: Generate `.h` and `.cxx` files
+3. **Include**: Add `fl_ask.h` to generated code
+4. **Function**: `make_window()` returns `Fl_Window*`
+5. **Window**: Named `main_window`, 400×300 at position 100,100
+6. **Menu bar**: Full width at top
+7. **Group**: Container with engraved frame
+8. **Buttons**: OK and Cancel with inline callbacks
+9. **Status box**: Bottom status label, left-aligned
+
+## Version Compatibility
+
+**Reading older files**:
+- FLUID reads files from older FLTK versions
+- Unknown options and properties are ignored with warnings
+- File format is stable across minor versions
+
+**Writing newer files**:
+- New features make files incompatible with older FLUID
+- Version 1.4+ features: `uid`, updated `snap`, `shell_commands`
+- Check version tag before opening in older FLUID
+
+**Safe compatibility practices**:
+- Keep FLUID version consistent across team
+- Document minimum FLTK version in project README
+- Test files with target FLUID version before release
+
+## Manual Editing Considerations
+
+### When to Edit Manually
+
+✅ **Safe edits**:
+- Bulk find/replace of labels or names
+- Changing file paths in options  
+- Adjusting numeric values (sizes, positions)
+- Adding comments
+
+⚠️ **Risky edits**:
+- Changing Type keywords
+- Modifying hierarchy structure
+- Adding new properties not in spec
+- Editing binary data blocks
+
+❌ **Never edit**:
+- Header format
+- Version number (use FLUID's File > Save As)
+- Property names (case-sensitive)
+- Brace matching in groups
+
+### Manual Editing Tips
+
+1. **Always backup** before hand-editing
+2. **Validate after editing**: Open in FLUID, check for errors
+3. **Use consistent formatting**: Match existing indentation  
+4. **Escape special characters**: `\`, `#`, `{`, `}`
+5. **Match braces**: Every `{` needs a `}`
+6. **Keep hierarchy valid**: Children must be compatible with parents
+
+### Common Manual Edits
+
+**Batch rename labels**:
+```bash
+sed -i 's/label {Old Text}/label {New Text}/g' myfile.fl
+```
+
+**Change all button sizes**:
+```bash
+# Not recommended - use FLUID's batch editing instead
+```
+
+**Update file paths**:
+```
+header_name {../include/ui.h}  # Change path
+code_name {../src/ui.cxx}
+```
+
+<Warning>
+FLUID may reformat manually-edited files on save, potentially losing custom formatting or comments.
+</Warning>
+
+## Error Messages
+
+**"Version too high"**: File from newer FLUID version
+- May still load but with warnings
+- Some features may not work
+
+**"Unknown option"**: File contains newer option
+- Option is ignored
+- Rest of file loads normally  
+
+**"Unknown Type"**: Invalid or misspelled Type keyword
+- Type is skipped
+- FLUID attempts to continue reading
+
+**"Syntax error"**: Malformed structure
+- Usually from manual editing errors
+- Check brace matching and word escaping
+
+## Advanced Topics
+
+### Parent Properties
+
+Some widgets (like Fl_Grid children) store properties for their parent:
+
+```
+parent_properties {
+  location {0 1}
+  colspan 2
+}
+```
+
+The parent interprets these properties during code generation.
+
+### UID System (FLUID 1.4+)
+
+Unique IDs track nodes for merge and refactoring:
+
+```
+uid 001a
+```
+
+- 4-digit hexadecimal
+- Unique within project  
+- Assigned automatically
+- Optional (older projects lack UIDs)
+
+### Binary Data Embedding
+
+```
+data icon_data {
+  filename {icons/app_icon.png}
+  compressed
+  public global
+}
+```
+
+Embeds binary files as C++ arrays in generated code.
+
+### Merge-back Support
+
+FLUID can merge changes from edited generated code back into `.fl` files (experimental). UIDs help track which code belongs to which widget.
+
+## Tools and Utilities
+
+### Version Control
+
+`.fl` files work well with Git:
+
+```gitignore
+# .gitignore
+*.cxx    # Don't commit generated code
+*.h      # Regenerate during build
+```
+
+Commit `.fl` files, regenerate code on each system.
+
+### Diffing .fl Files
+
+Use standard diff tools:
+
+```bash
+diff -u old.fl new.fl
+git diff myproject.fl
+```
+
+Text format makes changes clear.
+
+### Automated Code Generation
+
+**CMake**:
+```cmake
+fltk_wrap_ui(myapp ui/main.fl ui/dialog.fl)
+```
+
+**Makefile**:
+```makefile
+%.h %.cxx: %.fl
+	fluid -c $<
+```
+
+**Build script**:
+```bash
+for fl in ui/*.fl; do
+  fluid -c "$fl"
+done
+```
+
+## Reference Documentation
+
+For the complete, authoritative file format specification:
+
+- Read `fluid/README_fl.txt` in FLTK source
+- Check FLUID version-specific release notes
+- Consult FLTK mailing list for edge cases
+
+<CardGroup cols={2}>
+  <Card title="FLUID Overview" icon="home" href="/fluid/overview">
+    Return to FLUID introduction
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/fluid/getting-started">
+    Create your first project
+  </Card>
+  <Card title="Interface Guide" icon="window" href="/fluid/interface">
+    Master the FLUID interface
+  </Card>
+  <Card title="FLTK Source" icon="github" href="https://github.com/fltk/fltk">
+    View FLTK source code
+  </Card>
+</CardGroup>

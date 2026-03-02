@@ -1,0 +1,424 @@
+---
+title: Fl_Flex
+description: API reference for Fl_Flex flexible layout container
+---
+
+## Overview
+
+Fl_Flex is a container (layout) widget for one row or one column of widgets. It provides flexible positioning of its children either in one row (HORIZONTAL) or in one column (VERTICAL).
+
+**Since:** FLTK 1.4.0
+
+**Header:** `<FL/Fl_Flex.H>`
+
+**Inherits:** [Fl_Group](/api/fl-group)
+
+### Key Features
+
+- Simple flexible row or column layout
+- Configurable margins on all four sides
+- Gap spacing between children
+- Fixed and flexible widget sizing
+- Drop-in replacement for Fl_Pack (recommended)
+- Predictable resizing behavior
+
+### Use Cases
+
+- Toolbar layouts with flexible spacing
+- Button rows with consistent sizing
+- Form layouts with aligned controls
+- Single-row or single-column arrangements
+- Nested layouts for complex UIs
+
+## Layout Algorithm
+
+Fl_Flex positions widgets in a row or column:
+
+1. **Margins** are applied around all children at the inner side of the box frame
+2. **Gaps** are inserted between each child widget
+3. **Fixed-size** widgets maintain their specified width (HORIZONTAL) or height (VERTICAL)
+4. **Flexible** widgets share remaining space equally
+
+For HORIZONTAL layout:
+- All widgets are resized to full height minus margins
+- Flexible widgets share available width equally
+- Use `fixed()` to set specific widget widths
+
+For VERTICAL layout:
+- All widgets are resized to full width minus margins
+- Flexible widgets share available height equally
+- Use `fixed()` to set specific widget heights
+
+## Constructor
+
+### Standard Constructor
+
+```cpp
+Fl_Flex(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a vertical Fl_Flex container with standard FLTK coordinates.
+
+<ParamField path="X" type="int">
+X position of the widget
+</ParamField>
+
+<ParamField path="Y" type="int">
+Y position of the widget
+</ParamField>
+
+<ParamField path="W" type="int">
+Width of the widget
+</ParamField>
+
+<ParamField path="H" type="int">
+Height of the widget
+</ParamField>
+
+<ParamField path="L" type="const char*">
+Optional label string (default: NULL)
+</ParamField>
+
+### Simplified Constructors
+
+```cpp
+Fl_Flex(int direction)
+Fl_Flex(int w, int h, int direction)
+Fl_Flex(int x, int y, int w, int h, int direction)
+```
+
+Alternate constructors that specify layout direction directly.
+
+<ParamField path="direction" type="int">
+Layout direction: `Fl_Flex::HORIZONTAL`, `Fl_Flex::VERTICAL` (or aliases `ROW`, `COLUMN`)
+</ParamField>
+
+## Layout Direction
+
+### Type Constants
+
+```cpp
+enum {
+  VERTICAL   = 0,  // One column
+  HORIZONTAL = 1,  // One row
+  COLUMN     = 0,  // Alias for VERTICAL
+  ROW        = 1   // Alias for HORIZONTAL
+}
+```
+
+### horizontal()
+
+```cpp
+int horizontal() const
+```
+
+Returns non-zero if layout is horizontal.
+
+**Returns:** 1 if type() == HORIZONTAL, 0 if VERTICAL
+
+## Widget Sizing
+
+### fixed()
+
+```cpp
+void fixed(Fl_Widget *w, int size)
+void fixed(Fl_Widget &w, int size)
+int fixed(Fl_Widget *w) const
+```
+
+Sets or gets the fixed size of a child widget.
+
+<ParamField path="w" type="Fl_Widget*">
+Widget to affect
+</ParamField>
+
+<ParamField path="size" type="int">
+Fixed width (HORIZONTAL) or height (VERTICAL) in pixels
+</ParamField>
+
+**For HORIZONTAL:** Sets fixed width; widget height adjusts to container  
+**For VERTICAL:** Sets fixed height; widget width adjusts to container
+
+Widgets without a fixed size share remaining space equally.
+
+## Margins
+
+### margin() - Get
+
+```cpp
+int margin() const
+```
+
+Returns the left margin size (useful if all margins are equal).
+
+### margin() - Get All Four
+
+```cpp
+int margin(int *left, int *top, int *right, int *bottom) const
+```
+
+Returns all four margin sizes.
+
+<ParamField path="left" type="int*">
+Pointer to receive left margin (can be NULL)
+</ParamField>
+
+<ParamField path="top" type="int*">
+Pointer to receive top margin (can be NULL)
+</ParamField>
+
+<ParamField path="right" type="int*">
+Pointer to receive right margin (can be NULL)
+</ParamField>
+
+<ParamField path="bottom" type="int*">
+Pointer to receive bottom margin (can be NULL)
+</ParamField>
+
+**Returns:** 1 if all margins are equal, 0 otherwise
+
+### margin() - Set All Equal
+
+```cpp
+void margin(int m, int g = -1)
+```
+
+Sets all four margins to the same size, optionally sets gap.
+
+<ParamField path="m" type="int">
+Margin size in pixels (must be >= 0)
+</ParamField>
+
+<ParamField path="g" type="int">
+Optional gap size (if >= 0); negative values leave gap unchanged
+</ParamField>
+
+### margin() - Set Individual
+
+```cpp
+void margin(int left, int top, int right, int bottom)
+```
+
+Sets each margin individually.
+
+<ParamField path="left" type="int">
+Left margin in pixels (negative values set to 0)
+</ParamField>
+
+<ParamField path="top" type="int">
+Top margin in pixels (negative values set to 0)
+</ParamField>
+
+<ParamField path="right" type="int">
+Right margin in pixels (negative values set to 0)
+</ParamField>
+
+<ParamField path="bottom" type="int">
+Bottom margin in pixels (negative values set to 0)
+</ParamField>
+
+## Gap Spacing
+
+### gap()
+
+```cpp
+int gap() const
+void gap(int g)
+```
+
+Gets or sets the gap size between children.
+
+<ParamField path="g" type="int">
+Gap size in pixels (must be >= 0; negative values clamped to 0)
+</ParamField>
+
+### spacing()
+
+```cpp
+int spacing() const
+void spacing(int i)
+```
+
+Synonym for `gap()`. Provided for compatibility with Fl_Pack.
+
+## Layout Management
+
+### layout()
+
+```cpp
+void layout()
+```
+
+Calculates the layout of children and redraws the widget.
+
+### need_layout()
+
+```cpp
+void need_layout(int set)
+bool need_layout() const
+```
+
+Sets or gets whether layout calculation is required.
+
+<ParamField path="set" type="int">
+1 to request layout recalculation, 0 to reset (rarely use 0)
+</ParamField>
+
+Call with `set=1` if you change child attributes or sizes to ensure proper layout calculation.
+
+### resize()
+
+```cpp
+void resize(int x, int y, int w, int h) override
+```
+
+Resizes the Fl_Flex container and recalculates child layout.
+
+## Example: Simple Toolbar
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Flex.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+
+int main(int argc, char **argv) {
+  Fl_Double_Window window(410, 40, "Simple Fl_Flex Demo");
+  
+  // Create horizontal flex container
+  Fl_Flex flex(5, 5, 400, 30, Fl_Flex::HORIZONTAL);
+  
+  // Add buttons - position/size will be managed by Fl_Flex
+  Fl_Button b1(0, 0, 0, 0, "File");
+  Fl_Button b2(0, 0, 0, 0, "Save");
+  Fl_Box    bx(0, 0, 0, 0);  // Invisible spacer
+  Fl_Button b3(0, 0, 0, 0, "Exit");
+  
+  // Configure layout
+  flex.fixed(bx, 60);  // Fixed width spacer
+  flex.gap(10);        // 10 pixel gap between widgets
+  flex.end();
+  
+  window.resizable(flex);
+  window.end();
+  window.size_range(300, 30);  // Prevent too small
+  window.show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Example: Vertical Form Layout
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Flex.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Button.H>
+
+int main() {
+  Fl_Window win(300, 250, "Form Example");
+  
+  // Vertical flex container with margins
+  Fl_Flex *vbox = new Fl_Flex(0, 0, 300, 250, Fl_Flex::VERTICAL);
+  vbox->margin(10);
+  vbox->gap(5);
+  
+  Fl_Input *name = new Fl_Input(0, 0, 0, 30, "Name:");
+  Fl_Input *email = new Fl_Input(0, 0, 0, 30, "Email:");
+  
+  // Flexible spacer
+  Fl_Box *spacer = new Fl_Box(0, 0, 0, 0);
+  
+  // Fixed height button
+  Fl_Button *submit = new Fl_Button(0, 0, 0, 30, "Submit");
+  vbox->fixed(submit, 30);
+  
+  vbox->end();
+  win.resizable(vbox);
+  win.show();
+  return Fl::run();
+}
+```
+
+## Best Practices
+
+### Size Constraints
+
+Always set a minimum window size to prevent resizing below designed dimensions:
+
+```cpp
+window.size_range(min_width, min_height);
+```
+
+### Nested Layouts
+
+Nest Fl_Flex containers for complex multi-row/column layouts:
+
+```cpp
+// Outer vertical container
+Fl_Flex *vbox = new Fl_Flex(0, 0, 300, 200, Fl_Flex::VERTICAL);
+
+// Top horizontal row
+Fl_Flex *hbox1 = new Fl_Flex(0, 0, 0, 0, Fl_Flex::HORIZONTAL);
+hbox1->gap(5);
+// Add buttons to hbox1...
+vbox->fixed(hbox1, 40);  // Fixed height row
+hbox1->end();
+
+// Middle flexible area
+Fl_Box *content = new Fl_Box(0, 0, 0, 0);
+
+// Bottom horizontal row
+Fl_Flex *hbox2 = new Fl_Flex(0, 0, 0, 0, Fl_Flex::HORIZONTAL);
+// Add buttons to hbox2...
+vbox->fixed(hbox2, 40);
+hbox2->end();
+
+vbox->end();
+```
+
+### Invisible Spacers
+
+Use Fl_Box widgets for flexible or fixed spacing:
+
+```cpp
+// Flexible spacer (takes remaining space)
+Fl_Box *spacer1 = new Fl_Box(0, 0, 0, 0);
+
+// Fixed spacer
+Fl_Box *spacer2 = new Fl_Box(0, 0, 0, 0);
+flex.fixed(spacer2, 50);
+```
+
+### Replacement for Fl_Pack
+
+Fl_Flex is the recommended replacement for Fl_Pack since FLTK 1.4.0:
+
+```cpp
+// Old Fl_Pack code:
+Fl_Pack *pack = new Fl_Pack(x, y, w, h);
+pack->type(Fl_Pack::HORIZONTAL);
+pack->spacing(10);
+
+// New Fl_Flex code:
+Fl_Flex *flex = new Fl_Flex(x, y, w, h, Fl_Flex::HORIZONTAL);
+flex->gap(10);
+```
+
+## Notes
+
+- Default box type is `FL_NO_BOX` (inherited from Fl_Group)
+- Default margin is 0 on all sides
+- Default gap is 0
+- Default type is `VERTICAL`
+- Undefined behavior if resized below minimum child sizes
+- For complex grids, consider using [Fl_Grid](/api/fl-grid) instead
+
+## See Also
+
+- [Fl_Grid](/api/fl-grid) - Multi-row and multi-column grid layout
+- [Fl_Pack](/api/fl-pack) - Legacy pack container
+- [Fl_Group](/api/fl-group) - Base container class
+- [Fl_Tile](/api/fl-tile) - User-resizable tile layout

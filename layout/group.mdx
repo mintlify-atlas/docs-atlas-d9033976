@@ -1,0 +1,409 @@
+---
+title: Fl_Group
+description: Base container widget for organizing and managing child widgets in FLTK
+---
+
+Fl_Group is the fundamental container widget in FLTK. It maintains an ordered list of child widgets and controls their resize behavior. All other layout widgets (Fl_Window, Fl_Flex, Fl_Grid, Fl_Pack, Fl_Scroll, Fl_Tabs) derive from Fl_Group.
+
+## Creating Groups
+
+### Basic Constructor
+
+```cpp
+Fl_Group(int x, int y, int w, int h, const char *label = 0)
+```
+
+**Parameters:**
+- `x, y` - Position of the group
+- `w, h` - Size of the group  
+- `label` - Optional label text
+
+**Example:**
+
+```cpp
+Fl_Group *group = new Fl_Group(10, 10, 300, 200, "Panel");
+group->box(FL_UP_BOX);
+group->begin();
+  new Fl_Button(20, 20, 80, 30, "Button 1");
+  new Fl_Button(20, 60, 80, 30, "Button 2");
+group->end();
+```
+
+## Adding Children
+
+### begin() and end() Pattern
+
+The recommended way to add children is using the `begin()`/`end()` pattern:
+
+```cpp
+Fl_Group *group = new Fl_Group(x, y, w, h);
+group->begin();
+  // Widgets created here are automatically added
+  new Fl_Button(...);
+  new Fl_Input(...);
+group->end();
+```
+
+<Warning>
+  Always call `end()` to prevent subsequent widgets from being accidentally added to the group.
+</Warning>
+
+### Manual Addition
+
+```cpp
+// Add a widget reference
+void add(Fl_Widget &widget)
+void add(Fl_Widget *widget)
+
+// Insert at specific position
+void insert(Fl_Widget &widget, int index)
+void insert(Fl_Widget &widget, Fl_Widget *before)
+```
+
+**Example:**
+
+```cpp
+Fl_Button *btn = new Fl_Button(20, 20, 80, 30, "Click");
+group->add(btn);
+
+// Insert before another widget
+Fl_Button *new_btn = new Fl_Button(20, 60, 80, 30, "New");
+group->insert(*new_btn, btn);  // Insert before btn
+```
+
+### Fl_End Helper
+
+For constructor initialization lists:
+
+```cpp
+class MyWidget {
+  Fl_Group group;
+  Fl_Button button1;
+  Fl_End end;           // Automatically calls group.end()
+  Fl_Button button2;    // Not in group
+  
+  MyWidget() :
+    group(0, 0, 100, 100),
+    button1(10, 10, 80, 30),
+    end(),
+    button2(10, 110, 80, 30)
+  {}
+};
+```
+
+## Accessing Children
+
+```cpp
+// Get number of children
+int children() const
+
+// Get child by index (returns nullptr if out of range)
+Fl_Widget *child(int n) const
+
+// Find index of a widget (-1 if not found)
+int find(const Fl_Widget *widget) const
+```
+
+**Example:**
+
+```cpp
+for (int i = 0; i < group->children(); i++) {
+  Fl_Widget *child = group->child(i);
+  if (child) {
+    child->color(FL_BLUE);
+  }
+}
+
+int index = group->find(my_button);
+if (index >= 0) {
+  printf("Button is at index %d\n", index);
+}
+```
+
+## Removing Children
+
+```cpp
+// Remove by reference
+void remove(Fl_Widget &widget)
+void remove(Fl_Widget *widget)
+
+// Remove by index
+void remove(int index)
+
+// Remove all children
+void clear()
+
+// Remove and delete child
+int delete_child(int index)
+```
+
+**Example:**
+
+```cpp
+// Remove but don't delete
+group->remove(button);
+
+// Remove and delete
+delete button;  // Automatically removes from parent
+
+// Clear all children (doesn't delete them)
+group->clear();
+```
+
+<Note>
+  Since FLTK 1.3, `delete widget` automatically removes the widget from its parent group.
+</Note>
+
+## Resize Behavior
+
+### The resizable() Widget
+
+The resizable widget defines how children resize when the group changes size:
+
+```cpp
+void resizable(Fl_Widget *widget)
+Fl_Widget *resizable() const
+```
+
+**Three possible values:**
+
+<Tabs>
+  <Tab title="NULL (Fixed)">
+    ```cpp
+    group->resizable(NULL);
+    ```
+    
+    All children remain fixed size and distance from top-left corner.
+    
+    **Use for:** Fixed-size dialogs, static layouts
+  </Tab>
+  
+  <Tab title="Group Itself (Proportional)">
+    ```cpp
+    group->resizable(group);
+    ```
+    
+    All direct children resize proportionally. This is the default for Fl_Group.
+    
+    **Use for:** Uniform scaling of all widgets
+  </Tab>
+  
+  <Tab title="Child Widget (Box-based)">
+    ```cpp
+    Fl_Box *resizer = new Fl_Box(50, 50, 100, 100);
+    group->resizable(resizer);
+    ```
+    
+    Widgets inside the resizable's box are scaled. Widgets outside are moved.
+    
+    **Use for:** Custom resize behavior
+  </Tab>
+</Tabs>
+
+### How Resize Works
+
+<Steps>
+  <Step title="Define Resizable Box">
+    The resizable widget defines a rectangular region within the group.
+  </Step>
+  
+  <Step title="Categorize Children">
+    - **Inside:** Widgets horizontally/vertically inside the box are scaled
+    - **Outside:** Widgets outside the box are moved to maintain relative position
+  </Step>
+  
+  <Step title="Apply Changes">
+    When the group resizes, FLTK calculates new positions/sizes based on the resize box.
+  </Step>
+</Steps>
+
+### init_sizes()
+
+Call this to save current child positions/sizes as the baseline for resize calculations:
+
+```cpp
+group->init_sizes();
+```
+
+Useful when dynamically changing layout after initial setup.
+
+## Clipping Children
+
+Control whether children draw outside the group's bounds:
+
+```cpp
+void clip_children(int enable)
+unsigned int clip_children() const
+```
+
+```cpp
+group->clip_children(1);  // Enable clipping
+```
+
+**Default:** No clipping (children can draw outside bounds)
+
+## Current Group
+
+FLTK tracks a "current group" for automatic child addition:
+
+```cpp
+static void current(Fl_Group *group)
+static Fl_Group *current()
+```
+
+```cpp
+Fl_Group::current(my_group);
+new Fl_Button(...);  // Automatically added to my_group
+Fl_Group::current(NULL);  // Clear current group
+```
+
+<Warning>
+  `begin()` sets the current group. Always call `end()` to restore the previous current group.
+</Warning>
+
+## Complete Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 300, "Fl_Group Demo");
+  
+  // Create a group with a frame
+  Fl_Group *panel = new Fl_Group(10, 10, 380, 100, "Control Panel");
+  panel->box(FL_ENGRAVED_FRAME);
+  panel->align(FL_ALIGN_TOP_LEFT | FL_ALIGN_INSIDE);
+  panel->labelsize(12);
+  
+  panel->begin();
+  
+  // Add buttons in fixed positions
+  Fl_Button *btn1 = new Fl_Button(20, 30, 80, 30, "Start");
+  Fl_Button *btn2 = new Fl_Button(110, 30, 80, 30, "Stop");
+  Fl_Button *btn3 = new Fl_Button(200, 30, 80, 30, "Reset");
+  
+  // Invisible resizable box
+  Fl_Box *resizer = new Fl_Box(290, 30, 80, 60);
+  panel->resizable(resizer);
+  
+  panel->end();
+  
+  // Another group below
+  Fl_Group *info = new Fl_Group(10, 120, 380, 170, "Information");
+  info->box(FL_ENGRAVED_FRAME);
+  info->align(FL_ALIGN_TOP_LEFT | FL_ALIGN_INSIDE);
+  info->labelsize(12);
+  
+  info->begin();
+  Fl_Box *text = new Fl_Box(20, 140, 360, 140, 
+    "This is a group example.\nGroups organize widgets.\n"
+    "Resize the window to see behavior.");
+  text->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_WRAP);
+  info->resizable(text);  // Text box expands
+  info->end();
+  
+  window->end();
+  window->resizable(window);
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Patterns
+
+### Grouped Radio Buttons
+
+```cpp
+Fl_Group *radio_group = new Fl_Group(10, 10, 200, 100);
+radio_group->begin();
+  Fl_Round_Button *opt1 = new Fl_Round_Button(20, 20, 100, 20, "Option 1");
+  opt1->type(FL_RADIO_BUTTON);
+  opt1->setonly();  // Select by default
+  
+  Fl_Round_Button *opt2 = new Fl_Round_Button(20, 45, 100, 20, "Option 2");
+  opt2->type(FL_RADIO_BUTTON);
+  
+  Fl_Round_Button *opt3 = new Fl_Round_Button(20, 70, 100, 20, "Option 3");
+  opt3->type(FL_RADIO_BUTTON);
+radio_group->end();
+```
+
+### Invisible Container
+
+```cpp
+Fl_Group *container = new Fl_Group(0, 0, 400, 300);
+container->box(FL_NO_BOX);  // Invisible
+container->resizable(NULL); // Fixed children
+// ... add widgets ...
+container->end();
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always Call end()" icon="square-check">
+    Prevents accidental child addition:
+    ```cpp
+    group->begin();
+    // ... add children ...
+    group->end();  // Don't forget!
+    ```
+  </Card>
+
+  <Card title="Set Resizable" icon="expand">
+    Define resize behavior explicitly:
+    ```cpp
+    group->resizable(resizer_box);
+    ```
+  </Card>
+
+  <Card title="Use Direct Children" icon="sitemap">
+    resizable() must be a direct child:
+    ```cpp
+    // GOOD
+    group->resizable(child);
+    
+    // BAD - undefined behavior
+    group->resizable(grandchild);
+    ```
+  </Card>
+
+  <Card title="Initialize Sizes" icon="ruler">
+    Save initial sizes after layout:
+    ```cpp
+    group->init_sizes();
+    ```
+  </Card>
+</CardGroup>
+
+## Reference
+
+### Header File
+
+```cpp
+#include <FL/Fl_Group.H>
+```
+
+### Key Methods
+
+| Method | Description |
+|--------|-------------|
+| `begin()` | Start adding children to this group |
+| `end()` | Stop adding children to this group |
+| `add(Fl_Widget*)` | Add a widget to the group |
+| `remove(Fl_Widget*)` | Remove a widget from the group |
+| `children()` | Get number of children |
+| `child(int)` | Get child by index |
+| `resizable(Fl_Widget*)` | Set the resizable widget |
+| `clip_children(int)` | Enable/disable child clipping |
+| `clear()` | Remove all children |
+
+## See Also
+
+- [Fl_Flex](/layout/flex) - Flexible row/column layout
+- [Fl_Grid](/layout/grid) - Grid-based layout
+- [Resize Behavior](/concepts/resize) - Understanding resize mechanics

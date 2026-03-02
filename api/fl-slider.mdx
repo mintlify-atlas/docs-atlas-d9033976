@@ -1,0 +1,391 @@
+---
+title: Fl_Slider
+description: API reference for the Fl_Slider class in FLTK
+---
+
+# Fl_Slider
+
+The `Fl_Slider` widget contains a sliding knob inside a box that allows users to select a value from a continuous range. It's commonly used for volume controls, scrollbars, and value selection.
+
+## Header File
+
+```cpp
+#include <FL/Fl_Slider.H>
+```
+
+## Class Overview
+
+`Fl_Slider` is a valuator widget that provides a graphical slider control. Features include:
+
+- Sliding knob for value selection
+- Horizontal or vertical orientation
+- Multiple visual styles (standard, fill, nice)
+- Linear or logarithmic scaling
+- Optional tick marks for nice sliders
+- Configurable range with `minimum()` and `maximum()`
+
+## Inheritance
+
+```
+Fl_Widget
+  └── Fl_Valuator
+        └── Fl_Slider
+```
+
+Inherits from: `Fl_Valuator` (which inherits from `Fl_Widget`)
+
+## Slider Types
+
+Set the slider type using `type(int)`:
+
+- `FL_VERT_SLIDER` (0) - Vertical slider (default)
+- `FL_HOR_SLIDER` (1) - Horizontal slider
+- `FL_VERT_FILL_SLIDER` (2) - Vertical filled slider (progress meter style)
+- `FL_HOR_FILL_SLIDER` (3) - Horizontal filled slider
+- `FL_VERT_NICE_SLIDER` (4) - Vertical slider with nice-looking knob
+- `FL_HOR_NICE_SLIDER` (5) - Horizontal slider with nice-looking knob
+
+## Constructors
+
+### Standard Constructor
+
+```cpp
+Fl_Slider(int X, int Y, int W, int H, const char *L = 0)
+```
+
+Creates a new slider widget with default vertical orientation.
+
+<ParamField path="X" type="int">
+  The X coordinate of the slider relative to the enclosing window
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the slider relative to the enclosing window
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width of the slider in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height of the slider in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*" default="nullptr">
+  Label text for the slider
+</ParamField>
+
+### Type Constructor
+
+```cpp
+Fl_Slider(uchar t, int X, int Y, int W, int H, const char *L)
+```
+
+Creates a slider with a specific type.
+
+<ParamField path="t" type="uchar">
+  Slider type (e.g., `FL_HOR_SLIDER`, `FL_VERT_NICE_SLIDER`)
+</ParamField>
+
+<ParamField path="X" type="int">
+  The X coordinate of the slider
+</ParamField>
+
+<ParamField path="Y" type="int">
+  The Y coordinate of the slider
+</ParamField>
+
+<ParamField path="W" type="int">
+  Width in pixels
+</ParamField>
+
+<ParamField path="H" type="int">
+  Height in pixels
+</ParamField>
+
+<ParamField path="L" type="const char*">
+  Label text
+</ParamField>
+
+## Public Methods
+
+### slider_size()
+
+```cpp
+float slider_size() const
+void slider_size(double v)
+```
+
+Gets or sets the dimensions of the moving slider piece as a fraction of the entire widget.
+
+<ParamField path="v" type="double">
+  Fraction of widget size (0.0 to 1.0). Default is 0.08. Setting to 1.0 prevents movement.
+</ParamField>
+
+**Returns:** For getter, current slider size as a float
+
+<Note>
+For fill sliders, this controls the size of the area around the end that causes dragging rather than jumping to the mouse.
+</Note>
+
+### slider()
+
+```cpp
+Fl_Boxtype slider() const
+void slider(Fl_Boxtype c)
+```
+
+Gets or sets the box type used for the slider knob.
+
+<ParamField path="c" type="Fl_Boxtype">
+  Box type for the slider knob (e.g., `FL_UP_BOX`, `FL_ROUND_UP_BOX`)
+</ParamField>
+
+**Returns:** For getter, current slider box type
+
+### scale()
+
+```cpp
+Scale_Type scale() const
+void scale(Scale_Type s)
+```
+
+Gets or sets the scale type (linear or logarithmic).
+
+<ParamField path="s" type="Scale_Type">
+  Either `LINEAR_SCALE` (0, default) or `LOG_SCALE`
+</ParamField>
+
+**Returns:** For getter, current scale type
+
+### ticks()
+
+```cpp
+uchar ticks() const
+void ticks(uchar t, uchar num_ticks = 11)
+```
+
+Gets or sets tick mark positions for nice sliders.
+
+<ParamField path="t" type="uchar">
+  Tick position bitset:
+  - `TICKS_NONE` (0x00) - No ticks
+  - `TICKS_BELOW` (0x01) - Below horizontal slider
+  - `TICKS_ABOVE` (0x02) - Above horizontal slider  
+  - `TICKS_LEFT` (0x01) - Left of vertical slider
+  - `TICKS_RIGHT` (0x02) - Right of vertical slider
+  
+  Can combine with OR for both sides
+</ParamField>
+
+<ParamField path="num_ticks" type="uchar" default="11">
+  Number of tick marks to draw
+</ParamField>
+
+**Returns:** For getter, current tick position bitset
+
+### num_ticks()
+
+```cpp
+uchar num_ticks() const
+```
+
+Gets the number of tick marks.
+
+**Returns:** `uchar` - Number of tick marks
+
+### bounds()
+
+```cpp
+void bounds(double a, double b)
+```
+
+Sets the minimum and maximum values for the slider.
+
+<ParamField path="a" type="double">
+  Minimum value
+</ParamField>
+
+<ParamField path="b" type="double">
+  Maximum value
+</ParamField>
+
+<Note>
+The minimum may be greater than maximum to reverse the slider direction.
+</Note>
+
+### scrollvalue()
+
+```cpp
+int scrollvalue(int pos, int size, int first, int total)
+```
+
+Sets the slider position and size for use as a scrollbar.
+
+<ParamField path="pos" type="int">
+  Current scroll position
+</ParamField>
+
+<ParamField path="size" type="int">
+  Size of visible area
+</ParamField>
+
+<ParamField path="first" type="int">
+  First position in scrollable area
+</ParamField>
+
+<ParamField path="total" type="int">
+  Total size of scrollable area
+</ParamField>
+
+**Returns:** `int` - 1 if slider changed, 0 otherwise
+
+### handle()
+
+```cpp
+int handle(int event) override
+```
+
+Handles events for the slider.
+
+<ParamField path="event" type="int">
+  The FLTK event type
+</ParamField>
+
+**Returns:** `int` - 1 if handled, 0 otherwise
+
+## Protected Methods
+
+### draw()
+
+```cpp
+void draw() override
+void draw(int X, int Y, int W, int H)
+```
+
+Draws the slider. The parameterized version allows subclasses to draw in a smaller area.
+
+## Inherited Methods from Fl_Valuator
+
+### Value Management
+
+- `value()` / `value(double)` - Get or set current value
+- `minimum()` / `minimum(double)` - Get or set minimum value
+- `maximum()` / `maximum(double)` - Get or set maximum value
+- `range(double min, double max)` - Set min and max together
+- `step(double)` / `step(double, int)` - Set value stepping increment
+- `precision(int)` - Set number of digits for text display
+
+### Callback Control
+
+- `when()` / `when(uchar)` - Control when callbacks occur
+- `clamp(double)` - Clamp value to min/max range
+
+## Usage Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Slider.H>
+#include <FL/Fl_Box.H>
+#include <stdio.h>
+
+Fl_Box *output;
+
+void slider_cb(Fl_Widget *w, void *) {
+  Fl_Slider *slider = (Fl_Slider*)w;
+  char buffer[32];
+  sprintf(buffer, "Value: %.2f", slider->value());
+  output->label(buffer);
+  output->redraw();
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(400, 300);
+  
+  // Horizontal slider
+  Fl_Slider *h_slider = new Fl_Slider(FL_HOR_NICE_SLIDER, 
+                                       50, 50, 300, 30, "Volume");
+  h_slider->align(FL_ALIGN_TOP);
+  h_slider->bounds(0.0, 100.0);
+  h_slider->value(50.0);
+  h_slider->callback(slider_cb);
+  h_slider->ticks(TICKS_BELOW, 11);
+  
+  // Vertical slider
+  Fl_Slider *v_slider = new Fl_Slider(FL_VERT_FILL_SLIDER,
+                                       50, 120, 40, 150, "Level");
+  v_slider->align(FL_ALIGN_LEFT);
+  v_slider->bounds(0.0, 100.0);
+  v_slider->value(75.0);
+  
+  // Output display
+  output = new Fl_Box(150, 180, 200, 30, "Value: 50.00");
+  output->box(FL_DOWN_BOX);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Logarithmic Scale Example
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Slider.H>
+#include <FL/Fl_Box.H>
+#include <stdio.h>
+#include <math.h>
+
+Fl_Box *freq_display;
+
+void freq_cb(Fl_Widget *w, void *) {
+  Fl_Slider *slider = (Fl_Slider*)w;
+  double freq = slider->value();
+  char buffer[64];
+  sprintf(buffer, "Frequency: %.0f Hz", freq);
+  freq_display->copy_label(buffer);
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(450, 200);
+  
+  // Logarithmic frequency slider (20Hz to 20kHz)
+  Fl_Slider *freq = new Fl_Slider(FL_HOR_NICE_SLIDER,
+                                    50, 50, 350, 30, 
+                                    "Frequency (Logarithmic)");
+  freq->align(FL_ALIGN_TOP);
+  freq->bounds(20.0, 20000.0);
+  freq->value(1000.0);
+  freq->scale(Fl_Slider::LOG_SCALE);
+  freq->callback(freq_cb);
+  freq->ticks(TICKS_BELOW | TICKS_ABOVE, 10);
+  
+  freq_display = new Fl_Box(100, 120, 250, 40, "Frequency: 1000 Hz");
+  freq_display->box(FL_FLAT_BOX);
+  freq_display->labelsize(16);
+  
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();
+}
+```
+
+## Common Use Cases
+
+- **Volume controls** - Audio level adjustment
+- **Brightness/contrast** - Image adjustment controls  
+- **Progress indicators** - Using fill sliders as progress meters
+- **Scrollbars** - Custom scrollbar implementation
+- **Parameter adjustment** - Fine-tuning numeric values
+- **Color pickers** - RGB/HSV component selection
+
+## See Also
+
+- [Fl_Valuator](/api/fl-valuator) - Base class for value controls
+- [Fl_Value_Slider](/api/fl-value-slider) - Slider with numeric value display
+- [Fl_Scrollbar](/api/fl-scrollbar) - Specialized slider for scrolling
+- [Fl_Adjuster](/api/fl-adjuster) - Up/down arrow value adjuster
+- [Fl_Dial](/api/fl-dial) - Circular value control

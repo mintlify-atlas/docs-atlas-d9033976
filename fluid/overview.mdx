@@ -1,0 +1,176 @@
+---
+title: FLUID Overview
+description: Introduction to the Fast Light User Interface Designer for FLTK
+---
+
+FLUID (Fast Light User Interface Designer) is a graphical editor that generates C++ source code and header files for creating FLTK-based graphical user interfaces. FLUID stores UI designs in `.fl` project files and transforms them into ready-to-compile C++ code.
+
+## What is FLUID?
+
+FLUID is a visual interface design tool that enables developers to:
+
+- **Design UIs visually** through drag-and-drop functionality
+- **Generate C++ code** automatically from visual layouts
+- **Preview interfaces** in real-time as you design
+- **Organize UI hierarchically** using a tree-based widget browser
+- **Integrate with build systems** like CMake or custom IDEs
+
+Unlike hand-coding UI layouts, FLUID provides a "what you see is what you get" (WYSIWYG) editor that makes UI development faster and more intuitive.
+
+## Why Use a Visual Designer?
+
+Visual UI designers like FLUID offer several advantages over manual coding:
+
+### Faster Development
+- Position and size widgets visually rather than calculating coordinates
+- See immediate results without compile/run cycles
+- Copy and paste widget groups for rapid prototyping
+
+### Better Consistency
+- Use alignment guides and grids for pixel-perfect layouts
+- Apply consistent spacing and sizing across all widgets
+- Maintain design standards with reusable templates
+
+### Easier Maintenance
+- Modify layouts without hunting through source code
+- Visual hierarchy makes complex UIs easier to understand
+- Changes to the design don't require manual code refactoring
+
+### Reduced Errors
+- No manual coordinate calculations
+- Automatic code generation eliminates syntax errors
+- Preview functionality catches layout issues early
+
+## FLUID Capabilities
+
+FLUID supports the complete FLTK widget set and advanced features:
+
+### Widget Support
+- **All FLTK widgets**: buttons, inputs, browsers, menus, and more
+- **Container widgets**: windows, groups, tabs, scrolls, grids, flex layouts
+- **Specialized widgets**: trees, tables, terminals, help viewers
+- **Custom widgets**: subclass any FLTK widget type
+
+### Code Organization
+- **Functions**: Generate C++ functions that create UI elements
+- **Classes**: Create complete widget classes with methods
+- **Code blocks**: Insert custom C++ code anywhere in the hierarchy
+- **Declarations**: Define variables and forward declarations
+- **Comments**: Document your design with inline comments
+
+### Advanced Features
+- **Internationalization**: Built-in support for gettext and POSIX catalogs
+- **Resource embedding**: Include images and binary data directly in code
+- **Shell commands**: Execute build scripts from within FLUID
+- **Templates**: Save and reuse project templates
+- **Live code preview**: See generated C++ code in real-time
+
+### Workflow Modes
+
+**Interactive Mode**: Design UIs visually with full WYSIWYG editing
+
+**Command-line Mode**: Generate code automatically during builds
+```bash
+fluid -c myproject.fl
+```
+
+## Generated Code Structure
+
+FLUID generates two files from each `.fl` project:
+
+### Header File (.h)
+Contains:
+- Forward declarations for all widgets
+- Class definitions for custom widget classes
+- Public function prototypes
+- External variable declarations
+
+### Source File (.cxx)
+Contains:
+- Complete widget initialization code
+- Callback function implementations
+- All custom C++ code from code blocks
+- Resource data (images, binary files)
+
+### Example Structure
+
+For a simple window with a button:
+
+```cpp
+// Generated .h file
+class MyWindow : public Fl_Window {
+public:
+  MyWindow(int X, int Y, int W, int H);
+  Fl_Button *ok_button;
+};
+
+// Generated .cxx file
+MyWindow::MyWindow(int X, int Y, int W, int H) 
+  : Fl_Window(X, Y, W, H) {
+  ok_button = new Fl_Button(10, 10, 80, 25, "OK");
+  ok_button->callback(ok_callback);
+  end();
+}
+```
+
+## FLUID Workflow
+
+The typical FLUID development process:
+
+1. **Design**: Create UI visually in FLUID's interactive mode
+2. **Generate**: Write C++ source and header files
+3. **Compile**: Build generated code with your application
+4. **Link**: Create final executable with FLTK library
+5. **Integrate**: Access UI elements from other C++ modules
+
+### Small Projects
+FLUID can handle complete application development:
+- Design entire UI in a single `.fl` file
+- Use shell commands to compile directly from FLUID
+- Rapid prototyping without external build systems
+
+### Medium Projects
+Integrate with IDEs or build systems:
+- Pre-generate C++ files in interactive mode
+- Let IDE handle compilation and linking
+- Use FLUID for UI design, code editor for logic
+
+### Large Projects
+Command-line integration with build pipelines:
+- Include `.fl` files in version control
+- Generate code automatically during builds
+- Reference external resources (images, i18n files)
+- Run FLUID as external tool in CMake or Make
+
+## File Format
+
+FLUID projects are stored as plain-text `.fl` files:
+
+- **Human-readable**: Can be edited manually if needed
+- **Version control friendly**: Text format works well with Git/SVN
+- **Hierarchical structure**: Reflects the widget tree organization
+- **Backward compatible**: Newer FLUID versions read older files
+
+## Getting Help
+
+- **Interactive help**: Double-click any widget to see its properties
+- **Code preview**: View generated code in real-time (Edit > Show Code View)
+- **Tooltips**: Hover over controls for quick help
+- **Examples**: Study `.fl` files in FLTK's `test/` and `examples/` directories
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/fluid/getting-started">
+    Create your first FLUID project
+  </Card>
+  <Card title="Interface Guide" icon="window" href="/fluid/interface">
+    Learn the FLUID interface
+  </Card>
+  <Card title="File Format" icon="file-code" href="/fluid/file-format">
+    Understand .fl file structure
+  </Card>
+  <Card title="FLTK Documentation" icon="book" href="https://www.fltk.org/documentation.php">
+    Complete FLTK reference
+  </Card>
+</CardGroup>
