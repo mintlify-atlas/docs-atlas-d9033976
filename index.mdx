@@ -1,97 +1,194 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction to FLTK
+description: Fast Light Tool Kit - A cross-platform C++ GUI toolkit for modern applications
 ---
 
-## Setting up
+# Introduction to FLTK
 
-Get your documentation site up and running in minutes.
+The Fast Light Tool Kit (FLTK) is a cross-platform C++ GUI toolkit for UNIX®/Linux® (X11 or Wayland), Microsoft® Windows®, and macOS®. FLTK provides modern GUI functionality without bloat and supports 3D graphics via OpenGL® and its built-in GLUT emulation.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Originally developed by Bill Spitzak, FLTK is currently maintained by a small group of developers across the world with a central repository on GitHub.
 
-## Make it yours
+## Get started
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Build your first FLTK application in under 5 minutes
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Installation" icon="download" href="/installation">
+    Install FLTK on Linux, Windows, or macOS
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Hello world" icon="window" href="/hello-world">
+    Step-by-step guide to creating your first window
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API reference" icon="code" href="/api/fl">
+    Complete API documentation for all FLTK classes
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Why FLTK?
 
-Everything you need to create world-class documentation.
+FLTK stands out as a GUI toolkit for developers who value efficiency, simplicity, and cross-platform compatibility.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+### Cross-platform native support
 
-## Need inspiration?
+Write once, compile anywhere. FLTK runs natively on:
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+- **Linux/Unix**: X11 or Wayland backends with Cairo and Pango support
+- **Windows**: Native Win32 API with GDI+ antialiasing
+- **macOS**: Native Cocoa framework for both Intel and Apple Silicon
+
+### Lightweight and fast
+
+FLTK's core design philosophy prioritizes minimal overhead:
+
+- Small binary size - applications start in milliseconds
+- Low memory footprint ideal for embedded systems
+- Direct rendering without unnecessary abstraction layers
+- Single header inclusion model for faster compilation
+
+### Mature and stable
+
+FLTK has been in active development since 1998:
+
+- Battle-tested in production environments worldwide
+- Stable API with careful consideration for backwards compatibility
+- LGPL license with static linking exception - use freely in commercial software
+- Active community and responsive maintainers
+
+### Modern C++ features
+
+FLTK 1.5 embraces modern C++ while maintaining simplicity:
+
+- C++11 standard requirement enables cleaner, safer code
+- Standard library integration with `std::string` support
+- Smart pointer compatibility for memory management
+- Template-based event handling
+
+## Key features
+
+<AccordionGroup>
+  <Accordion title="Rich widget set">
+    FLTK includes over 70 built-in widgets:
+    
+    - Standard controls: buttons, sliders, input fields, menus
+    - Advanced widgets: browser, table, tree, tabs, wizard
+    - Text editing: full-featured editor with syntax highlighting support
+    - File choosers: native file dialogs on all platforms
+    - Custom drawing: create your own widgets with simple draw() override
+  </Accordion>
+
+  <Accordion title="OpenGL integration">
+    Built-in OpenGL support with GLUT emulation:
+    
+    - `Fl_Gl_Window` class for 3D graphics
+    - Hardware-accelerated rendering
+    - Cross-platform OpenGL context management
+    - Compatible with modern OpenGL 3+ shaders
+  </Accordion>
+
+  <Accordion title="Image support">
+    Comprehensive image handling capabilities:
+    
+    - Built-in support: PNG, JPEG, BMP, XPM, XBM
+    - SVG rendering and creation with built-in library
+    - Animated GIF playback and control
+    - Image manipulation: scaling, rotation, color adjustment
+  </Accordion>
+
+  <Accordion title="International text">
+    Full Unicode and internationalization support:
+    
+    - UTF-8 text rendering throughout the toolkit
+    - Pango integration for complex scripts (Arabic, Hindi, Thai)
+    - Right-to-left text support
+    - Multiple font support including TrueType on all platforms
+  </Accordion>
+
+  <Accordion title="FLUID GUI designer">
+    Interactive interface designer included:
+    
+    - Visual layout editor with drag-and-drop
+    - Code generation for C++ classes
+    - Live preview of interface designs
+    - Integration with CMake and build systems
+  </Accordion>
+</AccordionGroup>
+
+## Architecture overview
+
+FLTK uses a simple, event-driven architecture:
+
+```cpp
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
+
+void button_callback(Fl_Widget *widget, void *data) {
+  // Handle button click
+}
+
+int main(int argc, char **argv) {
+  Fl_Window *window = new Fl_Window(320, 240, "My App");
+  Fl_Button *button = new Fl_Button(20, 20, 80, 25, "Click");
+  button->callback(button_callback);
+  window->end();
+  window->show(argc, argv);
+  return Fl::run();  // Enter event loop
+}
+```
+
+Key concepts:
+
+- **Window hierarchy**: Windows contain widgets in parent-child relationships
+- **Event loop**: `Fl::run()` processes events until all windows close
+- **Callbacks**: Functions triggered by user interactions
+- **Automatic layout**: Widgets manage their own drawing and event handling
+
+## What's new in FLTK 1.5
+
+<Note>
+FLTK 1.5 requires C++11 and uses CMake exclusively for building.
+</Note>
+
+Major improvements in version 1.5:
+
+- **C++11 baseline**: Modern language features throughout the API
+- **CMake only**: Simplified, consistent build system across platforms
+- **Enhanced Wayland support**: First-class support for Wayland on Linux
+- **Improved text rendering**: Better Pango integration and Unicode handling
+- **Pen/stylus support**: Pressure-sensitive input on supporting hardware
+- **Better HiDPI**: Automatic scaling on high-resolution displays
+
+## Community and support
+
+Get help and connect with other FLTK developers:
+
+- **Mailing list**: [FLTK General](https://groups.google.com/forum/#!forum/fltkgeneral)
+- **GitHub Discussions**: [Q&A section](https://github.com/fltk/fltk/discussions/categories/q-a)
+- **Bug reports**: [FLTK bug tracker](https://www.fltk.org/bugs.php)
+- **Website**: [www.fltk.org](https://www.fltk.org/)
+
+## License
+
+FLTK is free software under the GNU Library General Public License (LGPL) with exceptions that permit static linking. This means you can:
+
+- Use FLTK in commercial applications
+- Statically link FLTK into proprietary software
+- Distribute FLTK-based applications under any license
+- Modify FLTK source (modifications must remain LGPL)
+
+<Info>
+The LGPL with static linking exception makes FLTK ideal for commercial software development while keeping the toolkit itself open source.
+</Info>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Install FLTK" icon="terminal" href="/installation">
+    Set up your development environment
+  </Card>
+  <Card title="Build your first app" icon="code" href="/quickstart">
+    Create a working application in 5 minutes
+  </Card>
+</CardGroup>
